@@ -421,6 +421,6 @@ Lokasi: `src/Backend/Gms.Infrastructure/Persistence/Migrations/`. Perintah: `dot
 `dotnet tool run dotnet-ef migrations add <Nama> --project src/Backend/Gms.Infrastructure --startup-project src/Backend/Gms.Api --output-dir Persistence/Migrations`.
 Untuk menjalankan ke database: set `GMS_DESIGN_CONNECTION` (tanpa menaruh kredensial di repository) lalu `dotnet tool run dotnet-ef database update ...`.
 
-**Status verifikasi (jujur):** model dan DDL tervalidasi oleh `dotnet ef migrations add` dan skrip SQL (`migrations script`) berhasil dibuat. **Belum dijalankan terhadap PostgreSQL nyata** (Docker Desktop tidak aktif saat tahap Architect). Tugas pertama Backend: menjalankan migrasi pada PostgreSQL (Testcontainers/Docker) dan menguji constraint kunci (sesi tunggal, periode tumpang tindih, CHECK stok/Sisa Rencana, trigger audit).
+**Status verifikasi:** migrasi **sudah dijalankan dan diuji terhadap PostgreSQL 17 nyata** (2026-11-08): 64 uji constraint SQL lulus, 12 uji runtime EF Core lulus, rollback penuh dan naik ulang bersih, tidak ada drift model. Rincian, keterbatasan, dan cara mengulang: `docs/Architecture/MigrationVerification.md`. Yang belum diuji: logika bisnis dan penguncian paralel (menunggu use case Backend).
 
 Catatan: tabel passkey Identity 10 tidak dibuat (fitur tidak dipakai). Nama PK/FK/indeks otomatis EF (mis. `PK_po_lines`) belum di-snake_case; kosmetik, dapat dirapikan Backend.
