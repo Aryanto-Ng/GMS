@@ -3,7 +3,7 @@
 | Atribut | Nilai |
 |---|---|
 | Modul | Master Data |
-| Versi | 0.1 (Draft, menunggu persetujuan) |
+| Versi | 1.0 (Disetujui user) |
 | Tipe | Modul Baru |
 | Penulis | System Analyst |
 | Fase | 1 |
@@ -305,6 +305,7 @@ Tidak ada halaman Static SSR pada modul ini. WebAssembly **tidak dipakai** (peng
 ## 11. Catatan untuk Peran Berikutnya
 
 - **Architect:** modelkan Routing dan Tarif sebagai bagian dari agregat FG. Rancang mekanisme penomoran otomatis yang aman terhadap konkurensi. Siapkan struktur snapshot Routing/Tarif yang akan dipakai Work Order.
+- **Backend (seeder):** buat data awal Customer khusus "STOK INTERNAL" untuk PO produksi stok (lihat FSD Customer PO, E2).
 - **FSD berikutnya:** Customer PO wajib memakai Customer, FG, Size, dan Color dari modul ini. Work Order wajib memeriksa Status Kesiapan FG saat dirilis.
 
 ---
@@ -313,10 +314,10 @@ Tidak ada halaman Static SSR pada modul ini. WebAssembly **tidak dipakai** (peng
 
 | # | Asumsi / Pertanyaan | Status |
 |---|---|---|
-| Q1 | Kode otomatis hanya untuk Customer, Vendor, dan Pekerja. Process, Kategori, UoM memakai kode manual. | Asumsi SA, perlu konfirmasi |
-| Q2 | Satu Process hanya sekali dalam satu Routing. Bila ada kebutuhan proses yang sama dikerjakan dua kali (misal QC di tengah dan akhir), buat dua Process terpisah. | Asumsi SA, perlu konfirmasi |
-| Q3 | Tarif harus > 0. Tidak ada proses internal tanpa upah. | Asumsi SA, perlu konfirmasi |
-| Q4 | Fitur "Salin dari FG lain" (AC-MD-27) termasuk fase 1. | Usulan SA, perlu konfirmasi |
-| Q5 | Import CSV hanya menambah data (tanpa update massal) dan semua-atau-tidak-sama-sekali. | Usulan SA, perlu konfirmasi |
-| Q6 | Material, Kategori, dan UoM dibangun di fase 1 walau belum dipakai transaksi. | Perlu konfirmasi (alternatif: tunda ke fase pembelian) |
+| Q1 | Kode otomatis hanya untuk Customer, Vendor, dan Pekerja. Process, Kategori, UoM memakai kode manual. | **Disetujui** |
+| Q2 | Satu Process hanya sekali dalam satu Routing. Bila ada kebutuhan proses yang sama dikerjakan dua kali (misal QC di tengah dan akhir), buat dua Process terpisah. | **Disetujui** |
+| Q3 | Tarif harus > 0. Tidak ada proses internal tanpa upah. | **Disetujui** |
+| Q4 | Fitur "Salin dari FG lain" (AC-MD-27) termasuk fase 1. | **Disetujui** |
+| Q5 | Import CSV hanya menambah data (tanpa update massal) dan semua-atau-tidak-sama-sekali. | **Disetujui** |
+| Q6 | Material, Kategori, dan UoM dibangun di fase 1 walau belum dipakai transaksi. Material dipakai oleh Serah Terima Material (catatan sederhana). | **Disetujui** |
 | Q7 | Jumlah data awal (Material, FG, Pekerja) belum diketahui, hanya memengaruhi batas import (2.000 baris). | Informasi |
