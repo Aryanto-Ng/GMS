@@ -3,7 +3,7 @@
 | Atribut | Nilai |
 |---|---|
 | Modul | Beranda |
-| Versi | 0.1 (Draft, menunggu persetujuan) |
+| Versi | 1.0 (Disetujui user) |
 | Tipe | Modul Baru (ditambahkan atas permintaan user saat tahap UI/UX) |
 | Penulis | System Analyst |
 | Fase | 1 |
@@ -149,8 +149,8 @@ Beranda tidak menyimpan data sendiri. Seluruh angka adalah **hasil hitung (read 
 
 | # | Asumsi / Pertanyaan | Status |
 |---|---|---|
-| Q1 | Daftar widget W-01 s.d. W-13 sudah sesuai, tidak ada yang kurang | Perlu konfirmasi |
-| Q2 | Jatuh tempo memakai jendela 7 hari | Default SA, boleh disesuaikan |
-| Q3 | Tanpa grafik tren di fase 1 | Default SA, perlu konfirmasi |
-| Q4 | Data dihitung saat dibuka dan saat Segarkan (tanpa auto-refresh) | Default SA, perlu konfirmasi |
-| Q5 | Zona waktu aplikasi WIB | Default SA, perlu konfirmasi |
+| Q1 | Daftar widget W-01 s.d. W-13 sudah sesuai | **Disetujui** |
+| Q2 | Jatuh tempo memakai jendela 7 hari | **Disetujui** |
+| Q3 | Tanpa grafik tren di fase 1 | **Disetujui** |
+| Q4 | Data dihitung saat dibuka dan saat Segarkan (tanpa auto-refresh) | **Disetujui** |
+| Q5 | Zona waktu aplikasi WIB | **Disetujui** |

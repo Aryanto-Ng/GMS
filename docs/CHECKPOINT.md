@@ -8,7 +8,7 @@
 ## Modul Aktif: Fase 1 — Seluruh Modul (Alur B: desain lintas modul dulu)
 - **Tipe:** Baru
 - **Alur B:** Peran 2 (UI/UX) dan 3 (Architect) dikerjakan untuk **seluruh 8 modul** terlebih dahulu, karena skema DB, alokasi, stok, dan snapshot saling terkait. Setelah itu peran 4 s.d. 8 dikerjakan **per modul** sesuai urutan dependensi di bawah (dan modul yang selesai 100% diarsipkan).
-- **Referensi FSD (semua v1.0 disetujui):**
+- **Referensi FSD (semua v1.0 disetujui; ditambah `docs/FSD/Beranda.md` v1.0 sebagai modul ke-9):**
   1. `docs/FSD/AccessManagement.md`
   2. `docs/FSD/MasterData.md`
   3. `docs/FSD/CustomerPO.md`
@@ -20,11 +20,11 @@
 - **Dokumen desain:** `docs/Design/<NamaModul>-UI.md`
 
 ### Urutan Implementasi (peran 4 s.d. 8, per modul)
-AccessManagement → MasterData → CustomerPO → WorkOrder → ProductionOutput → SerahTerimaStokFG → Pengiriman → PayrollBorongan
+AccessManagement → MasterData → CustomerPO → WorkOrder → ProductionOutput → SerahTerimaStokFG → Pengiriman → PayrollBorongan → Beranda (terakhir, karena membaca data semua modul)
 
 ## Workflow Status
 - [x] **1. System Analyst:** FSD disetujui (Render Mode ditetapkan) untuk 8 modul.
-- [ ] **2. UI/UX Designer:** Spesifikasi Vibe, Layout, & State UI (Loading/Error) selesai ditulis (8 modul).
+- [x] **2. UI/UX Designer:** Spesifikasi Vibe, Layout, & State UI (Loading/Error) selesai ditulis (9 modul + fondasi: `docs/Design/`).
 - [ ] **3. Architect:** `src/Shared/` (DTOs), Skema DB, dan Mock API Contract selesai (8 modul).
 - [ ] **4. Backend Developer:** Minimal APIs, Handlers, Seeder, & xUnit selesai (per modul).
 - [ ] **5. Frontend Developer:** Blazor WebApp (Fluent UI) & bUnit selesai (per modul).
@@ -40,6 +40,8 @@ AccessManagement → MasterData → CustomerPO → WorkOrder → ProductionOutpu
 > - [SA → Architect] Konfigurasi aplikasi (bukan kode): nama dan alamat Konveksi (kop slip), nama dan alamat Comfi (kop surat jalan), password Administrator awal (secret).
 > - [SA → Backend] Seeder: role Administrator + katalog permission (tiap FSD mendaftarkan permission-nya), akun Administrator awal, Customer "STOK INTERNAL".
 > - [UI/UX] Fondasi desain selesai: `docs/Design/_Foundation-UI.md` (vibe campuran Compact/Comfortable, terang+gelap, nav per fungsi, pola daftar/form/detail/dialog, Grid Matriks Ukuran, chip status, state UI, a11y WCAG 2.1 AA, target 1366+). Dokumen per modul menyusul: `docs/Design/<NamaModul>-UI.md`.
-> - [UI/UX → Architect/Frontend] Library komponen yang direncanakan: `Microsoft.FluentUI.AspNetCore.Components` (MIT). **Belum diizinkan user**, wajib minta izin sebelum ditambahkan.
-> - [SA] FSD ke-9 **Beranda** (`docs/FSD/Beranda.md`) v0.1 draft atas permintaan user, menunggu persetujuan (Q1-Q5). Desain UI Beranda ditunda sampai disetujui. Modul lain menambah filter yang dibutuhkan beranda (PO: Terlambat, Jatuh Tempo, PO Customer belum ada, Sisa Rencana > 0; Riwayat Output: hari ini; WO: Terlambat).
+> - [UI/UX → Architect/Frontend] **Izin user diberikan (2026-11-08):** `Microsoft.FluentUI.AspNetCore.Components` (MIT). Daftarkan versi di `src/Directory.Packages.props`, verifikasi kompatibilitas .NET. Total izin library saat ini: ASP.NET Core Identity, PDFsharp-MigraDoc, ClosedXML, Microsoft.FluentUI.AspNetCore.Components.
+> - [UI/UX → Frontend/Architect] 9 dokumen desain + fondasi selesai di `docs/Design/`. Komponen bersama yang harus dibangun: Grid Matriks Ukuran (kolom bertingkat, baris "batas", tempel blok), Matriks Progres, Dialog Alasan + Pratinjau Dampak, Kartu Metrik, Chip Status, Daftar Master Generik, Wizard Import CSV, komponen pembuat PDF bersama. Aturan kumulatif/stok/pratinjau dampak adalah **hasil hitung server** (jangan diimplementasikan ulang di klien).
+> - [UI/UX → Semua FSD] Parameter query filter bersama (Beranda dan chip cepat): `terlambat`, `jatuhTempo7`, `poCustomerKosong`, `sisaRencana`, `hariIni`. Modul terkait wajib menyediakannya.
+> - [SA] FSD ke-9 **Beranda** (`docs/FSD/Beranda.md`) v1.0 disetujui.
 > - [SA] Item belum final: Pengiriman Q6-Q8 (tata letak surat jalan), Customer PO Q6-Q7 (default berlaku).
