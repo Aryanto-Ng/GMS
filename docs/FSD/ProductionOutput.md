@@ -116,6 +116,7 @@ Entri khusus yang dipakai bila kesalahan ditemukan pada tanggal kerja yang sudah
 ### 4.2 Aturan Tanggal dan Periode
 - **AC-PR-09** Tanggal Kerja di masa depan ditolak.
 - **AC-PR-10** Tanggal Kerja yang berada pada periode gaji tertutup ditolak dengan pesan "Periode gaji sudah ditutup, gunakan Penyesuaian".
+- **AC-PR-10a** Setelah periode gaji pertama dibuat, Tanggal Kerja yang lebih awal dari tanggal mulai periode pertama ditolak (agar tidak ada output yang lolos dari penggajian). Aturan penutupan periode ada di FSD Payroll Borongan.
 
 ### 4.3 Void
 - **AC-PR-11** Pengguna dengan permission `Void` dapat membatalkan entri dengan **alasan wajib**. Entri berstatus Voided dan tetap tampil di riwayat, tidak dihitung pada kumulatif dan upah.

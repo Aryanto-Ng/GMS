@@ -3,7 +3,7 @@
 | Atribut | Nilai |
 |---|---|
 | Modul | Pengiriman ke Customer (Surat Jalan) |
-| Versi | 0.1 (Draft, menunggu persetujuan) |
+| Versi | 1.0 (Disetujui user) |
 | Tipe | Modul Baru |
 | Penulis | System Analyst |
 | Fase | 1 |
@@ -173,8 +173,8 @@ Tidak ada halaman Static SSR pada modul ini. WebAssembly **tidak dipakai**.
 
 | # | Asumsi / Pertanyaan | Status |
 |---|---|---|
-| Q1 | Format nomor `SJ-YYYYMM-NNNN` | Default SA, perlu konfirmasi |
-| Q2 | Field header: tanggal, penerima, kendaraan/no. polisi, sopir, catatan | Default SA, perlu konfirmasi |
-| Q3 | Satu surat jalan untuk satu PO | Default SA, perlu konfirmasi |
-| Q4 | Void diizinkan walau PO sudah Completed (PO kembali In Progress) | Default SA, perlu konfirmasi |
+| Q1 | Format nomor `SJ-YYYYMM-NNNN` | **Disetujui** |
+| Q2 | Field header: tanggal, penerima, kendaraan/no. polisi, sopir, catatan | **Disetujui** |
+| Q3 | Satu surat jalan untuk satu PO | **Disetujui** |
+| Q4 | Void diizinkan walau PO sudah Completed (PO kembali In Progress) | **Disetujui** |
 | Q5 | Cetak/PDF surat jalan ditunda | **Disetujui** (jawaban sebelumnya) |
