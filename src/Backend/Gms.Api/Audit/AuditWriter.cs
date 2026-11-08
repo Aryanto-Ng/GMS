@@ -26,6 +26,17 @@ public static class AuditEvents
     public const string RoleUpdated = "RoleUpdated";
     public const string RoleDeleted = "RoleDeleted";
     public const string AccessDenied = "AccessDenied";
+
+    // Master Data
+    public const string MasterCreated = "MasterCreated";
+    public const string MasterUpdated = "MasterUpdated";
+    public const string MasterDeactivated = "MasterDeactivated";
+    public const string MasterActivated = "MasterActivated";
+    public const string FgSizesChanged = "FgSizesChanged";
+    public const string FgRoutingChanged = "FgRoutingChanged";
+    public const string FgTariffsChanged = "FgTariffsChanged";
+    public const string FgCopied = "FgCopied";
+    public const string ImportCompleted = "ImportCompleted";
 }
 
 public interface IAuditWriter

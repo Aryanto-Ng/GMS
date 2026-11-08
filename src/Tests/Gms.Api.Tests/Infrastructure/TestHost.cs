@@ -40,7 +40,7 @@ public sealed class TestHost : IAsyncDisposable
 
     public Guid AdminRoleId { get; private set; }
 
-    public static async Task<TestHost> StartAsync(string connectionString)
+    public static async Task<TestHost> StartAsync(string connectionString, IReadOnlyDictionary<string, string?>? extraConfig = null)
     {
         await using (var db = CreateDbContext(connectionString))
         {
@@ -56,6 +56,11 @@ public sealed class TestHost : IAsyncDisposable
                 ["Seed:AdminPassword"] = BootstrapPassword,
                 ["Logging:LogLevel:Default"] = "Warning",
             });
+
+            if (extraConfig is not null)
+            {
+                builder.Configuration.AddInMemoryCollection(extraConfig);
+            }
         });
 
         using (var scope = app.Services.CreateScope())

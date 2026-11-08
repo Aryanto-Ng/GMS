@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Net.Http;
 using System.Text.Json;
 using Gms.Api.Common;
 using Gms.Shared.Problems;
@@ -44,6 +45,40 @@ public sealed class ApiClient(HttpClient http)
         SendAsync(HttpMethod.Put, path, body, token);
 
     public Task<ApiResponse> DeleteAsync(string path, string? token = null) => SendAsync(HttpMethod.Delete, path, null, token);
+
+    /// <summary>Unggah berkas multipart (impor CSV). Isi berkas dikirim apa adanya (byte).</summary>
+    public async Task<ApiResponse> PostFileAsync(string path, string fileName, byte[] content, string? token, string fieldName = "file")
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, path);
+        if (token is not null)
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        }
+
+        var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(content);
+        file.Headers.ContentType = new MediaTypeHeaderValue("text/csv");
+        form.Add(file, fieldName, fileName);
+        request.Content = form;
+
+        using var response = await http.SendAsync(request);
+        var text = await response.Content.ReadAsStringAsync();
+        return new ApiResponse(response.StatusCode, text, response.Content.Headers.ContentType?.MediaType);
+    }
+
+    /// <summary>Mengunduh berkas mentah (template CSV, PDF, dst.).</summary>
+    public async Task<(HttpStatusCode Status, byte[] Bytes, string? ContentType, string? FileName)> DownloadAsync(string path, string? token)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, path);
+        if (token is not null)
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        }
+
+        using var response = await http.SendAsync(request);
+        return (response.StatusCode, await response.Content.ReadAsByteArrayAsync(),
+            response.Content.Headers.ContentType?.MediaType, response.Content.Headers.ContentDisposition?.FileName);
+    }
 
     public async Task<ApiResponse> SendAsync(HttpMethod method, string path, object? body, string? token)
     {

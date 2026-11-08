@@ -5,9 +5,15 @@ namespace Gms.Shared.Master;
 
 // ===== Pola umum =====
 
-public sealed record MasterListQuery : PageQuery
+public record MasterListQuery : PageQuery
 {
     public ActiveFilter Status { get; init; } = ActiveFilter.Active;
+}
+
+/// <summary>Daftar FG: tambahan filter "hanya yang Siap Produksi" (UI: kolom Kesiapan + filter).</summary>
+public sealed record FgListQuery : MasterListQuery
+{
+    public bool ReadyOnly { get; init; }
 }
 
 /// <summary>Kontrak CRUD generik untuk semua master. <c>TSave</c> membawa <c>RowVersion</c> untuk pembaruan.</summary>

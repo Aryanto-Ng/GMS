@@ -87,6 +87,8 @@ public sealed class ErrorBag
 
     public bool Any => _errors.Count > 0;
 
+    public bool HasKey(string path) => _errors.ContainsKey(path);
+
     public ErrorBag Add(string path, string message)
     {
         if (!_errors.TryGetValue(path, out var list))

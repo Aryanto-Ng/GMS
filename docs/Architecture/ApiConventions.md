@@ -125,6 +125,13 @@ Pola untuk entitas `uoms`, `material-categories`, `materials`, `sizes`, `colors`
 | POST | `/master/{e}/{id}/deactivate`, `/activate` | `…Deactivate` |
 | GET | `/master/{e}/lookup?q=` | `…View` (daftar ringan untuk dropdown/combobox, hanya aktif) |
 
+Catatan perilaku (diimplementasikan & diuji):
+- Daftar: `?page&pageSize&q&sort=code|name:asc|desc&status=Active|Inactive|All` (bawaan `Active`). Daftar FG menambah `readyOnly=true` (hanya Siap Produksi; `FgListQuery` di Shared). Ukuran `Size` terurut `sortOrder` lalu kode.
+- `POST .../deactivate` dan `.../activate` menerima `rowVersion` sebagai **query string**.
+- `lookup`: hanya data aktif, maksimal 50 baris, urut kode.
+- Kode otomatis (`customers` = `CUS-0001`, `vendors` = `VND-0001`, `workers` = `PKJ-0001`) tidak ada di body simpan. Kode manual dikirim di body dan terkunci (422 pada field `code`) bila sudah dipakai data lain.
+- Penolakan nonaktif karena masih dipakai: 409 `rule-violation` dengan `code` `master.in-use` (atau `fg.has-open-documents`) dan `violations[].subject` = pemakai (mis. `FG KMJ-001`).
+
 Khusus FG:
 | Metode | Rute | Izin |
 |---|---|---|
@@ -133,6 +140,11 @@ Khusus FG:
 | GET/PUT | `/master/fgs/{id}/tariffs` | `MasterData.Tarif.View/Edit` |
 | GET | `/master/fgs/{id}/readiness` | `MasterData.FG.View` |
 | POST | `/master/fgs/{id}/copy-from/preview`, `/copy-from` | `MasterData.Routing.Edit` dan `MasterData.Tarif.Edit` |
+
+Semantik impor (diimplementasikan & diuji):
+- `dryRun` bawaan **true** (aman). Respons selalu `200` + `ImportResultDto` untuk galat **per baris** (`Committed=false`, `Rows[].RowNumber` = nomor baris berkas, judul = baris 1). Impor sungguhan (`dryRun=false`) hanya menyimpan bila SEMUA baris valid (semua-atau-tidak-sama-sekali).
+- Galat **tingkat berkas** (judul kolom salah, kosong, bukan UTF-8, kutip tidak tertutup, >2.000 baris, >2 MB) = `422 import-invalid` dengan `code = import.file-invalid`.
+- Isi bukan multipart = `415`; field `file` tidak ada = `400 bad-request`. Pemisah koma atau titik koma terdeteksi otomatis; BOM diterima.
 
 Impor (Material, FG, Pekerja):
 | Metode | Rute | Izin |

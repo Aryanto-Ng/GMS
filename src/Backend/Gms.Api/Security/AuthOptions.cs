@@ -25,6 +25,9 @@ public sealed class SeedOptions
     public string AdminUserName { get; set; } = "admin";
     public string AdminFullName { get; set; } = "Administrator";
 
+    /// <summary>True = isi data contoh (master, FG dengan routing + tarif, dst.) untuk Development/UAT. Jangan di produksi.</summary>
+    public bool DemoData { get; set; }
+
     /// <summary>Wajib bila belum ada Administrator. Jangan menaruh nilai di repository (user-secrets / environment).</summary>
     public string? AdminPassword { get; set; }
 }

@@ -22,7 +22,7 @@ public sealed class ApiFixture : IAsyncLifetime
     }
 
     /// <summary>Database baru yang kosong di container yang sama, sudah dimigrasi dan di-seed.</summary>
-    public async Task<TestHost> CreateIsolatedAsync()
+    public async Task<TestHost> CreateIsolatedAsync(IReadOnlyDictionary<string, string?>? extraConfig = null)
     {
         var name = "iso_" + Guid.NewGuid().ToString("N")[..12];
         await using (var admin = new NpgsqlConnection(_container.GetConnectionString()))
@@ -34,7 +34,7 @@ public sealed class ApiFixture : IAsyncLifetime
         }
 
         var builder = new NpgsqlConnectionStringBuilder(_container.GetConnectionString()) { Database = name };
-        var host = await TestHost.StartAsync(builder.ConnectionString);
+        var host = await TestHost.StartAsync(builder.ConnectionString, extraConfig);
         _isolated.Add(host);
         return host;
     }

@@ -3,19 +3,19 @@ using Gms.Shared.Enums;
 
 namespace Gms.Domain.Master;
 
-public sealed class Uom : MasterEntity
+public sealed class Uom : MasterEntity, ICodedEntity
 {
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
 }
 
-public sealed class MaterialCategory : MasterEntity
+public sealed class MaterialCategory : MasterEntity, ICodedEntity
 {
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
 }
 
-public sealed class Material : MasterEntity
+public sealed class Material : MasterEntity, ICodedEntity
 {
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -24,14 +24,14 @@ public sealed class Material : MasterEntity
     public string? Description { get; set; }
 }
 
-public sealed class Size : MasterEntity
+public sealed class Size : MasterEntity, ICodedEntity
 {
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public int SortOrder { get; set; }
 }
 
-public sealed class Color : MasterEntity
+public sealed class Color : MasterEntity, ICodedEntity
 {
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -40,7 +40,7 @@ public sealed class Color : MasterEntity
     public string? Hex { get; set; }
 }
 
-public sealed class Customer : MasterEntity
+public sealed class Customer : MasterEntity, ICodedEntity
 {
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -50,14 +50,14 @@ public sealed class Customer : MasterEntity
     public string? Notes { get; set; }
 }
 
-public sealed class Process : MasterEntity
+public sealed class Process : MasterEntity, ICodedEntity
 {
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public ProcessType Type { get; set; }
 }
 
-public sealed class Vendor : MasterEntity
+public sealed class Vendor : MasterEntity, ICodedEntity
 {
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -69,7 +69,7 @@ public sealed class Vendor : MasterEntity
 }
 
 /// <summary>Pekerja borongan (dikelola Konveksi).</summary>
-public sealed class Worker : MasterEntity
+public sealed class Worker : MasterEntity, ICodedEntity
 {
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -81,7 +81,7 @@ public sealed class Worker : MasterEntity
     public string? Notes { get; set; }
 }
 
-public sealed class Fg : MasterEntity
+public sealed class Fg : MasterEntity, ICodedEntity
 {
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;

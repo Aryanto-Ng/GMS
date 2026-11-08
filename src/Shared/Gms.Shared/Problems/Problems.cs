@@ -50,6 +50,15 @@ public static class ProblemCodes
     public const string PayrollStartAfterOldestOutput = "payroll.start-after-oldest-output";
     public const string LastAdministrator = "access.last-administrator";
     public const string CannotDeactivateSelf = "access.cannot-deactivate-self";
+
+    // Master Data
+    public const string MasterInUse = "master.in-use";
+    public const string FgSizeHasTariffs = "fg.size-has-tariffs";
+    public const string FgStepHasTariffs = "fg.step-has-tariffs";
+    public const string FgCopyNeedsConfirm = "fg.copy-needs-confirm";
+    public const string FgHasOpenDocuments = "fg.has-open-documents";
+    public const string ProcessTypeLocked = "process.type-locked";
+    public const string ImportFileInvalid = "import.file-invalid";
     public const string SystemRoleImmutable = "access.system-role-immutable";
     public const string RoleInUse = "access.role-in-use";
 }

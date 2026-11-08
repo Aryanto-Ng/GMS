@@ -31,3 +31,10 @@ public sealed class NumberSequence
     public string Key { get; set; } = string.Empty;
     public long NextValue { get; set; }
 }
+
+/// <summary>Entitas master yang memiliki kode unik (tanpa peka huruf besar-kecil) dan nama.</summary>
+public interface ICodedEntity
+{
+    string Code { get; set; }
+    string Name { get; set; }
+}

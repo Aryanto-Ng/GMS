@@ -57,6 +57,21 @@ Gms.Api/
 - Enum JSON sebagai string, camelCase, `null` tidak ditulis.
 - Aturan konkurensi dan urutan kunci: ADR-004.
 
+## Pola Master Data (`Features/Master`)
+
+Entitas master memakai `MasterCrudHandler<TEntity,TList,TDetail,TSave>` (abstract) + `MasterContext`. Untuk menambah master baru cukup membuat kelas turunan yang mengisi: `Label`, `AutoCodePrefix` (kode otomatis) atau `MaxCodeLength`, `ListSelector`/`DetailSelector`, `ValidateAsync`, `Apply`, `Snapshot`, dan (opsional) `IsCodeUsedAsync` / `CheckCanDeactivateAsync`, lalu daftarkan satu baris di `MasterEndpoints.Map`. Mesin menyediakan: kode unik tanpa peka huruf besar-kecil (`citext`), kunci kode setelah dipakai, tanpa hapus (nonaktif/aktif), `rowVersion` → 409, audit, daftar/pencarian/sort/lookup.
+
+Penomoran otomatis: `NumberSequences.NextCodeAsync("CUS")` / `NextMonthlyCodeAsync("PO")` — WAJIB di dalam transaksi bisnis (`BeginTransactionAsync`) agar rollback ikut membatalkan nomor.
+
+Seeder demo: `Seed:DemoData=true` (Development) mengisi master + 3 FG contoh (`KMJ-001`, `CLN-001` siap produksi; `COV-001` belum lengkap).
+
+## Jebakan yang Sudah Ditemukan (jangan diulang)
+
+1. **Urutkan sebelum proyeksi DTO.** `OrderBy(x => x.Seq)` pada hasil `new SomeDto(...)` tidak dapat diterjemahkan EF (500). Pola yang benar: `Join → proyeksi anonim → OrderBy → Select(new Dto(...))`.
+2. **Jangan memakai parameter lambda generik pada endpoint.** `RouteHandlerAnalyzer` ASP.NET mogok (`AD0001`) pada `[FromServices] THandler`. Ambil dari `http.RequestServices.GetRequiredService<THandler>()` (lihat `MasterEndpoints.MapCrud`).
+3. **Ubah urutan routing tanpa menyentuh tarif:** cukup `UPDATE seq` dalam satu `SaveChanges` (unik `(fg_id, seq)` DEFERRABLE). Jangan hapus-lalu-sisipkan: FK komposit meng-CASCADE tarif.
+4. **Mengganti seluruh routing/tarif (salin dari FG):** hapus dengan `ExecuteDeleteAsync` di luar change tracker lebih dulu, baru `Add`, agar tidak bentrok dengan kunci unik `(fg_id, process_id)`.
+
 ## Catatan Teknis
 
 - `AccessSeeder` (Order 10) menjamin Administrator selalu memiliki SELURUH permission dari `PermissionCatalog` setiap seeder dijalankan, sehingga permission baru dari modul berikutnya otomatis tersedia bagi Administrator.
