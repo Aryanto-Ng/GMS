@@ -108,7 +108,7 @@ Notasi: **R** = membaca, daftar mendukung paging dan filter. Semua rute berawala
 | POST | `/users/{id}/reset-password` | `…User.ResetPassword` |
 | POST | `/users/{id}/unlock` | `…User.Unlock` |
 | POST | `/users/{id}/end-session` | `…User.EndSession` |
-| POST | `/users/{id}/deactivate`, `/activate` | `…User.Deactivate` |
+| POST | `/users/{id}/deactivate?rowVersion=N`, `/users/{id}/activate?rowVersion=N` (`rowVersion` sebagai query string) | `…User.Deactivate` |
 | GET/POST | `/roles` | `…Role.View/Create` |
 | GET/PUT/DELETE | `/roles/{id}` | `…Role.View/Edit/Delete` |
 | GET | `/permissions` | `…Role.View` (katalog untuk matriks) |

@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Tes integrasi API: host yang sama dengan produksi (ApiHost.Build) pada port acak + PostgreSQL nyata via Testcontainers (butuh Docker). -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <!-- xUnit1051 (wajib TestContext.Current.CancellationToken) tidak dipakai: tes tidak membatalkan permintaan. -->
+    <NoWarn>$(NoWarn);xUnit1051</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Backend\Gms.Api\Gms.Api.csproj" />
+    <ProjectReference Include="..\..\Backend\Gms.Infrastructure\Gms.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Backend\Gms.Domain\Gms.Domain.csproj" />
+    <ProjectReference Include="..\..\Shared\Gms.Shared\Gms.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

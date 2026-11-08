@@ -49,6 +49,8 @@ public static class ProblemCodes
     public const string PayrollNotContiguous = "payroll.not-contiguous";
     public const string PayrollStartAfterOldestOutput = "payroll.start-after-oldest-output";
     public const string LastAdministrator = "access.last-administrator";
+    public const string CannotDeactivateSelf = "access.cannot-deactivate-self";
+    public const string SystemRoleImmutable = "access.system-role-immutable";
     public const string RoleInUse = "access.role-in-use";
 }
 

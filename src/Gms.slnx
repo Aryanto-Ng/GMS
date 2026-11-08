@@ -10,4 +10,7 @@
   <Folder Name="/Shared/">
     <Project Path="Shared/Gms.Shared/Gms.Shared.csproj" />
   </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/Gms.Api.Tests/Gms.Api.Tests.csproj" />
+  </Folder>
 </Solution>
