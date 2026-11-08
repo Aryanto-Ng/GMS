@@ -53,7 +53,7 @@ public sealed class FgHandler(MasterContext ctx) : MasterCrudHandler<Fg, FgListI
             set = set.Where(FgReadiness.IsReady(Db));
         }
 
-        var page = await set.OrderBy(f => f.Code).Select(ListSelector).ToPagedAsync(query.Page, query.PageSize, ct);
+        var page = await ApplySort(set, query.Sort).Select(ListSelector).ToPagedAsync(query.Page, query.PageSize, ct);
         var ready = await FgReadiness.ReadyIdsAsync(Db, page.Items.Select(i => i.Id).ToList(), ct);
         var items = page.Items.Select(i => i with { IsReady = ready.Contains(i.Id) }).ToList();
         return page with { Items = items };

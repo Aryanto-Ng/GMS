@@ -167,6 +167,12 @@ Impor (Material, FG, Pekerja):
 | POST | `/po-lines/{lineId}/allocate` | `CustomerPO.Alokasi.Allocate` |
 | POST | `/po-lines/{lineId}/release-allocation` | `CustomerPO.Alokasi.Release` |
 
+**Catatan implementasi (backend, 2026-11-08):**
+- `confirm` menerima `rowVersion` sebagai **query string** (`?rowVersion=N`); `cancel` menerima body `ReasonRequest { reason (wajib, ≤500), rowVersion }`.
+- Pembatalan ditolak 409 `po.cancel-blocked` bila ada pengiriman aktif, qty terkirim, atau WO yang belum Closed/Cancelled; bila lolos, seluruh alokasi dilepas otomatis (sumber `PoCancel`).
+- Alokasi/pelepasan melebihi batas → 409 `allocation.exceeded` dengan `violations[0].current` (diminta) dan `limit` (batas terbaru). Revisi di bawah komitmen → 409 `po.qty-below-committed`; menghapus baris terpakai → 409 `po.line-in-use`.
+- Daftar `GET /purchase-orders` mendukung `sort=code|poDate:asc|desc` (default `poDate:desc`) dan `q` (kode, nomor PO customer, nama customer).
+
 ### 4.4 Work Order
 | Metode | Rute | Izin |
 |---|---|---|

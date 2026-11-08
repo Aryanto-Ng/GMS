@@ -256,7 +256,7 @@ public abstract partial class MasterCrudHandler<TEntity, TList, TDetail, TSave>(
         _ => set,
     };
 
-    private IQueryable<TEntity> ApplySort(IQueryable<TEntity> set, string? sort)
+    protected IQueryable<TEntity> ApplySort(IQueryable<TEntity> set, string? sort)
     {
         if (string.IsNullOrWhiteSpace(sort))
         {

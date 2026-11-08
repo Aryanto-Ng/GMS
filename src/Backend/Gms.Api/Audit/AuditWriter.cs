@@ -27,6 +27,16 @@ public static class AuditEvents
     public const string RoleDeleted = "RoleDeleted";
     public const string AccessDenied = "AccessDenied";
 
+    // Customer PO
+    public const string PoCreated = "PoCreated";
+    public const string PoUpdated = "PoUpdated";
+    public const string PoConfirmed = "PoConfirmed";
+    public const string PoCancelled = "PoCancelled";
+    public const string PoCustomerNumberChanged = "PoCustomerNumberChanged";
+    public const string PoStatusChanged = "PoStatusChanged";
+    public const string PoAllocated = "PoAllocated";
+    public const string PoAllocationReleased = "PoAllocationReleased";
+
     // Master Data
     public const string MasterCreated = "MasterCreated";
     public const string MasterUpdated = "MasterUpdated";

@@ -65,12 +65,27 @@ Penomoran otomatis: `NumberSequences.NextCodeAsync("CUS")` / `NextMonthlyCodeAsy
 
 Seeder demo: `Seed:DemoData=true` (Development) mengisi master + 3 FG contoh (`KMJ-001`, `CLN-001` siap produksi; `COV-001` belum lengkap).
 
+## Pola Customer PO dan Alokasi Stok (`Features/Sales`)
+
+Modul ini pertama kali memakai invarian konsistensi ADR-004. Pola yang WAJIB diikuti modul berikutnya (Work Order, Pengiriman, Stok FG):
+
+1. **Kunci dulu, baru baca.** Dalam transaksi: `RowLocks.LockPoLinesAsync` (urut `id`) → `RowLocks.LockStockAsync` (urut fg, color, size) → muat entitas → cek ulang batas → tulis. Memuat sebelum mengunci menghasilkan keputusan dari data basi.
+2. **Counter proyeksi + ledger append-only dalam satu transaksi** (`po_lines.allocated_qty`, `stock_balances.allocated` + `po_allocations`). CHECK database (`delivered+allocated+in_production <= qty`, `allocated <= on_hand`) adalah jaring pengaman terakhir, bukan mekanisme utama: pelanggaran seharusnya sudah ditolak sebagai 409 `allocation.exceeded` oleh handler.
+3. **Status PO yang digerakkan sistem** (Confirmed→InProgress, ↔Completed) lewat `PoLifecycle` (`ExecuteUpdateAsync` atomik), jangan menulis `Status` dari handler modul lain.
+4. **`PoQueries`** (bukan "Handler", didaftarkan manual) adalah satu-satunya tempat hitung metrik baris (`RemainingPlanQty`, `MinAllowedQty`, `IsLocked`, `IsLate`, `AllowedActions`). Klien tidak menghitung ulang.
+5. Revisi PO: kolom terkunci menurut status; `qty` tidak boleh di bawah `delivered+allocated+in_production` (`po.qty-below-committed`); baris yang pernah dipakai (alokasi/WO/pengiriman, termasuk riwayat) tidak dapat dihapus (`po.line-in-use`).
+6. Tes konkurensi memakai `TaskCompletionSource` sebagai gerbang agar semua permintaan dilepas bersamaan, lalu menegaskan: tidak ada 5xx, jumlah sukses tepat, dan `AssertStockInvariantAsync` (stok = Σ baris = Σ ledger).
+
+Seeder demo PO (`PoSeeder`, Order 30): 3 PO + stok awal, hanya dengan `Seed:DemoData=true`.
+
 ## Jebakan yang Sudah Ditemukan (jangan diulang)
 
 1. **Urutkan sebelum proyeksi DTO.** `OrderBy(x => x.Seq)` pada hasil `new SomeDto(...)` tidak dapat diterjemahkan EF (500). Pola yang benar: `Join → proyeksi anonim → OrderBy → Select(new Dto(...))`.
 2. **Jangan memakai parameter lambda generik pada endpoint.** `RouteHandlerAnalyzer` ASP.NET mogok (`AD0001`) pada `[FromServices] THandler`. Ambil dari `http.RequestServices.GetRequiredService<THandler>()` (lihat `MasterEndpoints.MapCrud`).
 3. **Ubah urutan routing tanpa menyentuh tarif:** cukup `UPDATE seq` dalam satu `SaveChanges` (unik `(fg_id, seq)` DEFERRABLE). Jangan hapus-lalu-sisipkan: FK komposit meng-CASCADE tarif.
 4. **Mengganti seluruh routing/tarif (salin dari FG):** hapus dengan `ExecuteDeleteAsync` di luar change tracker lebih dulu, baru `Add`, agar tidak bentrok dengan kunci unik `(fg_id, process_id)`.
+
+5. **Daftar khusus harus tetap memakai `ApplySort` kelas dasar.** Daftar FG pernah mengabaikan `sort` (selalu urut kode) karena override `ListAsync` menulis `OrderBy` sendiri; tertangkap saat tes lain menambah data. Gunakan `ApplySort(set, query.Sort)`.
 
 ## Catatan Teknis
 

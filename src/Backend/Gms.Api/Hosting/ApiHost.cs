@@ -8,6 +8,7 @@ using Gms.Api.Features.Access.Roles;
 using Gms.Api.Features.Access.Seeding;
 using Gms.Api.Features.Access.Users;
 using Gms.Api.Features.Master;
+using Gms.Api.Features.Sales;
 using Gms.Api.Security;
 using Gms.Infrastructure.Identity;
 using Gms.Infrastructure.Persistence;
@@ -84,11 +85,13 @@ public static class ApiHost
             services.AddScoped(type);
         }
 
+        services.AddScoped<PoQueries>();
         services.AddScoped<MasterContext>();
         services.AddScoped<NumberSequences>();
 
         services.AddScoped<IDataSeeder, AccessSeeder>();
         services.AddScoped<IDataSeeder, MasterSeeder>();
+        services.AddScoped<IDataSeeder, PoSeeder>();
 
         configure?.Invoke(builder);
 
@@ -129,5 +132,6 @@ public static class ApiHost
         RolesEndpoints.Map(app);
         AuditEndpoints.Map(app);
         MasterEndpoints.Map(app);
+        PoEndpoints.Map(app);
     }
 }
