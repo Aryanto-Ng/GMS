@@ -1,0 +1,156 @@
+using Gms.Domain.Master;
+using Gms.Domain.Sales;
+using Gms.Infrastructure.Persistence;
+using Gms.Shared.Enums;
+using Microsoft.EntityFrameworkCore;
+
+var conn = Environment.GetEnvironmentVariable("GMS_DESIGN_CONNECTION")
+           ?? throw new InvalidOperationException("GMS_DESIGN_CONNECTION belum di-set");
+var options = new DbContextOptionsBuilder<GmsDbContext>().UseNpgsql(conn).Options;
+var failures = 0;
+
+void Report(string name, bool ok, string detail = "")
+{
+    Console.WriteLine($"{(ok ? "LULUS" : "GAGAL")} | {name}{(detail.Length > 0 ? " -> " + detail : "")}");
+    if (!ok) failures++;
+}
+
+var suffix = Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
+
+// 1) Insert master + RowVersion terisi dari xmin
+Guid uomId;
+await using (var db = new GmsDbContext(options))
+{
+    var uom = new Uom { Code = "SMK" + suffix, Name = "Smoke" };
+    uom.CreatedAt = DateTimeOffset.UtcNow;
+    db.Uoms.Add(uom);
+    await db.SaveChangesAsync();
+    uomId = uom.Id;
+    Report("Insert master: RowVersion (xmin) terisi setelah simpan", uom.RowVersion != 0, $"xmin={uom.RowVersion}");
+}
+
+// 2) Konkurensi optimistis: dua konteks mengubah baris yang sama
+await using (var a = new GmsDbContext(options))
+await using (var b = new GmsDbContext(options))
+{
+    var ua = await a.Uoms.SingleAsync(x => x.Id == uomId);
+    var ub = await b.Uoms.SingleAsync(x => x.Id == uomId);
+    ua.Name = "Diubah A";
+    await a.SaveChangesAsync();
+    ub.Name = "Diubah B";
+    try
+    {
+        await b.SaveChangesAsync();
+        Report("Konkurensi: penyimpan kedua ditolak", false, "tidak ada exception");
+    }
+    catch (DbUpdateConcurrencyException)
+    {
+        Report("Konkurensi: penyimpan kedua ditolak (DbUpdateConcurrencyException)", true);
+    }
+}
+
+// 3) citext: pencarian tanpa peka huruf besar-kecil, dan unik
+await using (var db = new GmsDbContext(options))
+{
+    var found = await db.Uoms.AnyAsync(x => x.Code == ("smk" + suffix).ToLower());
+    Report("citext: pencarian 'smkxxxx' menemukan 'SMKXXXX'", found);
+
+    db.Uoms.Add(new Uom { Code = ("smk" + suffix).ToLower(), Name = "Duplikat", CreatedAt = DateTimeOffset.UtcNow });
+    try
+    {
+        await db.SaveChangesAsync();
+        Report("citext: kode berbeda huruf ditolak unik", false, "tidak ada exception");
+    }
+    catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("23505") == true || ex.InnerException?.Message.Contains("duplicate") == true)
+    {
+        Report("citext: kode berbeda huruf ditolak unik", true);
+    }
+}
+
+// 4) Enum string + DateOnly + decimal(18,5)
+Guid procId;
+await using (var db = new GmsDbContext(options))
+{
+    var p = new Process { Code = "PV" + suffix, Name = "Bordir", Type = ProcessType.Vendor, CreatedAt = DateTimeOffset.UtcNow };
+    db.Processes.Add(p);
+    await db.SaveChangesAsync();
+    procId = p.Id;
+}
+
+await using (var db = new GmsDbContext(options))
+{
+    var type = await db.Database.SqlQueryRaw<string>("SELECT type AS \"Value\" FROM processes WHERE id = {0}", procId).SingleAsync();
+    Report("Enum disimpan sebagai teks 'Vendor'", type == "Vendor", $"nilai di DB='{type}'");
+    var back = await db.Processes.SingleAsync(x => x.Id == procId);
+    Report("Enum dibaca kembali sebagai ProcessType.Vendor", back.Type == ProcessType.Vendor);
+}
+
+// 5) Presisi tarif 5 desimal dan DateOnly lewat jalur PO (butuh customer/fg/color/size)
+await using (var db = new GmsDbContext(options))
+{
+    var cust = new Customer { Code = "CS" + suffix, Name = "Cust " + suffix, CreatedAt = DateTimeOffset.UtcNow };
+    var size = new Size { Code = "Z" + suffix, Name = "Z", SortOrder = 1, CreatedAt = DateTimeOffset.UtcNow };
+    var color = new Color { Code = "C" + suffix, Name = "C", Hex = "#A1B2C3", CreatedAt = DateTimeOffset.UtcNow };
+    var fg = new Fg { Code = "F" + suffix, Name = "FG", CustomerId = cust.Id, CreatedAt = DateTimeOffset.UtcNow };
+    var po = new PurchaseOrder
+    {
+        Code = "PO-SMK-" + suffix,
+        CustomerId = cust.Id,
+        PoDate = new DateOnly(2026, 11, 8),
+        Status = PoStatus.Confirmed,
+        CreatedAt = DateTimeOffset.UtcNow,
+    };
+    po.Lines.Add(new PoLine
+    {
+        FgId = fg.Id, ColorId = color.Id, SizeId = size.Id,
+        DeliveryDate = new DateOnly(2026, 11, 20), Qty = 100, CreatedAt = DateTimeOffset.UtcNow,
+    });
+    db.AddRange(cust, size, color, fg, po);
+    fg.Sizes.Add(new FgSize { FgId = fg.Id, SizeId = size.Id });
+    var step = new FgRoutingStep { FgId = fg.Id, ProcessId = procId, Seq = 1 };
+    // Proses Vendor tidak seharusnya bertarif (aturan aplikasi); gunakan proses Internal untuk tarif.
+    var internalProc = new Process { Code = "PI" + suffix, Name = "Sewing", Type = ProcessType.Internal, CreatedAt = DateTimeOffset.UtcNow };
+    db.Processes.Add(internalProc);
+    var step2 = new FgRoutingStep { FgId = fg.Id, ProcessId = internalProc.Id, Seq = 2 };
+    fg.RoutingSteps.Add(step);
+    fg.RoutingSteps.Add(step2);
+    fg.Tariffs.Add(new FgTariff { FgId = fg.Id, ProcessId = internalProc.Id, SizeId = size.Id, Rate = 1250.12345m });
+    await db.SaveChangesAsync();
+
+    var line = po.Lines.Single();
+    Report("PoLine: RowVersion (xmin) terisi", line.RowVersion != 0);
+    Report("PoLine: Sisa Rencana dihitung = Qty (belum ada komitmen)", line.RemainingPlanQty == 100);
+
+    await using var db2 = new GmsDbContext(options);
+    var rate = await db2.FgTariffs.Where(t => t.FgId == fg.Id).Select(t => t.Rate).SingleAsync();
+    Report("Tarif 5 desimal kembali persis (1250.12345)", rate == 1250.12345m, rate.ToString());
+    var d = await db2.PoLines.Where(l => l.Id == line.Id).Select(l => l.DeliveryDate).SingleAsync();
+    Report("DateOnly kembali persis", d == new DateOnly(2026, 11, 20), d.ToString("yyyy-MM-dd"));
+
+    // 6) CHECK constraint Sisa Rencana lewat EF: kelebihan komitmen harus ditolak database
+    await using var db3 = new GmsDbContext(options);
+    var l3 = await db3.PoLines.SingleAsync(l => l.Id == line.Id);
+    l3.AllocatedQty = 70;
+    l3.InProductionQty = 31;
+    try
+    {
+        await db3.SaveChangesAsync();
+        Report("EF: komitmen melebihi Qty ditolak CHECK", false, "tidak ada exception");
+    }
+    catch (DbUpdateException)
+    {
+        Report("EF: komitmen melebihi Qty ditolak CHECK", true);
+    }
+
+    // 7) FK komposit + cascade: hapus langkah routing ikut menghapus tarif (lewat EF)
+    await using var db4 = new GmsDbContext(options);
+    var stepToDelete = await db4.FgRoutingSteps.SingleAsync(s => s.Id == step2.Id);
+    db4.FgRoutingSteps.Remove(stepToDelete);
+    await db4.SaveChangesAsync();
+    var left = await db4.FgTariffs.CountAsync(t => t.FgId == fg.Id);
+    Report("EF: hapus langkah routing ikut menghapus tarifnya", left == 0, $"sisa tarif={left}");
+}
+
+Console.WriteLine();
+Console.WriteLine(failures == 0 ? "SEMUA LULUS" : $"{failures} GAGAL");
+return failures;
