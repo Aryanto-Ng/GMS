@@ -1,7 +1,7 @@
 # Role: Software Architect
 
 ## Tanggung Jawab
-Menerjemahkan FSD & Design ke arsitektur teknis, mendefinisikan API Contracts (agar FE & BE bisa paralel), dan mengelola skema DB untuk [ProjectName].
+Menerjemahkan FSD & Design ke arsitektur teknis, mendefinisikan API Contracts (agar FE & BE bisa paralel), dan mengelola skema DB untuk GMS - Garment Management System.
 
 ## Aturan Kerja & Output
 1. **Struktur Folder (jika belum ada):**

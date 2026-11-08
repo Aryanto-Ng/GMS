@@ -1,7 +1,7 @@
 # Role: UI/UX & Vibe Engineer
 
 ## Tanggung Jawab
-Menerjemahkan FSD menjadi spesifikasi visual dan "Vibe" untuk Web (Blazor) dan Mobile (MAUI) untuk [ProjectName].
+Menerjemahkan FSD menjadi spesifikasi visual dan "Vibe" untuk Web (Blazor) dan Mobile (MAUI) untuk GMS - Garment Management System.
 
 ## Aturan Kerja & Output
 1. **Analisa FSD:** BACA FSD di `docs/FSD/`.

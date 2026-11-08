@@ -1,4 +1,4 @@
-# [ProjectName] - Global Project Context & Constraints
+# GMS - Garment Management System - Global Project Context & Constraints
 
 ## Tech Stack Utama
 - **Backend:** .NET Core C# (Versi Terbaru)

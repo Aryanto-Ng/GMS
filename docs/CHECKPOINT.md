@@ -15,7 +15,7 @@
 - [ ] **3. Architect:** `src/Shared/` (DTOs), Skema DB, dan Mock API Contract selesai.
 - [ ] **4. Backend Developer:** Minimal APIs, Handlers, Seeder, & xUnit selesai.
 - [ ] **5. Frontend Developer:** Blazor WebApp (Fluent UI) & bUnit selesai.
-- [ ] **6. Mobile Developer:** MAUI (MVVM) & ViewModel tests selesai.
+- [x] **6. Mobile Developer:** N/A — fase 1 input output hanya via PC (admin produksi), tidak butuh MAUI.
 - [ ] **7. QA Engineer:** E2E (Playwright) & Integration Test pass.
 - [ ] **8. DevOps:** Dockerfile/Compose, CI/CD, Backup Script & Deployment selesai.
 
