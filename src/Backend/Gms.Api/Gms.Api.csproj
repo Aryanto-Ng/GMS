@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- Host API (Minimal APIs, Vertical Slice di folder Features/). Dipakai oleh Gms.Web melalui HttpClient. -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Gms.Infrastructure\Gms.Infrastructure.csproj" />
+    <ProjectReference Include="..\Gms.Domain\Gms.Domain.csproj" />
+    <ProjectReference Include="..\..\Shared\Gms.Shared\Gms.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

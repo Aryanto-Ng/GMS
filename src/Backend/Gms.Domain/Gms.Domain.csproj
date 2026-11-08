@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Entitas dan aturan domain murni. Hanya bergantung pada Gms.Shared (enum dan kunci permission). -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\Gms.Shared\Gms.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

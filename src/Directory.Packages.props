@@ -1,0 +1,40 @@
+<Project>
+
+  <!--
+    Central Package Management (aturan proyek): SEMUA versi package hanya didefinisikan di sini.
+    DILARANG menulis atribut Version pada PackageReference di file .csproj.
+    Menambah package baru WAJIB izin user terlebih dahulu (lihat CLAUDE.md).
+
+    Package yang sudah diizinkan user:
+      - EF Core standar + provider PostgreSQL (Npgsql)             -> keputusan database, 2026-11-08
+      - ASP.NET Core Identity (EF Core store)                      -> 2026-11-08
+      - Microsoft.FluentUI.AspNetCore.Components                   -> 2026-11-08
+      - PDFsharp-MigraDoc (slip gaji + surat jalan)                -> 2026-11-08
+      - ClosedXML (ekspor Excel)                                   -> 2026-11-08
+
+    Belum diizinkan (akan diminta saat dibutuhkan): Microsoft.EntityFrameworkCore.Design + tool dotnet-ef,
+    xUnit/Microsoft.NET.Test.Sdk, bUnit, Microsoft.Playwright, Testcontainers.
+  -->
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup Label="Data (EF Core + PostgreSQL + Identity)">
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.14" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+  </ItemGroup>
+
+  <ItemGroup Label="UI">
+    <!-- 4.14.x = jalur matang (Fluent 2, net10). 5.0.x adalah major baru; ditinjau Frontend sebelum dipakai. -->
+    <PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components" Version="4.14.5" />
+  </ItemGroup>
+
+  <ItemGroup Label="Dokumen (PDF + Excel)">
+    <PackageVersion Include="PDFsharp-MigraDoc" Version="6.2.4" />
+    <PackageVersion Include="ClosedXML" Version="0.105.1" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/Backend/">
+    <Project Path="Backend/Gms.Api/Gms.Api.csproj" />
+    <Project Path="Backend/Gms.Domain/Gms.Domain.csproj" />
+    <Project Path="Backend/Gms.Infrastructure/Gms.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Frontend/">
+    <Project Path="Frontend/Gms.Web/Gms.Web.csproj" />
+  </Folder>
+  <Folder Name="/Shared/">
+    <Project Path="Shared/Gms.Shared/Gms.Shared.csproj" />
+  </Folder>
+</Solution>

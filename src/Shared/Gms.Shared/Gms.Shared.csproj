@@ -1,0 +1,5 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Kontrak bersama: DTO, enum, katalog permission, tipe Problem Details, rute API. Tanpa dependensi lain. -->
+
+</Project>

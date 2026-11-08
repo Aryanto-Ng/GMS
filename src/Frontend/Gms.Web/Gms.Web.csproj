@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- Blazor Web App. Interactive Server untuk hampir semua halaman, Static SSR untuk Login/Logout/Ganti Password/403. -->
+
+  <PropertyGroup>
+    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\Gms.Shared\Gms.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

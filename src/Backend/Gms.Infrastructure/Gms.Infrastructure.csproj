@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- EF Core (PostgreSQL), konfigurasi Fluent API, ASP.NET Core Identity store, migrasi. -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Gms.Domain\Gms.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+
+</Project>

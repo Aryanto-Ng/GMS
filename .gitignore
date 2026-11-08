@@ -1,0 +1,45 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+publish/
+*.dll
+*.pdb
+
+# IDE
+.vs/
+.idea/
+*.user
+*.suo
+*.rsuser
+launchSettings.json.user
+
+# Tests / coverage
+TestResults/
+coverage/
+*.trx
+playwright-report/
+test-results/
+
+# Secrets dan konfigurasi lokal (JANGAN commit kredensial)
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+secrets.json
+*.pfx
+*.key
+
+# Data lokal
+*.log
+*.bak
+backups/
+pgdata/
+
+# Node (jika dipakai tooling)
+node_modules/
+
+# OS
+Thumbs.db
+.DS_Store
