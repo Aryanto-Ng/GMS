@@ -3,6 +3,14 @@
   <!-- Host API (Minimal APIs, Vertical Slice di folder Features/). Dipakai oleh Gms.Web melalui HttpClient. -->
 
   <ItemGroup>
+    <!-- Startup project untuk tool dotnet-ef; tidak ikut ke output aplikasi. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Gms.Infrastructure\Gms.Infrastructure.csproj" />
     <ProjectReference Include="..\Gms.Domain\Gms.Domain.csproj" />
     <ProjectReference Include="..\..\Shared\Gms.Shared\Gms.Shared.csproj" />

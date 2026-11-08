@@ -13,7 +13,9 @@
 - Enum disimpan sebagai `text` + CHECK. Nilai enum ada di `Gms.Shared`.
 - FK `RESTRICT` kecuali ditandai **CASCADE** (anak agregat).
 - Tanggal bisnis `date`. Uang/tarif `numeric` (lihat ADR-003).
-- Kode unik case-insensitive: indeks unik pada `lower(code)`.
+- Kode unik case-insensitive: kolom bertipe `citext` + indeks unik (implementasi aktual; tulisan "unik `lower(code)`" di tabel bawah bermakna sama).
+- Semua tabel bertanda **[RV]** mewarisi kolom jejak `created_at/by`, `updated_at/by`.
+- Pada kode: kolom `xmin` dipetakan lewat `IsRowVersion()`; Npgsql tidak membuatnya sebagai kolom (tidak ada di DDL).
 - Seluruh tabel dikonfigurasi lewat Fluent API di `Gms.Infrastructure/Persistence/Configurations/<Modul>/`.
 
 ## 1. Gambaran Relasi (ringkas)
@@ -106,13 +108,13 @@ PK `(role_id, permission_key)`. FK role **CASCADE**; FK permission RESTRICT.
 | created_at, last_activity_at | timestamptz NOT NULL | |
 | revoked_at | timestamptz | NULL = aktif |
 | revoked_reason | text | `Logout`, `Timeout`, `Replaced`, `AdminForced`, `Deactivated`, `PasswordReset` |
-| ip_address | inet | |
+| ip_address | text(64) | (sebelumnya `inet`; disederhanakan karena alamat berasal dari header proxy) |
 | user_agent | text | |
 
 **Indeks:** unik `(token_hash)`; **unik parsial `(user_id) WHERE revoked_at IS NULL`** (satu sesi aktif per pengguna).
 
 ### audit_logs (append-only)
-`id bigint identity PK`, `occurred_at timestamptz NOT NULL`, `actor_user_id uuid`, `actor_username text`, `event_type text NOT NULL`, `target_type text`, `target_id text`, `old_value jsonb`, `new_value jsonb`, `ip_address inet`.
+`id bigint identity PK`, `occurred_at timestamptz NOT NULL`, `actor_user_id uuid`, `actor_username text`, `event_type text NOT NULL`, `target_type text`, `target_id text`, `old_value jsonb`, `new_value jsonb`, `ip_address text(64)`.
 Indeks `(occurred_at DESC)`, `(actor_user_id, occurred_at DESC)`, `(event_type, occurred_at DESC)`.
 **Trigger** `audit_logs_immutable` menolak UPDATE dan DELETE.
 
@@ -405,3 +407,20 @@ PK `(period_id, worker_id)`: `worker_code`, `worker_name`, `total_qty int`, `sum
 ## 12. Perkiraan Volume (untuk indeks)
 
 5–6 pengguna, puluhan PO/bulan, puluhan WO aktif. `output_entries` adalah tabel paling besar: perkiraan puluhan ribu baris per bulan. Indeks pada bagian 6 cukup. Tidak ada partisi pada fase 1.
+
+---
+
+## 13. Migrasi (EF Core) dan Status Implementasi
+
+| Migrasi | Isi |
+|---|---|
+| `Initial` | 47 tabel (termasuk tabel Identity `users`, `user_claims`, `user_logins`, `user_tokens`), 33 CHECK constraint, indeks unik parsial, FK (termasuk FK komposit), ekstensi `citext` dan `btree_gist` |
+| `AdvancedConstraints` | SQL eksplisit: unik `(fg_id, seq)` DEFERRABLE pada `fg_routing_steps`; exclusion constraint `ex_payroll_periods_no_overlap`; trigger `audit_logs` anti UPDATE/DELETE/TRUNCATE |
+
+Lokasi: `src/Backend/Gms.Infrastructure/Persistence/Migrations/`. Perintah: `dotnet tool restore` lalu
+`dotnet tool run dotnet-ef migrations add <Nama> --project src/Backend/Gms.Infrastructure --startup-project src/Backend/Gms.Api --output-dir Persistence/Migrations`.
+Untuk menjalankan ke database: set `GMS_DESIGN_CONNECTION` (tanpa menaruh kredensial di repository) lalu `dotnet tool run dotnet-ef database update ...`.
+
+**Status verifikasi (jujur):** model dan DDL tervalidasi oleh `dotnet ef migrations add` dan skrip SQL (`migrations script`) berhasil dibuat. **Belum dijalankan terhadap PostgreSQL nyata** (Docker Desktop tidak aktif saat tahap Architect). Tugas pertama Backend: menjalankan migrasi pada PostgreSQL (Testcontainers/Docker) dan menguji constraint kunci (sesi tunggal, periode tumpang tindih, CHECK stok/Sisa Rencana, trigger audit).
+
+Catatan: tabel passkey Identity 10 tidak dibuat (fitur tidak dipakai). Nama PK/FK/indeks otomatis EF (mis. `PK_po_lines`) belum di-snake_case; kosmetik, dapat dirapikan Backend.

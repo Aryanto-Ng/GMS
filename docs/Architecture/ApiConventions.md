@@ -251,6 +251,20 @@ Satu endpoint ringan per widget (dimuat independen, izin dicek per widget): `GET
 ### 4.10 Sistem
 `GET /health` (publik, tanpa data sensitif).
 
+### 4.11 Endpoint Tambahan (selaras antarmuka klien di `Gms.Shared`)
+Ditemukan saat menyusun antarmuka bertipe; melengkapi tabel di atas.
+
+| Metode | Rute | Izin |
+|---|---|---|
+| PUT | `/work-orders/{id}/schedule` (tanggal mulai/target/keterangan; sebelum Closed) | `WorkOrder.Edit` |
+| POST | `/handovers/fg/preview` (perkiraan alokasi otomatis vs stok bebas) | `SerahTerimaFG.Create` |
+| POST | `/stock/adjustments/preview` (hasil Fisik/Tersedia sebelum simpan) | `StokFG.Adjust` |
+| GET | `/deliveries/eligible-pos?q=` (PO yang masih punya kebutuhan untuk dikirim) | `Pengiriman.Create` |
+| POST | `/production/outputs` ditambah penanganan konfirmasi: bila Kum langkah pertama melebihi Qty WO dan `confirmExceedWoQty = false`, server membalas 409 `rule-violation` dengan `code = output.exceeds-wo-qty-needs-confirmation`; klien meminta konfirmasi lalu mengirim ulang dengan `true`. | `ProductionOutput.Create` |
+| GET | `/payroll/periods/{id}/summary?q=` (filter nama/kode pekerja) | `Payroll.View` |
+
+Pemetaan antarmuka → rute dilakukan oleh implementasi `HttpXxxApi` di Frontend; nama metode di `Gms.Shared` adalah kontrak, bukan nama rute.
+
 ---
 
 ## 5. Aturan Respons yang Penting bagi UI

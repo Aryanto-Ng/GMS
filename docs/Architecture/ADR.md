@@ -69,9 +69,9 @@ src/
 | Enum | Disimpan sebagai `text` (`HasConversion<string>()`) agar terbaca saat debug/QA, dengan CHECK constraint untuk nilai yang valid. |
 | Konkurensi optimistis | `xmin` PostgreSQL sebagai token versi (`row_version`, properti `uint` dengan `IsRowVersion()`) pada agregat yang dapat diedit. Konflik → 409 `concurrency-conflict`. |
 | Penghapusan | **Tidak ada hard delete / soft delete untuk data bisnis** (aturan FSD): nonaktif atau void/cancel. FK memakai `ON DELETE RESTRICT`, kecuali anak agregat (baris dokumen, tarif, langkah routing) yang `CASCADE` dari induknya. |
-| Case-insensitive unik | Kode dan username memakai indeks unik pada `lower(kolom)` (ekspresi), bukan collation khusus. |
+| Case-insensitive unik | Kolom kode/nama unik bertipe **`citext`** (ekstensi contrib PostgreSQL yang termasuk trusted), sehingga indeks unik biasa sudah tidak peka huruf besar-kecil dan dapat dinyatakan lewat Fluent API. |
 
-Ekstensi PostgreSQL: `btree_gist` (untuk exclusion constraint). Migrasi dikelola EF Core Migrations (alat `dotnet-ef` dan paket Design akan **diminta izinnya** saat fase Backend).
+Ekstensi PostgreSQL: `citext` dan `btree_gist` (untuk exclusion constraint), dibuat oleh migrasi awal (`CREATE EXTENSION IF NOT EXISTS`). Migrasi dikelola EF Core Migrations memakai tool lokal `dotnet-ef` (manifest `dotnet-tools.json` di root; `dotnet tool restore`). Constraint yang tidak dapat dinyatakan lewat Fluent API (unik DEFERRABLE, exclusion constraint, trigger audit) ada di migrasi `AdvancedConstraints` berupa SQL eksplisit. Model tervalidasi oleh `dotnet ef migrations add`; eksekusi terhadap PostgreSQL nyata adalah tugas pertama fase Backend.
 
 ---
 
@@ -176,7 +176,7 @@ Penulisan `audit_logs` (siapa, kapan, jenis, objek, nilai sebelum/sesudah dalam 
 | Komponen UI | bUnit | Perlu izin package |
 | E2E | Playwright | Perlu izin package |
 
-Package pengujian **belum diizinkan**; diminta saat fase Backend/QA.
+Izin user (2026-11-08): `xunit.v3`, `xunit.runner.visualstudio`, `Microsoft.NET.Test.Sdk`, `bunit`, `Microsoft.Playwright`, `Testcontainers.PostgreSql`. **Belum diizinkan:** `Microsoft.AspNetCore.Mvc.Testing` (WebApplicationFactory) dan `Microsoft.Playwright.Xunit`; Backend/QA wajib meminta izin bila membutuhkannya. Integration test memakai PostgreSQL nyata melalui Testcontainers (membutuhkan Docker).
 
 ---
 
@@ -190,6 +190,7 @@ Tidak ada kredensial di repository. Connection string (tanpa password) hanya seb
 
 - **Shared** memuat: DTO request/response per modul, enum, katalog permission, tipe Problem Details, konstanta rute, dan **antarmuka klien bertipe** per modul (mis. `IPurchaseOrdersApi`).
 - **Web** memiliki dua implementasi tiap antarmuka: `HttpXxxApi` (HttpClient ke API) dan `MockXxxApi` (data dalam memori, mengikuti contoh data seeder). Konfigurasi `Api:UseMock` memilihnya. Dengan begitu Frontend dapat membangun UI sebelum endpoint Backend ada, dan perilaku galat (Problem Details, `violations`) dapat disimulasikan.
+- **Pembagian tanggung jawab (keputusan Architect):** Architect menyediakan **kontrak** (DTO + antarmuka di `Gms.Shared`, semuanya sudah ada). **Frontend menulis `MockXxxApi` dan `HttpXxxApi`** karena hanya Frontend yang tahu variasi data yang dibutuhkan tiap layar (kosong, penuh, galat `violations`, konkurensi). Contoh data kanonik mengikuti seed di `Database.md` bagian 10. Mock harus melempar `ApiException` dengan `GmsProblemDetails` yang sama seperti API sungguhan.
 - Backend mengimplementasikan endpoint sesuai `ApiConventions.md` dan DTO Shared. Perubahan DTO/kontrak hanya melalui Architect (ditulis di Log CHECKPOINT).
 
 ---

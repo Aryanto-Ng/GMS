@@ -21,6 +21,9 @@ public sealed class AppUser : IdentityUser<Guid>
 
     public DateTimeOffset? LastLoginAt { get; set; }
 
+    /// <summary>Token konkurensi optimistis (kolom sistem xmin).</summary>
+    public uint RowVersion { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
     public Guid? CreatedBy { get; set; }
     public DateTimeOffset? UpdatedAt { get; set; }
