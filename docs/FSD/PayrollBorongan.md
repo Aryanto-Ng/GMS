@@ -3,7 +3,7 @@
 | Atribut | Nilai |
 |---|---|
 | Modul | Payroll Borongan |
-| Versi | 0.1 (Draft, menunggu persetujuan) |
+| Versi | 1.0 (Disetujui user; library ekspor/PDF menunggu izin, lihat bagian 10) |
 | Tipe | Modul Baru |
 | Penulis | System Analyst |
 | Fase | 1 |
@@ -19,7 +19,8 @@ Menghitung **upah borongan kotor** setiap pekerja Konveksi dari output yang dica
 - menjumlahkan `qty × tarif` dari output aktif berdasarkan **tanggal kerja**,
 - memakai **tarif snapshot WO** (bukan tarif master terbaru),
 - membekukan hasil perhitungan saat periode **ditutup**, sehingga angka yang sudah dibayarkan tidak berubah,
-- menyajikan rekap yang dapat ditelusuri sampai entri output asal dan dapat diekspor.
+- menyajikan rekap yang dapat ditelusuri sampai entri output asal, termasuk **rincian per hari**,
+- mengekspor rekap ke **Excel (.xlsx) dan CSV**, serta mencetak **slip gaji PDF** per pekerja.
 
 ### Keputusan Cakupan
 - Hanya **upah borongan kotor**. Tidak ada bonus, potongan, kasbon, absensi, atau pajak.
@@ -29,7 +30,7 @@ Menghitung **upah borongan kotor** setiap pekerja Konveksi dari output yang dica
 - Mata uang Rupiah.
 
 ### Di Luar Scope
-- Slip gaji PDF, pembayaran, dan integrasi bank.
+- Pembayaran dan integrasi bank.
 - Komponen gaji selain borongan.
 - Pembukaan kembali periode yang sudah ditutup.
 - Keuangan Konveksi (pencatatan keuangan terpisah di luar sistem).
@@ -97,8 +98,12 @@ Penutupan bersifat permanen.
 ### 4.2 Rekap (Periode Open)
 - **AC-PY-07** Rekap menampilkan per pekerja: Kode, Nama, Total Qty, Jumlah (sebelum pembulatan), Dibayarkan (dibulatkan). Di bawahnya total periode dan jumlah pekerja.
 - **AC-PY-08** Pekerja dengan output pada periode tampil walaupun sudah nonaktif. Pekerja tanpa output tidak tampil.
-- **AC-PY-09** Rincian per pekerja dikelompokkan per **WO → Proses → Size**, berisi: Qty, Tarif, Subtotal. Baris jenis **Penyesuaian** diberi penanda, menampilkan Tanggal Asal dan alasan.
-- **AC-PY-10** Setiap kelompok dapat dibuka menjadi rincian **per tanggal kerja** dan entri output asal (dapat membuka entri di Production Output bagi pengguna yang berhak).
+- **AC-PY-09** Rincian per pekerja tersedia dalam dua tampilan yang dapat ditukar:
+  - **Per WO → Proses → Size:** Qty, Tarif, Subtotal.
+  - **Per Hari:** diurutkan menurut Tanggal Kerja. Tiap hari menampilkan WO, Proses, Size, Qty, Tarif, Subtotal, serta **subtotal harian**, dan total pekerja di akhir.
+  Baris jenis **Penyesuaian** diberi penanda, menampilkan Tanggal Asal dan alasan.
+- **AC-PY-10** Tab **Rincian Harian** pada tingkat periode menampilkan seluruh pekerja: Tanggal Kerja, Pekerja, WO, Proses, Size, Jenis, Qty, Tarif, Subtotal, dengan subtotal harian per pekerja. Filter: rentang tanggal dalam periode, pekerja, WO, proses. Tiap baris dapat ditelusuri ke entri output asal (bagi pengguna yang berhak di Production Output). Qty dijumlahkan lintas Color karena tarif tidak bergantung pada Color. Rincian per Color tersedia pada detail entri.
+- **AC-PY-10a** Tersedia tampilan **Matriks Harian**: baris = pekerja, kolom = tanggal dalam periode, sel = total qty dan upah hari itu, ditambah kolom total per pekerja dan baris total per hari. Hari tanpa output pekerja ditampilkan kosong.
 - **AC-PY-11** Rekap Open dihitung ulang dari data terkini saat dibuka dan dapat disegarkan. Tampil penanda "Belum final".
 - **AC-PY-12** Total pekerja yang bernilai negatif (akibat penyesuaian) ditampilkan apa adanya dengan penanda khusus. Sistem tidak membatasinya ke nol.
 - **AC-PY-13** Filter dan pencarian: nama atau kode pekerja, WO, proses.
@@ -116,12 +121,17 @@ Penutupan bersifat permanen.
 
 ### 4.4 Daftar Periode
 - **AC-PY-23** Daftar periode: Kode, rentang tanggal, status, jumlah pekerja, total (untuk Closed dari snapshot, untuk Open dihitung langsung), ditutup oleh dan kapan.
-- **AC-PY-24** Detail periode memiliki tab: Ringkasan per pekerja, Rincian, dan Penyesuaian (baris jenis Penyesuaian yang masuk periode ini).
+- **AC-PY-24** Detail periode memiliki tab: Ringkasan per pekerja, Rincian, Rincian Harian (termasuk Matriks Harian), dan Penyesuaian (baris jenis Penyesuaian yang masuk periode ini).
 
-### 4.5 Ekspor
-- **AC-PY-25** Pengguna dengan `Payroll.Export` dapat mengekspor **CSV** (UTF-8) untuk: (a) Ringkasan per pekerja dan (b) Rincian lengkap. Ekspor periode Open diberi tanda "BELUM FINAL" pada nama file dan isi.
-- **AC-PY-26** Ekspor periode Closed identik dengan snapshot. Setiap ekspor tercatat di audit log (pelaku, periode, jenis).
-- **AC-PY-27** Format angka pada CSV mengikuti lokal Indonesia atau netral (desimal titik). Template ditetapkan di fase desain bersama Admin Gaji. Rupiah dibulatkan hanya pada kolom "Dibayarkan".
+### 4.5 Ekspor dan Slip Gaji
+- **AC-PY-25** Pengguna dengan `Payroll.Export` dapat mengekspor periode ke **Excel (.xlsx)**. Satu berkas berisi sheet: Ringkasan, Rincian (WO → Proses → Size), Harian, dan Penyesuaian. Kolom angka disimpan sebagai **angka** (bukan teks) dengan format yang sesuai (tarif hingga 5 desimal, rupiah tanpa desimal pada kolom Dibayarkan). Baris judul memuat periode dan status.
+- **AC-PY-26** `Payroll.Export` juga mengekspor **CSV** (UTF-8 dengan BOM, pemisah koma, desimal titik) untuk: (a) Ringkasan per pekerja dan (b) Rincian Harian lengkap.
+- **AC-PY-27** Ekspor periode Open diberi tanda "BELUM FINAL" pada nama berkas dan isi. Ekspor periode Closed identik dengan snapshot. Rupiah dibulatkan hanya pada kolom "Dibayarkan". Setiap ekspor tercatat di audit log (pelaku, periode, jenis).
+- **AC-PY-28** Pengguna dengan `Payroll.PrintSlip` dapat membuat **Slip Gaji PDF**: (a) untuk satu pekerja, atau (b) satu berkas berisi slip seluruh pekerja pada periode (satu pekerja mulai di halaman baru, urut Kode Pekerja).
+- **AC-PY-29** Isi slip (A4 portrait): kop (nama dan alamat Konveksi dari konfigurasi aplikasi), judul "Slip Upah Borongan", periode, Kode dan Nama Pekerja, tabel ringkas **WO → Proses → Size** (Qty, Tarif, Subtotal), baris Penyesuaian (dengan Tanggal Asal), **Jumlah (sebelum pembulatan)** dan **Dibayarkan (dibulatkan)**, kolom tanda terima ("Diterima oleh"), serta catatan "Dicetak oleh [pengguna] pada [waktu]".
+- **AC-PY-30** Pilihan **"Sertakan rincian harian"** (default nonaktif) menambahkan tabel per Tanggal Kerja pada slip.
+- **AC-PY-31** Slip periode Closed bersumber dari snapshot dan identik dengan rekap. Slip periode Open diberi watermark **"BELUM FINAL"**.
+- **AC-PY-32** Total negatif ditandai jelas pada slip. Teks dan huruf slip menampilkan karakter Indonesia dengan benar. Setiap pencetakan slip tercatat di audit log (pelaku, periode, pekerja atau "semua").
 
 ---
 
@@ -129,7 +139,7 @@ Penutupan bersifat permanen.
 
 | Resource | Action |
 |---|---|
-| Payroll | View, CreatePeriod, ClosePeriod, Export |
+| Payroll | View, CreatePeriod, ClosePeriod, Export, PrintSlip |
 
 Usulan awal Role: **Admin Gaji (Konveksi)** penuh. **Comfi** dan **Owner/Manajemen** `Payroll.View`. `Payroll.View` berarti dapat melihat tarif dan upah.
 
@@ -175,7 +185,7 @@ PeriodId, WorkerId (+ salinan Kode, Nama), TotalQty, JumlahSebelumPembulatan, Di
 | Daftar periode dan formulir buat/ubah periode | **Interactive Server** | Validasi tanggal berurutan secara langsung |
 | Detail periode (ringkasan, rincian, drill-down, penyesuaian) | **Interactive Server** | Pembukaan kelompok, filter, dan pencarian dinamis |
 | Dialog Penutupan Periode | **Interactive Server** | Menampilkan ringkasan dan peringatan sebelum penutupan |
-| Ekspor CSV | **Interactive Server** (memicu unduhan file melalui endpoint) | Unduhan berkas, bukan halaman |
+| Ekspor Excel/CSV dan Slip Gaji PDF | **Interactive Server** (memicu unduhan file melalui endpoint) | Unduhan berkas, bukan halaman |
 
 Tidak ada halaman Static SSR pada modul ini. WebAssembly **tidak dipakai**.
 
@@ -216,7 +226,13 @@ Tidak ada halaman Static SSR pada modul ini. WebAssembly **tidak dipakai**.
 ## 10. Catatan untuk Peran Berikutnya
 
 - **Architect:** rancang mekanisme penguncian tanggal kerja yang atomik terhadap penutupan periode. Putuskan apakah snapshot disimpan sebagai tabel terpisah (disarankan) dan bagaimana ekspor CSV disajikan melalui endpoint.
-- **Ekspor Excel (.xlsx):** tidak termasuk fase 1. Bila dibutuhkan kemudian, memerlukan library open-source (misalnya ClosedXML, MIT) dan **izin eksplisit user** sesuai aturan dependency.
+- **Library ekspor/PDF (WAJIB IZIN USER SEBELUM DITAMBAHKAN):** hasil riset SA per 2026-11-08 (versi diverifikasi ulang oleh Architect saat instalasi):
+  - **PDF:** rekomendasi **PDFsharp + MigraDoc** (`PDFsharp-MigraDoc`, lisensi MIT, seri 6.x menargetkan .NET 10). **Jangan** QuestPDF: lisensi Community terbaru bersifat source-available dengan syarat pendapatan tahunan, bukan open source murni, sehingga bertentangan dengan aturan proyek.
+  - **Excel:** rekomendasi **ClosedXML** (MIT, 0.105.x). Alternatif: MiniExcel (Apache-2.0, ringan untuk data besar). **Jangan** EPPlus (Polyform Noncommercial, berbayar untuk penggunaan komersial).
+  - **CSV** tidak membutuhkan library.
+  - Semua versi dicatat di `src/Directory.Packages.props` (Central Package Management).
+- **DevOps/Architect (font PDF):** PDFsharp pada Linux/Docker membutuhkan penyediaan font sendiri (font resolver) agar PDF tidak gagal. Sertakan font berlisensi terbuka (misalnya keluarga Noto atau Liberation) dalam image dan uji karakter Indonesia.
+- **Konfigurasi aplikasi:** nama dan alamat Konveksi untuk kop slip disimpan di konfigurasi (bukan di kode).
 - **QA:** skenario khusus untuk AC-PY-18, AC-PY-19, AC-PY-22 (konkurensi), AC-PY-12 (total negatif), dan pembulatan di sekitar setengah rupiah.
 
 ---
@@ -225,12 +241,12 @@ Tidak ada halaman Static SSR pada modul ini. WebAssembly **tidak dipakai**.
 
 | # | Asumsi / Pertanyaan | Status |
 |---|---|---|
-| Q1 | Periode berurutan tanpa celah, hanya satu Open pada satu waktu | Default SA, perlu konfirmasi |
-| Q2 | Pembulatan sekali per pekerja (jumlah semua baris), setengah ke atas menjauhi nol | Default SA, perlu konfirmasi |
-| Q3 | Rekap per pekerja dengan drill-down WO → Proses → Size → Tanggal | Default SA, perlu konfirmasi |
-| Q4 | Status periode hanya Open dan Closed (tanpa Draft/Review) | Default SA, perlu konfirmasi |
-| Q5 | Ekspor CSV saja di fase 1 (Excel dan PDF slip ditunda) | Default SA, perlu konfirmasi |
-| Q6 | Total negatif ditampilkan apa adanya | Default SA, perlu konfirmasi |
-| Q7 | Pekerja nonaktif tetap tampil bila punya output pada periode | Default SA, perlu konfirmasi |
-| Q8 | `Payroll.View` = boleh melihat tarif dan upah. Admin Gaji penuh, Comfi dan manajemen View. | Default SA, perlu konfirmasi |
+| Q1 | Periode berurutan tanpa celah, hanya satu Open pada satu waktu | **Disetujui** |
+| Q2 | Pembulatan sekali per pekerja (jumlah semua baris), setengah ke atas menjauhi nol | **Disetujui** |
+| Q3 | Rekap butuh **rincian per hari** (tampilan Per Hari, tab Rincian Harian, Matriks Harian) | **Disetujui** (koreksi dari user) |
+| Q4 | Status periode hanya Open dan Closed | **Disetujui** |
+| Q5 | Ekspor Excel/CSV dan **slip gaji PDF masuk fase 1** (library open source dan stabil) | **Disetujui**; izin penambahan library masih menunggu (bagian 10) |
+| Q6 | Total negatif ditampilkan apa adanya | **Disetujui** |
+| Q7 | Pekerja nonaktif tetap tampil bila punya output pada periode | **Disetujui** |
+| Q8 | `Payroll.View` = boleh melihat tarif dan upah. Admin Gaji penuh, Comfi dan manajemen View. | **Disetujui** |
 | Q9 | Periode Closed bersifat permanen (tidak ada Reopen) | Sesuai keputusan sebelumnya (koreksi lewat Penyesuaian) |
