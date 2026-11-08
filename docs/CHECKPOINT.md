@@ -5,26 +5,38 @@
 2. Lakukan `git add .` dan `git commit -m "chore: status update"` setelah mencentang kotak Anda.
 3. Jika modul sudah selesai 100% (QA Pass/DevOps), pindahkan blok modul ini ke `docs/ARCHIVE_CHECKPOINT.md` dan kosongkan bagian "Modul Aktif" di sini untuk modul berikutnya.
 
-## Modul Aktif: Access Management
+## Modul Aktif: Fase 1 — Seluruh Modul (Alur B: desain lintas modul dulu)
 - **Tipe:** Baru
-- **Referensi:** `docs/FSD/AccessManagement.md` | `docs/Design/...`
+- **Alur B:** Peran 2 (UI/UX) dan 3 (Architect) dikerjakan untuk **seluruh 8 modul** terlebih dahulu, karena skema DB, alokasi, stok, dan snapshot saling terkait. Setelah itu peran 4 s.d. 8 dikerjakan **per modul** sesuai urutan dependensi di bawah (dan modul yang selesai 100% diarsipkan).
+- **Referensi FSD (semua v1.0 disetujui):**
+  1. `docs/FSD/AccessManagement.md`
+  2. `docs/FSD/MasterData.md`
+  3. `docs/FSD/CustomerPO.md`
+  4. `docs/FSD/WorkOrder.md`
+  5. `docs/FSD/ProductionOutput.md`
+  6. `docs/FSD/SerahTerimaStokFG.md`
+  7. `docs/FSD/Pengiriman.md` (v1.1: cetak Surat Jalan PDF; Q6-Q8 menunggu konfirmasi)
+  8. `docs/FSD/PayrollBorongan.md`
+- **Dokumen desain:** `docs/Design/<NamaModul>-UI.md`
+
+### Urutan Implementasi (peran 4 s.d. 8, per modul)
+AccessManagement → MasterData → CustomerPO → WorkOrder → ProductionOutput → SerahTerimaStokFG → Pengiriman → PayrollBorongan
 
 ## Workflow Status
-- [x] **1. System Analyst:** FSD disetujui (Render Mode ditetapkan).
-- [ ] **2. UI/UX Designer:** Spesifikasi Vibe, Layout, & State UI (Loading/Error) selesai ditulis.
-- [ ] **3. Architect:** `src/Shared/` (DTOs), Skema DB, dan Mock API Contract selesai.
-- [ ] **4. Backend Developer:** Minimal APIs, Handlers, Seeder, & xUnit selesai.
-- [ ] **5. Frontend Developer:** Blazor WebApp (Fluent UI) & bUnit selesai.
+- [x] **1. System Analyst:** FSD disetujui (Render Mode ditetapkan) untuk 8 modul.
+- [ ] **2. UI/UX Designer:** Spesifikasi Vibe, Layout, & State UI (Loading/Error) selesai ditulis (8 modul).
+- [ ] **3. Architect:** `src/Shared/` (DTOs), Skema DB, dan Mock API Contract selesai (8 modul).
+- [ ] **4. Backend Developer:** Minimal APIs, Handlers, Seeder, & xUnit selesai (per modul).
+- [ ] **5. Frontend Developer:** Blazor WebApp (Fluent UI) & bUnit selesai (per modul).
 - [x] **6. Mobile Developer:** N/A — fase 1 input output hanya via PC (admin produksi), tidak butuh MAUI.
-- [ ] **7. QA Engineer:** E2E (Playwright) & Integration Test pass.
+- [ ] **7. QA Engineer:** E2E (Playwright) & Integration Test pass (per modul).
 - [ ] **8. DevOps:** Dockerfile/Compose, CI/CD, Backup Script & Deployment selesai.
 
 > **Log / Serah Terima:**
-> - [SA → UI/UX/Architect] FSD Access Management v1.0 disetujui. Render Mode: Login/Logout/Ganti Password/403 = Static SSR; halaman User, Role+Matriks, Audit Log = Interactive Server. Mobile N/A (fase 1).
-> - [SA → Architect] User **sudah memberi izin** memakai ASP.NET Core Identity (`Microsoft.AspNetCore.Identity.EntityFrameworkCore`). Daftarkan versinya di `src/Directory.Packages.props` saat solution dibuat (belum ada solution). Satu sesi aktif per user (AC-AM-06a) dan penegakan permission di server wajib dirancang sejak awal.
-> - [SA] Status FSD fase 1: AccessManagement v1.0, CustomerPO v1.0, MasterData v1.0, WorkOrder v1.0 (semua disetujui). Serah terima material dicatat oleh Admin Produksi (Konveksi) yang diberi hak akses.
-> - [SA] ProductionOutput v1.0 disetujui (ledger append-only, aturan kumulatif ketat, void/koreksi atomik, Penyesuaian untuk periode tertutup, kirim/terima vendor). Tersisa FSD: Serah Terima & Stok FG, Pengiriman, Payroll Borongan.
-> - [SA] SerahTerimaStokFG v1.0 dan Pengiriman v1.0 disetujui. PayrollBorongan v1.0 disetujui (rincian per hari; ekspor Excel/CSV; slip gaji PDF masuk fase 1). Seluruh FSD fase 1 lengkap (8 modul): AccessManagement, MasterData, CustomerPO, WorkOrder, ProductionOutput, SerahTerimaStokFG, Pengiriman, PayrollBorongan.
-> - [SA → Architect] Library yang MASIH BUTUH IZIN USER sebelum ditambahkan: PDFsharp-MigraDoc (MIT) untuk slip PDF dan ClosedXML (MIT) untuk Excel. Tolak QuestPDF (lisensi Community berbasis pendapatan) dan EPPlus (Polyform Noncommercial). Detail di docs/FSD/PayrollBorongan.md bagian 10. Perhatikan penyediaan font PDF di Linux/Docker.
-> - [SA] (arsip) Status sebelumnya: AccessManagement v1.0, CustomerPO v1.0, MasterData v0.1 draft. Ditambahkan ke fase 1 atas permintaan user: Customer PO, Serah Terima & Stok FG (termasuk serah terima material sederhana tanpa stok), Pengiriman ke Customer. BOM ditiadakan. Urutan FSD: Work Order → Production Output → Serah Terima & Stok FG → Pengiriman → Payroll.
-> - [SA] Keputusan lintas modul: Comfi = master data/PO/WO/tarif; Konveksi = output & payroll & master pekerja. Granularitas output = WO + Proses + Pekerja + Tanggal kerja + Size + Color (Level C). Tarif per FG × Proses × Size, di-snapshot ke WO saat Released. Koreksi setelah tutup periode = entri penyesuaian di periode berikutnya. FSD berikutnya: Master Data → Work Order → Production Output (+ vendor job) → Payroll Borongan.
+> - [SA → UI/UX/Architect] Cakupan fase 1 = 8 modul. Render Mode: **Interactive Server** untuk hampir semua halaman; **Static SSR** hanya untuk Login/Logout/Ganti Password/403 (AccessManagement). WebAssembly tidak dipakai. Mobile N/A.
+> - [SA] Keputusan lintas modul: Comfi = master data, PO, WO, tarif, stok FG, pengiriman; Konveksi = output, serah terima, payroll, master pekerja. Granularitas output = WO + Proses + Pekerja + Tanggal kerja + Color + Size (Level C). Tarif per FG × Proses × Size (presisi 5 desimal, Rupiah), di-snapshot ke WO saat Released. BOM ditiadakan. Koreksi setelah periode gaji tertutup = entri Penyesuaian di periode berikutnya (tidak ada reopen periode). Ledger output/stok bersifat append-only; koreksi = void + entri baru atomik.
+> - [SA → Architect] **Izin library dari user (2026-11-08):** ASP.NET Core Identity (`Microsoft.AspNetCore.Identity.EntityFrameworkCore`), **PDFsharp-MigraDoc** (MIT; slip gaji + surat jalan), **ClosedXML** (MIT; ekspor Excel). Daftarkan versi (verifikasi stabil dan kompatibel .NET 10) di `src/Directory.Packages.props`. **Tolak** QuestPDF (lisensi Community berbasis pendapatan) dan EPPlus (Polyform Noncommercial). Library lain tetap wajib minta izin. Gunakan satu komponen pembuat PDF bersama. Siapkan font berlisensi terbuka untuk PDF di Linux/Docker (DevOps).
+> - [SA → Architect] Titik rawan konsistensi yang harus dirancang atomik: (1) invariant kumulatif output antar proses per WO (kunci per WO), (2) stok FG vs alokasi PO vs pengiriman (kunci per FG × Color × Size), (3) penutupan periode gaji vs input output (serialisasi), (4) satu sesi aktif per user dan penegakan permission di server.
+> - [SA → Architect] Konfigurasi aplikasi (bukan kode): nama dan alamat Konveksi (kop slip), nama dan alamat Comfi (kop surat jalan), password Administrator awal (secret).
+> - [SA → Backend] Seeder: role Administrator + katalog permission (tiap FSD mendaftarkan permission-nya), akun Administrator awal, Customer "STOK INTERNAL".
+> - [SA] Item belum final: Pengiriman Q6-Q8 (tata letak surat jalan), Customer PO Q6-Q7 (default berlaku).

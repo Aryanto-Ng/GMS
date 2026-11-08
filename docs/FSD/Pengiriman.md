@@ -3,7 +3,7 @@
 | Atribut | Nilai |
 |---|---|
 | Modul | Pengiriman ke Customer (Surat Jalan) |
-| Versi | 1.0 (Disetujui user) |
+| Versi | 1.1 (v1.0 disetujui; cetak Surat Jalan PDF ditarik ke fase 1 atas permintaan user, detail tata letak menunggu konfirmasi) |
 | Tipe | Modul Baru |
 | Penulis | System Analyst |
 | Fase | 1 |
@@ -26,14 +26,13 @@ Mencatat barang jadi yang dikirim Comfi ke customer. Tanpa modul ini, stok FG ti
 - Pengiriman hanya dari qty yang sudah **dialokasikan** ke baris PO tersebut (FSD Customer PO 2.2), dan tidak boleh melebihi `Qty − Terkirim` baris PO.
 - Pengiriman bisa **bertahap** (banyak surat jalan per PO).
 - Surat jalan dicatat langsung (tidak ada status Draft).
-- Cetak/PDF surat jalan **ditunda** (butuh keputusan library).
+- Cetak **Surat Jalan PDF** masuk fase 1 (library PDF: PDFsharp + MigraDoc, sudah diizinkan user).
 
 ### Di Luar Scope
 - Invoice, harga, dan pembayaran.
 - Retur dari customer.
 - Biaya dan ekspedisi.
-- Tanda terima digital/tanda tangan.
-- Cetak/PDF surat jalan.
+- Tanda terima digital/tanda tangan elektronik.
 
 ---
 
@@ -91,13 +90,22 @@ Mencatat barang jadi yang dikirim Comfi ke customer. Tanpa modul ini, stok FG ti
 - **AC-PG-15** Detail menampilkan header, baris (FG, Color, Size, Qty), rujukan antar-surat jalan (hasil koreksi), alasan void, dan jejak. Tab Pengiriman pada detail PO menampilkan surat jalan yang terkait.
 - **AC-PG-16** Tombol dan menu mengikuti permission, penegakan di server bersifat final. Seluruh aksi tercatat di audit log.
 
+### 4.5 Cetak Surat Jalan (PDF)
+- **AC-PG-17** Pengguna dengan `Pengiriman.Print` dapat mencetak Surat Jalan sebagai PDF (A4) dari daftar dan dari detail surat jalan.
+- **AC-PG-18** Isi dokumen: kop Comfi (nama dan alamat dari konfigurasi aplikasi), judul "SURAT JALAN", Kode SJ, Tanggal Kirim, data Customer (nama dan alamat dari Master Data), PO internal dan Nomor PO Customer (bila ada), Nama Penerima, Kendaraan/No. Polisi, Sopir, Catatan.
+- **AC-PG-19** Daftar barang berbentuk **matriks ukuran**: baris = FG + Color, kolom = Size (urut sesuai Urutan Tampil), kolom akhir Total, baris akhir Total Keseluruhan.
+- **AC-PG-20** Bagian bawah memuat kolom tanda tangan: Pengirim, Sopir, Penerima, serta catatan "Dicetak oleh [pengguna] pada [waktu]".
+- **AC-PG-21** Surat jalan berstatus **Voided** dicetak dengan watermark "DIBATALKAN". Cetakan kedua dan seterusnya dari surat jalan aktif diberi penanda "CETAK ULANG".
+- **AC-PG-22** Setiap pencetakan tercatat di audit log (pelaku, kode SJ, waktu). Teks menampilkan karakter Indonesia dengan benar.
+- **AC-PG-23** Isi dokumen bersumber dari data surat jalan saat dicetak. Perubahan non-qty (AC-PG-07) terlihat pada cetakan berikutnya.
+
 ---
 
 ## 5. Permission (Didaftarkan ke Katalog Access Management)
 
 | Resource | Action |
 |---|---|
-| Pengiriman | View, Create, Edit, Void, Correct |
+| Pengiriman | View, Create, Edit, Void, Correct, Print |
 
 Usulan awal Role: **Comfi** penuh. **Konveksi** `Pengiriman.View` bila dibutuhkan, ditentukan Administrator.
 
@@ -130,6 +138,7 @@ DeliveryId, POLineId (FG × Color × Size), Qty (integer > 0).
 | Form surat jalan (pilih PO, grid qty, batas maksimal, alokasi cepat) | **Interactive Server** | Validasi langsung terhadap alokasi dan sisa kebutuhan |
 | Daftar dan detail surat jalan | **Interactive Server** | Filter, paging, void/koreksi dengan pratinjau dampak |
 | Tab Pengiriman pada detail PO | **Interactive Server** | Bagian dari halaman PO yang sudah interaktif |
+| Cetak Surat Jalan PDF | **Interactive Server** (memicu unduhan/pratinjau PDF melalui endpoint) | Berkas, bukan halaman |
 
 Tidak ada halaman Static SSR pada modul ini. WebAssembly **tidak dipakai**.
 
@@ -149,7 +158,8 @@ Tidak ada halaman Static SSR pada modul ini. WebAssembly **tidak dipakai**.
 | E8 | FG, Color, atau Customer dinonaktifkan setelah PO dibuat | Pengiriman tetap diizinkan untuk PO yang ada. |
 | E9 | Koneksi Blazor terputus saat mengisi form | Input belum tersimpan hilang. Peringatan sebelum meninggalkan halaman. |
 | E10 | Dua pengguna menyimpan SJ yang bersama-sama melebihi alokasi | Hanya yang pertama lolos (AC-PG-06). |
-| E11 | Surat jalan butuh dicetak | Tidak tersedia di fase 1. Pengguna memakai data di layar sebagai rujukan. |
+| E11 | Surat jalan dengan banyak FG/Color/Size sehingga matriks lebar atau panjang | Matriks dipecah per halaman dengan header kolom Size diulang. Jumlah Size yang sangat banyak dibagi ke beberapa blok. |
+| E12 | Alamat Customer atau kop Comfi belum diisi | PDF tetap dibuat dengan bagian terkait dikosongkan. Peringatan ditampilkan sebelum cetak. |
 
 ---
 
@@ -165,7 +175,7 @@ Tidak ada halaman Static SSR pada modul ini. WebAssembly **tidak dipakai**.
 
 - **Customer PO:** `Terkirim` dan status Completed diturunkan dari pengiriman aktif. Tab Pengiriman pada detail PO bersumber dari modul ini.
 - **Architect:** satukan penanganan transaksi untuk ledger stok, konsumsi alokasi, dan status PO agar konsisten pada konkurensi dan pada void.
-- **Cetak/PDF:** akan dibahas bersama keputusan library pencetakan (perlu izin sesuai aturan dependency).
+- **Cetak PDF:** memakai library yang sama dengan slip gaji (PDFsharp + MigraDoc). Gunakan satu komponen pembuat PDF bersama (font, kop, gaya). Nama dan alamat Comfi disimpan di konfigurasi aplikasi. Font PDF pada Linux/Docker perlu disediakan (lihat FSD Payroll bagian 10).
 
 ---
 
@@ -177,4 +187,7 @@ Tidak ada halaman Static SSR pada modul ini. WebAssembly **tidak dipakai**.
 | Q2 | Field header: tanggal, penerima, kendaraan/no. polisi, sopir, catatan | **Disetujui** |
 | Q3 | Satu surat jalan untuk satu PO | **Disetujui** |
 | Q4 | Void diizinkan walau PO sudah Completed (PO kembali In Progress) | **Disetujui** |
-| Q5 | Cetak/PDF surat jalan ditunda | **Disetujui** (jawaban sebelumnya) |
+| Q5 | Cetak Surat Jalan PDF ditarik ke fase 1 | **Disetujui** |
+| Q6 | Daftar barang berbentuk matriks ukuran (baris FG + Color, kolom Size) | Default SA, perlu konfirmasi |
+| Q7 | Cetakan ulang diberi penanda "CETAK ULANG", surat jalan Voided ber-watermark "DIBATALKAN" | Default SA, perlu konfirmasi |
+| Q8 | Tiga kolom tanda tangan: Pengirim, Sopir, Penerima | Default SA, perlu konfirmasi |
