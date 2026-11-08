@@ -3,7 +3,7 @@
 | Atribut | Nilai |
 |---|---|
 | Modul | Serah Terima & Stok FG |
-| Versi | 0.1 (Draft, menunggu persetujuan) |
+| Versi | 1.0 (Disetujui user) |
 | Tipe | Modul Baru |
 | Penulis | System Analyst |
 | Fase | 1 |
@@ -256,7 +256,7 @@ Tidak ada halaman Static SSR pada modul ini. WebAssembly **tidak dipakai**.
 | Q2 | Serah terima material dicatat Admin Produksi (hak akses), tanpa stok | **Disetujui** |
 | Q3 | Satu gudang, penyesuaian manual dengan alasan, tanpa stock opname | **Disetujui** |
 | Q4 | Stok awal lewat penyesuaian atau import CSV | **Disetujui** |
-| Q5 | Field "Diterima Oleh" berupa teks bebas opsional | Default SA, perlu konfirmasi |
-| Q6 | Qty material berupa desimal 3 digit (karena satuan meter/kg) | Default SA, perlu konfirmasi |
-| Q7 | Serah terima material boleh sejak WO Draft hingga Completed | Default SA, perlu konfirmasi |
-| Q8 | Serah terima FG ditolak saat WO Closed (harus Reopen) | Default SA, perlu konfirmasi |
+| Q5 | Field "Diterima Oleh" berupa teks bebas opsional | **Disetujui** |
+| Q6 | Qty material berupa desimal 3 digit (karena satuan meter/kg) | **Disetujui** |
+| Q7 | Serah terima material boleh sejak WO Draft hingga Completed | **Disetujui** |
+| Q8 | Serah terima FG ditolak saat WO Closed (harus Reopen) | **Disetujui** |

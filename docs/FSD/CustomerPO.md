@@ -112,6 +112,7 @@ Alokasi dan pembuatan WO hanya diperbolehkan pada status **Confirmed** dan **In 
 - **AC-PO-09** Comfi mengubah Draft menjadi Confirmed. Konfirmasi tidak mensyaratkan Nomor PO Customer.
 - **AC-PO-10** Status berubah ke In Progress otomatis saat pertama kali terjadi alokasi, pembuatan WO, atau pengiriman pada PO tersebut.
 - **AC-PO-11** Status berubah ke Completed otomatis saat semua baris `Terkirim = Qty`. PO Completed terkunci (tidak dapat direvisi).
+- **AC-PO-11a** Pengecualian terkunci: bila pengiriman yang membuat PO Completed di-void (FSD Pengiriman), PO kembali otomatis ke In Progress. Pengguna tetap tidak dapat merevisi PO Completed secara langsung.
 - **AC-PO-12** Status Completed, Confirmed, dan In Progress tampil dengan penanda warna dan teks yang berbeda di daftar.
 
 ### 4.4 Alokasi Stok
