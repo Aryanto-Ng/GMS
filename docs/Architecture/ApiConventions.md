@@ -191,7 +191,13 @@ Impor (Material, FG, Pekerja):
 | GET | `/work-orders/{id}/progress` | `WorkOrder.View` |
 | GET | `/work-orders/{id}/tariff-snapshot` | `WorkOrder.Tarif.View` |
 | GET | `/work-orders/{id}/status-history` | `WorkOrder.View` |
-| PUT | `/work-orders/{id}/schedule` (Draft/Released/InProgress: tanggal + keterangan) | `WorkOrder.Edit` |**Catatan implementasi (backend, 2026-11-09):**- Semua aksi status (`release`, `complete`, `resume`, `close`, `reopen`, `cancel`) memakai body `WoActionRequest { reason, rowVersion }`; alasan wajib untuk `cancel`, `resume`, `reopen`. Dua penekan bersamaan: yang kalah mendapat 409 `state-conflict` atau `concurrency-conflict`.- `PUT /work-orders/{id}/quantities` harus mengirim SELURUH baris WO (baris tidak dapat ditambah/dihapus). Galat: 409 `wo.qty-below-output` (di bawah output proses pertama), 409 `po.remaining-plan-exceeded` (kenaikan; `violations[].limit` = batas terbaru).- Rilis ditolak 409 `fg.not-ready` (dengan `violations` per butir) bila FG belum siap; `po.remaining-plan-exceeded` bila Sisa Rencana tidak cukup. Cancel ditolak 409 `wo.has-activity` bila ada output, pengiriman vendor, atau serah terima.- Snapshot tarif hanya lewat `/tariff-snapshot` (`WorkOrder.Tarif.View`); detail, progres, dan daftar tidak pernah memuat tarif.
+| PUT | `/work-orders/{id}/schedule` (Draft/Released/InProgress: tanggal + keterangan) | `WorkOrder.Edit` |
+
+**Catatan implementasi (backend, 2026-11-09):**
+- Semua aksi status (`release`, `complete`, `resume`, `close`, `reopen`, `cancel`) memakai body `WoActionRequest { reason, rowVersion }`; alasan wajib untuk `cancel`, `resume`, `reopen`. Dua penekan bersamaan: yang kalah mendapat 409 `state-conflict` atau `concurrency-conflict`.
+- `PUT /work-orders/{id}/quantities` harus mengirim SELURUH baris WO (baris tidak dapat ditambah/dihapus). Galat: 409 `wo.qty-below-output` (di bawah output proses pertama), 409 `po.remaining-plan-exceeded` (kenaikan; `violations[].limit` = batas terbaru).
+- Rilis ditolak 409 `fg.not-ready` (dengan `violations` per butir) bila FG belum siap; `po.remaining-plan-exceeded` bila Sisa Rencana tidak cukup. Cancel ditolak 409 `wo.has-activity` bila ada output, pengiriman vendor, atau serah terima.
+- Snapshot tarif hanya lewat `/tariff-snapshot` (`WorkOrder.Tarif.View`); detail, progres, dan daftar tidak pernah memuat tarif.
 
 ### 4.5 Production Output (+ Vendor)
 | Metode | Rute | Izin |
