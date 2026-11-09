@@ -87,6 +87,18 @@ Seeder demo PO (`PoSeeder`, Order 30): 3 PO + stok awal, hanya dengan `Seed:Demo
 - **Snapshot** (routing, tarif Internal × size yang dipakai WO, label) dibuat dalam satu transaksi dengan perubahan status Released dan tidak pernah diubah. Tarif tidak pernah masuk DTO selain `WoTariffSnapshotDto`.
 - `WoQueries` (manual DI) menyatukan detail, progres, daftar, opsi pembuatan, dan pratinjau; `AllowedActions` = status × permission.
 
+## Pola Production Output (`Features/Production`)
+
+Semua perubahan ledger output/vendor melewati `StepLedger` (jangan menulis `wo_step_balances` dari tempat lain):
+
+1. **Urutan:** `BeginAsync` (kunci periode gaji `FOR SHARE` → kunci WO `FOR UPDATE` → muat WO/routing/baris) → ubah ledger → `SaveChanges` → `RecomputeAsync` (saldo dihitung ulang dari entri AKTIF, bukan delta) → `ValidateAsync` (rantai `Output(n−1) ≥ Terkirim(n) ≥ Diterima(n) ≥ Kum(n+1)` + diterima ≤ terkirim per vendor) → `ThrowIfAny` → commit. Pelanggaran melempar sebelum commit sehingga transaksi batal; aturan hanya dicek pada KONDISI AKHIR (itulah sebabnya koreksi = void + entri baru tidak terhalang aturan sementara).
+2. **Pratinjau dampak = jalur yang sama + rollback** (`dryRun`): jangan menulis logika pratinjau terpisah. `touched` (langkah yang diubah) menentukan kode galat: langkah yang diubah → `*-exceeded`, langkah hilir → `output.below-downstream`.
+3. **Ledger tidak pernah diubah nilainya:** hanya `Status/VoidReason/Voided*`. Koreksi menyimpan `ReplacesEntryId`/`ReplacesId` dan alasan; alasan void koreksi diawali "Dikoreksi:".
+4. **Status WO:** `RequireOpenForEntries` (Released/In Progress). Released → In Progress dilakukan `MarkInProgressAsync` (riwayat + `PoLifecycle.MarkInProgressAsync`) pada output/terima pertama.
+5. **Periode gaji:** `EnsureWorkDateAllowedAsync` (≤ hari ini, bukan periode tertutup, tidak sebelum periode pertama). Modul Payroll yang menutup periode WAJIB mengunci `payroll_periods` `FOR UPDATE` (urutan kunci ke-1) agar serial dengan input output (yang memakai `FOR SHARE`).
+6. Riwayat gabungan (`EntryQueries`) memakai `Concat` dua proyeksi ke kelas `Row` yang sama; pembatasan lihat per permission dilakukan sebelum union.
+7. Tes konkurensi memakai `AssertLedgerInvariantAsync` (saldo proyeksi = Σ ledger aktif dan rantai terpenuhi).
+
 ## Jebakan yang Sudah Ditemukan (jangan diulang)
 
 1. **Urutkan sebelum proyeksi DTO.** `OrderBy(x => x.Seq)` pada hasil `new SomeDto(...)` tidak dapat diterjemahkan EF (500). Pola yang benar: `Join → proyeksi anonim → OrderBy → Select(new Dto(...))`.

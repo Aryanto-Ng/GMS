@@ -25,6 +25,24 @@ public static class PermissionExtensions
         return builder;
     }
 
+    /// <summary>Mewajibkan login dan SALAH SATU dari beberapa permission (mis. riwayat gabungan Output + Vendor).</summary>
+    public static TBuilder RequireAnyPermission<TBuilder>(this TBuilder builder, params string[] permissions)
+        where TBuilder : IEndpointConventionBuilder
+    {
+        builder.RequireAuthorization();
+        builder.AddEndpointFilter(async (context, next) =>
+        {
+            var user = context.HttpContext.RequestServices.GetRequiredService<ICurrentUser>();
+            if (!permissions.Any(user.HasPermission))
+            {
+                throw ProblemException.Forbidden();
+            }
+
+            return await next(context);
+        });
+        return builder;
+    }
+
     /// <summary>Wajib login saja (tanpa permission khusus).</summary>
     public static TBuilder RequireLogin<TBuilder>(this TBuilder builder)
         where TBuilder : IEndpointConventionBuilder

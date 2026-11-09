@@ -48,6 +48,15 @@ public static class AuditEvents
     public const string WoReopened = "WoReopened";
     public const string WoCancelled = "WoCancelled";
 
+    // Production Output
+    public const string OutputCreated = "OutputCreated";
+    public const string OutputVoided = "OutputVoided";
+    public const string OutputCorrected = "OutputCorrected";
+    public const string OutputAdjusted = "OutputAdjusted";
+    public const string VendorMovementCreated = "VendorMovementCreated";
+    public const string VendorMovementVoided = "VendorMovementVoided";
+    public const string VendorMovementCorrected = "VendorMovementCorrected";
+
     // Master Data
     public const string MasterCreated = "MasterCreated";
     public const string MasterUpdated = "MasterUpdated";

@@ -37,6 +37,27 @@ public static class RowLocks
         }
     }
 
+    /// <summary>
+    /// Mengunci bersama (<c>FOR SHARE</c>) periode gaji yang memuat tanggal-tanggal tersebut (urutan kunci ke-1). Input output boleh
+    /// berjalan paralel, tetapi penutupan periode (FOR UPDATE) menunggu dan sebaliknya (ADR-004).
+    /// </summary>
+    public static async Task LockPayrollPeriodsSharedAsync(GmsDbContext db, IEnumerable<DateOnly> dates, CancellationToken ct)
+    {
+        var distinct = dates.Distinct().ToArray();
+        if (distinct.Length == 0)
+        {
+            return;
+        }
+
+        var command = Command(db, """
+            SELECT id FROM payroll_periods
+            WHERE EXISTS (SELECT 1 FROM unnest(@dates) AS d(v) WHERE d.v BETWEEN start_date AND end_date)
+            ORDER BY id FOR SHARE
+            """);
+        command.Parameters.Add(new NpgsqlParameter("dates", distinct));
+        await RunAsync(command, ct);
+    }
+
     /// <summary>Mengunci satu baris work_orders <c>FOR UPDATE</c> (urutan kunci ke-2, sebelum po_lines).</summary>
     public static async Task LockWorkOrderAsync(GmsDbContext db, Guid woId, CancellationToken ct)
     {

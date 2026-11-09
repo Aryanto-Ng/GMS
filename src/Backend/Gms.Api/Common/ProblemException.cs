@@ -56,6 +56,9 @@ public sealed class ProblemException : Exception
             Violations = violations,
         };
 
+    public static ProblemException PeriodClosed(string message) =>
+        new(StatusCodes.Status409Conflict, ProblemTypes.PeriodClosed, "Periode gaji sudah ditutup.", message);
+
     public static ProblemException Concurrency() =>
         new(StatusCodes.Status409Conflict, ProblemTypes.ConcurrencyConflict, "Data telah diubah pengguna lain.",
             "Data telah diubah oleh pengguna lain. Muat ulang lalu coba lagi.");

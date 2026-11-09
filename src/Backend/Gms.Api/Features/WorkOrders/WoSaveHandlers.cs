@@ -349,7 +349,7 @@ public sealed class UpdateWoQuantitiesHandler(GmsDbContext db, ICurrentUser user
         var firstSeq = await db.WoRoutingSnapshots.Where(r => r.WoId == id).MinAsync(r => (int?)r.Seq, ct);
         var lineIds = wo.Lines.Select(l => l.Id).ToList();
         var firstOutput = firstSeq is { } fs
-            ? await db.WoStepBalances.Where(b => lineIds.Contains(b.WoLineId) && b.Seq == fs).ToDictionaryAsync(b => b.WoLineId, b => b.Qty, ct)
+            ? await db.WoStepBalances.Where(b => lineIds.Contains(b.WoLineId) && b.Seq == fs).ToDictionaryAsync(b => b.WoLineId, b => Math.Max(b.Qty, b.SentQty), ct)
             : [];
 
         var poLines = await db.PoLines.Where(l => poLineIds.Contains(l.Id)).ToDictionaryAsync(l => l.Id, ct);

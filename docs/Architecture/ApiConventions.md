@@ -214,6 +214,12 @@ Impor (Material, FG, Pekerja):
 | POST | `/production/vendor-movements/{id}/void/preview`, `/void` | `VendorJob.Void` |
 | POST | `/production/vendor-movements/{id}/correct/preview`, `/correct` | `VendorJob.Create` dan `VendorJob.Void` |
 
+**Catatan implementasi (backend, 2026-11-09):**
+- Tabel permission di atas berlaku apa adanya, kecuali koreksi vendor yang diimplementasikan dengan `VendorJob.Void` (endpoint) dan `CanCorrect` mensyaratkan `Create` + `Void`. `/production/entries` dan `/{id}` menerima `ProductionOutput.View` ATAU `VendorJob.View`; baris yang tidak boleh dilihat pengguna tidak ikut (entri vendor bagi yang hanya `ProductionOutput.View` mengembalikan 404 pada detail).
+- Void memakai `POST .../void` dengan body `ReasonRequest` dan membalas 204. Koreksi membalas `{ "id": <entri baru> }`. Pembuatan penyesuaian dan vendor membalas 201 `{ "id" }`. Pratinjau (`/void/preview`, `/correct/preview`) menjalankan jalur kode yang sama lalu rollback, sehingga hasilnya identik dengan eksekusi sebenarnya.
+- Galat spesifik: 409 `output.cumulative-exceeded` (input melebihi output langkah sebelumnya), `output.below-downstream` (void/koreksi/penyesuaian membuat langkah hilir melampaui), `output.exceeds-wo-qty-needs-confirmation` (langkah pertama > Qty WO; kirim ulang dengan `confirmExceedWoQty: true`), `vendor.sent-exceeded`, `vendor.received-exceeded` (termasuk per vendor), `payroll.date-before-first-period`; 409 `period-closed` (tipe) untuk tanggal di periode gaji tertutup; 409 `wo.status-invalid` bila WO bukan Released/In Progress. Semua pelanggaran membawa `violations[]` per sel (`subject` = warna/size · langkah, `current`, `limit`).
+- Output pada langkah Vendor ditolak 422 (`seq`); kirim/terima pada langkah Internal ditolak 422. Terima pertama (bukan Kirim) memindahkan WO Released → In Progress.
+
 ### 4.6 Serah Terima & Stok FG
 | Metode | Rute | Izin |
 |---|---|---|
