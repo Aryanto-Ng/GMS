@@ -301,6 +301,8 @@ Satu endpoint ringan per widget (dimuat independen, izin dicek per widget): `GET
 | payroll-period | `Payroll.View` |
 | security | `AccessManagement.AuditLog.View` |
 
+**Catatan implementasi (backend, 2026-11-09):** `GET /dashboard/{widgetId}` memuat satu widget; izin dicek per widget (403 `forbidden` bila tidak berhak, 404 bila id tidak dikenal, 401 bila belum login). "Hari ini" dan jendela 7 hari memakai zona waktu aplikasi (`App:TimeZone`). Widget PO menghitung PO Confirmed/In Progress agar sama dengan filter daftar PO (`terlambat`, `jatuhTempo7`, `poCustomerKosong`, `sisaRencana`); widget WO memakai filter `terlambat` dan `menungguClose` pada daftar WO; `output-today` selaras dengan `hariIni` pada riwayat produksi. Aksi Cepat tidak memiliki endpoint (disusun klien dari permission pada `/auth/me`).
+
 ### 4.10 Sistem
 `GET /health` (publik, tanpa data sensitif).
 
