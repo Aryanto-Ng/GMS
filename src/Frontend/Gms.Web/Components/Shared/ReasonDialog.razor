@@ -32,10 +32,13 @@
                 }
             }
 
-            <label for="@_reasonId">Alasan @(ReasonRequired ? "" : "(opsional)") @if (ReasonRequired) { <span class="gms-required">wajib</span> }</label>
-            <textarea id="@_reasonId" class="gms-reason" rows="3" maxlength="@MaxLength" autofocus
-                      aria-describedby="@(_reasonId)-hint" value="@_reason" @oninput="e => _reason = e.Value?.ToString() ?? string.Empty"></textarea>
-            <small id="@(_reasonId)-hint">@_reason.Length / @MaxLength karakter</small>
+            @if (ShowReason)
+            {
+                <label for="@_reasonId">Alasan @(ReasonRequired ? "" : "(opsional)") @if (ReasonRequired) { <span class="gms-required">wajib</span> }</label>
+                <textarea id="@_reasonId" class="gms-reason" rows="3" maxlength="@MaxLength" autofocus
+                          aria-describedby="@(_reasonId)-hint" value="@_reason" @oninput="e => _reason = e.Value?.ToString() ?? string.Empty"></textarea>
+                <small id="@(_reasonId)-hint">@_reason.Length / @MaxLength karakter</small>
+            }
 
             @if (_problem is not null)
             {
@@ -85,6 +88,9 @@
 
     [Parameter] public bool ReasonRequired { get; set; } = true;
 
+    /// <summary>false = dialog konfirmasi biasa tanpa isian alasan (OnConfirm menerima string kosong).</summary>
+    [Parameter] public bool ShowReason { get; set; } = true;
+
     [Parameter] public int MaxLength { get; set; } = 500;
 
     /// <summary>Syarat tambahan dari pemanggil (mis. konfirmasi kode periode).</summary>
@@ -98,7 +104,7 @@
 
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    private bool ReasonOk => !ReasonRequired || !string.IsNullOrWhiteSpace(_reason);
+    private bool ReasonOk => !ShowReason || !ReasonRequired || !string.IsNullOrWhiteSpace(_reason);
 
     private bool PreviewOk => LoadPreview is null || (_preview is { CanProceed: true } && !_previewLoading);
 

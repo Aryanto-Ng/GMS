@@ -1,0 +1,179 @@
+@page "/admin/users"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.AccessManagement.User.View)]
+@using Gms.Shared.Security
+@using Gms.Web.Infrastructure.Auth
+@using Microsoft.AspNetCore.Authorization
+@inject IUsersApi Users
+@inject IRolesApi Roles
+@inject ApiErrorHandler Errors
+@inject IToastService Toasts
+@inject AuthenticationStateProvider Auth
+
+<PageTitle>Pengguna · GMS</PageTitle>
+
+<PageHeader Title="Pengguna" Subtitle="@(_total is null ? null : $"{_total} pengguna")">
+    <Actions>
+        @if (_can(Permissions.AccessManagement.User.Create))
+        {
+            <FluentAnchor Href="/admin/users/new" Appearance="Appearance.Accent">Tambah Pengguna</FluentAnchor>
+        }
+    </Actions>
+</PageHeader>
+
+<div class="gms-toolbar" role="search">
+    <div class="gms-field">
+        <label for="user-q">Cari username/nama</label>
+        <input id="user-q" type="search" value="@_q" @onchange="e => ApplyFilter(() => _q = e.Value?.ToString())" />
+    </div>
+    <div class="gms-field">
+        <label for="user-role">Role</label>
+        <select id="user-role" @onchange="e => ApplyFilter(() => _role = Guid.TryParse(e.Value?.ToString(), out var g) ? g : null)">
+            <option value="">Semua role</option>
+            @foreach (var role in _roles)
+            {
+                <option value="@role.Id" selected="@(_role == role.Id)">@role.Name</option>
+            }
+        </select>
+    </div>
+    <div class="gms-field">
+        <label for="user-status">Status</label>
+        <select id="user-status" @onchange="e => ApplyFilter(() => _status = Enum.TryParse<UserStatus>(e.Value?.ToString(), out var s) ? s : null)">
+            <option value="">Semua status</option>
+            <option value="Active" selected="@(_status == UserStatus.Active)">Aktif</option>
+            <option value="Locked" selected="@(_status == UserStatus.Locked)">Terkunci</option>
+            <option value="Inactive" selected="@(_status == UserStatus.Inactive)">Nonaktif</option>
+        </select>
+    </div>
+</div>
+
+<AsyncContent T="PagedResult<UserListItem>" Key="@($"{_version}|{_page}|{_q}|{_role}|{_status}")" Loader="LoadAsync" IsEmpty="r => r.TotalCount == 0">
+    <EmptyContent>
+        <EmptyState Icon="@(new Icons.Regular.Size48.People())" Title="Tidak ada pengguna yang cocok" Description="Ubah kata kunci atau filter." />
+    </EmptyContent>
+    <ChildContent Context="result">
+        <table class="gms-table">
+            <caption class="gms-sr-only">Daftar pengguna</caption>
+            <thead>
+                <tr><th scope="col">Username</th><th scope="col">Nama</th><th scope="col">Role</th><th scope="col">Status</th><th scope="col">Login terakhir</th><th scope="col">Aksi</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var user in result.Items)
+                {
+                    <tr>
+                        <th scope="row"><a href="/admin/users/@user.Id">@user.UserName</a></th>
+                        <td>@user.FullName</td>
+                        <td>@user.RoleName</td>
+                        <td><StatusChip Value="@user.Status" /></td>
+                        <td>@IdFormat.DateTime(user.LastLoginAt)</td>
+                        <td class="gms-rowactions">
+                            @if (_can(Permissions.AccessManagement.User.Edit))
+                            {
+                                <FluentAnchor Href="@($"/admin/users/{user.Id}")" Appearance="Appearance.Lightweight" aria-label="@($"Ubah {user.UserName}")">Ubah</FluentAnchor>
+                            }
+                            @if (user.Status == UserStatus.Locked && _can(Permissions.AccessManagement.User.Unlock))
+                            {
+                                <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Buka kunci {user.UserName}")" OnClick="() => Ask(Pending.Unlock, user)">Buka kunci</FluentButton>
+                            }
+                            @if (_can(Permissions.AccessManagement.User.Deactivate) && user.Status != UserStatus.Inactive)
+                            {
+                                <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Nonaktifkan {user.UserName}")" OnClick="() => Ask(Pending.Deactivate, user)">Nonaktifkan</FluentButton>
+                            }
+                            @if (_can(Permissions.AccessManagement.User.Deactivate) && user.Status == UserStatus.Inactive)
+                            {
+                                <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Aktifkan {user.UserName}")" OnClick="() => Ask(Pending.Activate, user)">Aktifkan</FluentButton>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <PagerBar Page="result.Page" PageSize="result.PageSize" TotalCount="result.TotalCount" PageChanged="p => _page = p" />
+    </ChildContent>
+</AsyncContent>
+
+<ReasonDialog Open="_pending is not null" OpenChanged="o => { if (!o) _pending = null; }"
+              Title="@PendingTitle" Description="@PendingDescription" ConfirmText="@PendingConfirm" ShowReason="false"
+              Danger="@(_pending is Pending.Deactivate)" OnConfirm="RunPendingAsync" />
+
+@code {
+    private enum Pending { Unlock, Deactivate, Activate }
+
+    private bool _loadedRoles;
+    private IReadOnlyList<RoleListItem> _roles = [];
+    private string? _q;
+    private Guid? _role;
+    private UserStatus? _status;
+    private int _page = 1;
+    private int _version;
+    private int? _total;
+    private Pending? _pending;
+    private UserListItem? _target;
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+    private bool _can(string permission) => _user.HasPermission(permission);
+
+    private string PendingTitle => _pending switch
+    {
+        Pending.Unlock => $"Buka kunci {_target?.UserName}?",
+        Pending.Deactivate => $"Nonaktifkan {_target?.UserName}?",
+        _ => $"Aktifkan {_target?.UserName}?",
+    };
+
+    private string PendingDescription => _pending switch
+    {
+        Pending.Unlock => "Pengguna dapat login kembali dan hitungan gagal login diatur ulang.",
+        Pending.Deactivate => "Pengguna tidak dapat login dan sesi aktifnya berakhir. Data historis tetap tersimpan.",
+        _ => "Pengguna dapat login kembali.",
+    };
+
+    private string PendingConfirm => _pending switch { Pending.Unlock => "Buka kunci", Pending.Deactivate => "Nonaktifkan", _ => "Aktifkan" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _user = (await Auth.GetAuthenticationStateAsync()).User;
+        if (!_loadedRoles)
+        {
+            _loadedRoles = true;
+            try { _roles = await Roles.ListAsync(); }
+            catch (ApiException ex) when (!Errors.TryHandleSessionEnd(ex.Problem)) { _roles = []; } // filter role opsional; daftar tetap berfungsi
+        }
+    }
+
+    private async Task<PagedResult<UserListItem>> LoadAsync(CancellationToken ct)
+    {
+        var result = await Users.ListAsync(new UserListQuery { Page = _page, Q = _q, RoleId = _role, Status = _status }, ct);
+        _total = result.TotalCount;
+        await InvokeAsync(StateHasChanged); // subjudul jumlah
+        return result;
+    }
+
+    private void ApplyFilter(Action change)
+    {
+        change();
+        _page = 1;
+    }
+
+    private void Ask(Pending action, UserListItem user)
+    {
+        _target = user;
+        _pending = action;
+    }
+
+    private async Task RunPendingAsync(string _)
+    {
+        var user = _target!;
+        var action = _pending!.Value;
+        switch (action)
+        {
+            case Pending.Unlock:
+                await Users.UnlockAsync(user.Id);
+                break;
+            default:
+                var detail = await Users.GetAsync(user.Id); // rowVersion terbaru
+                await Users.SetActiveAsync(user.Id, action == Pending.Activate, detail.RowVersion);
+                break;
+        }
+
+        Toasts.ShowSuccess(action switch { Pending.Unlock => $"{user.UserName} dibuka kuncinya.", Pending.Deactivate => $"{user.UserName} dinonaktifkan.", _ => $"{user.UserName} diaktifkan." });
+        _version++;
+    }
+}

@@ -82,6 +82,11 @@ public sealed class GmsApiClient(IHttpClientFactory factory, ISessionTokenProvid
         using var response = await SendAsync(HttpMethod.Put, path, body, ct);
     }
 
+    public async Task DeleteAsync(string path, CancellationToken ct = default)
+    {
+        using var response = await SendAsync(HttpMethod.Delete, path, null, ct);
+    }
+
     /// <summary>Mengunduh berkas (PDF, Excel, CSV). Nama berkas dari <c>Content-Disposition</c>.</summary>
     public async Task<FileContent> DownloadAsync(string path, CancellationToken ct = default)
     {

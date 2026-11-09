@@ -177,3 +177,30 @@ code { font-family: Consolas, "Courier New", monospace; }
 /* ===== Penanda kesalahan Blazor ===== */
 #blazor-error-ui { color-scheme: light only; background: #fff4ce; color: #3b2a00; bottom: 0; box-shadow: 0 -1px 2px rgba(0,0,0,.2); box-sizing: border-box; display: none; left: 0; padding: .6rem 1.25rem .7rem; position: fixed; width: 100%; z-index: 1000; }
 #blazor-error-ui .dismiss { cursor: pointer; position: absolute; right: .75rem; top: .5rem; }
+
+/* ===== Halaman admin (daftar, form, matriks izin, audit) ===== */
+.gms-toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; margin: 0 0 12px; }
+.gms-field { display: flex; flex-direction: column; gap: 4px; min-width: 180px; }
+.gms-field label { font-weight: 600; font-size: .85rem; }
+.gms-field input, .gms-field select, .gms-form select { font: inherit; color: var(--gms-fg); background: var(--gms-bg); border: 1px solid var(--gms-stroke); border-radius: 4px; padding: 7px 10px; }
+.gms-rowactions { display: flex; gap: 4px; flex-wrap: wrap; }
+.gms-twocol { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .gms-twocol { grid-template-columns: 1fr; } }
+.gms-card { background: var(--gms-card); border: 1px solid var(--gms-stroke); border-radius: 8px; padding: 16px; }
+.gms-card h2 { font-size: 1.05rem; margin: 0 0 10px; }
+.gms-dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0 0 12px; }
+.gms-dl dt { color: var(--gms-muted); }
+.gms-dl dd { margin: 0; }
+.gms-stack { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.gms-inline { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.gms-formactions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+.gms-rules { list-style: none; padding: 0; margin: 4px 0; display: flex; flex-direction: column; gap: 2px; }
+.gms-rules li { display: inline-flex; gap: 6px; align-items: center; }
+.gms-temp { font-size: 1.1rem; padding: 2px 8px; background: var(--gms-bg); border: 1px solid var(--gms-stroke); border-radius: 4px; user-select: all; }
+.gms-required { font-weight: 400; font-size: .75rem; color: var(--gms-muted); margin-inline-start: 4px; }
+.gms-perm td, .gms-perm th { text-align: center; }
+.gms-perm th[scope="row"] { text-align: start; }
+.gms-perm .gms-na { color: var(--gms-muted); }
+.gms-perm .gms-groupheader th { background: var(--gms-bg2); text-align: start; font-size: .8rem; letter-spacing: .04em; text-transform: uppercase; }
+.gms-perm input[type="checkbox"] { width: 18px; height: 18px; }
+.gms-auditdetail td { background: var(--gms-bg2); }

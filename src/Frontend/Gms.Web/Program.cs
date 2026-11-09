@@ -56,6 +56,11 @@ services.AddScoped<IAuthApi>(sp => api.UseMock
     ? ActivatorUtilities.CreateInstance<MockAuthApi>(sp)
     : ActivatorUtilities.CreateInstance<HttpAuthApi>(sp));
 
+services.AddSingleton<MockAccessStore>();
+services.AddScoped<IUsersApi>(sp => api.UseMock ? ActivatorUtilities.CreateInstance<MockUsersApi>(sp) : ActivatorUtilities.CreateInstance<HttpUsersApi>(sp));
+services.AddScoped<IRolesApi>(sp => api.UseMock ? ActivatorUtilities.CreateInstance<MockRolesApi>(sp) : ActivatorUtilities.CreateInstance<HttpRolesApi>(sp));
+services.AddScoped<IAuditApi>(sp => api.UseMock ? ActivatorUtilities.CreateInstance<MockAuditApi>(sp) : ActivatorUtilities.CreateInstance<HttpAuditApi>(sp));
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

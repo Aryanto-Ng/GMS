@@ -1,0 +1,136 @@
+@page "/admin/audit"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.AccessManagement.AuditLog.View)]
+@inject IAuditApi Audit
+
+<PageTitle>Audit Log · GMS</PageTitle>
+
+<PageHeader Title="Audit Log" Subtitle="Catatan kejadian keamanan dan perubahan data. Hanya baca." />
+
+<form class="gms-toolbar" role="search" @onsubmit="Apply" @onsubmit:preventDefault>
+    <div class="gms-field">
+        <label for="a-from">Dari tanggal</label>
+        <input id="a-from" type="date" value="@_fromText" @onchange="e => _fromText = e.Value?.ToString() ?? string.Empty" />
+    </div>
+    <div class="gms-field">
+        <label for="a-to">Sampai tanggal</label>
+        <input id="a-to" type="date" value="@_toText" @onchange="e => _toText = e.Value?.ToString() ?? string.Empty" />
+    </div>
+    <div class="gms-field">
+        <label for="a-event">Peristiwa</label>
+        <select id="a-event" @onchange="e => _eventText = e.Value?.ToString() ?? string.Empty">
+            <option value="">Semua peristiwa</option>
+            @foreach (var ev in AuditLabels.Known)
+            {
+                <option value="@ev.Code" selected="@(_eventText == ev.Code)">@ev.Label</option>
+            }
+        </select>
+    </div>
+    <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent">Terapkan</FluentButton>
+</form>
+
+@if (_rangeError is not null)
+{
+    <div class="gms-banner error" role="alert"><div class="gms-banner-body"><p>@_rangeError</p></div></div>
+}
+else
+{
+    <AsyncContent T="PagedResult<AuditLogItem>" Key="@($"{_from}|{_to}|{_event}|{_page}")" Loader="LoadAsync" IsEmpty="r => r.TotalCount == 0">
+        <EmptyContent>
+            <EmptyState Title="Tidak ada kejadian pada rentang ini" Description="Ubah rentang tanggal atau filter peristiwa." />
+        </EmptyContent>
+        <ChildContent Context="result">
+            <table class="gms-table">
+                <caption class="gms-sr-only">Daftar audit log</caption>
+                <thead>
+                    <tr><th scope="col">Waktu</th><th scope="col">Pelaku</th><th scope="col">Peristiwa</th><th scope="col">Objek</th><th scope="col">IP</th><th scope="col"><span class="gms-sr-only">Detail</span></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in result.Items)
+                    {
+                        var expanded = _expanded.Contains(item.Id);
+                        var hasDetail = item.OldValueJson is not null || item.NewValueJson is not null;
+                        <tr>
+                            <td>@IdFormat.DateTime(item.OccurredAt)</td>
+                            <td>@(item.ActorUsername ?? "—")</td>
+                            <td>@AuditLabels.For(item.EventType)</td>
+                            <td>@(item.TargetType is null ? "—" : $"{item.TargetType}: {item.TargetId}")</td>
+                            <td>@(item.IpAddress ?? "—")</td>
+                            <td>
+                                @if (hasDetail)
+                                {
+                                    <FluentButton Appearance="Appearance.Lightweight" aria-expanded="@(expanded ? "true" : "false")" aria-controls="@($"audit-{item.Id}")"
+                                                  aria-label="@($"Detail {AuditLabels.For(item.EventType)}")" OnClick="() => Toggle(item.Id)">@(expanded ? "Tutup" : "Detail")</FluentButton>
+                                }
+                            </td>
+                        </tr>
+                        @if (expanded)
+                        {
+                            <tr class="gms-auditdetail" id="@($"audit-{item.Id}")">
+                                <td colspan="6">
+                                    <dl class="gms-dl">
+                                        <dt>Sebelum</dt><dd><code>@(item.OldValueJson ?? "—")</code></dd>
+                                        <dt>Sesudah</dt><dd><code>@(item.NewValueJson ?? "—")</code></dd>
+                                    </dl>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+            <PagerBar Page="result.Page" PageSize="result.PageSize" TotalCount="result.TotalCount" PageChanged="p => _page = p" />
+        </ChildContent>
+    </AsyncContent>
+}
+
+@code {
+    private DateOnly _from, _to;
+    private string _fromText = string.Empty, _toText = string.Empty, _eventText = string.Empty;
+    private string? _event, _rangeError;
+    private int _page = 1;
+    private readonly HashSet<long> _expanded = [];
+
+    protected override void OnInitialized()
+    {
+        var today = DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(IdFormat.Offset).DateTime);
+        _to = today;
+        _from = today.AddDays(-6); // default 7 hari
+        _fromText = _from.ToString("yyyy-MM-dd");
+        _toText = _to.ToString("yyyy-MM-dd");
+    }
+
+    private void Apply()
+    {
+        if (!DateOnly.TryParseExact(_fromText, "yyyy-MM-dd", out var from) || !DateOnly.TryParseExact(_toText, "yyyy-MM-dd", out var to))
+        {
+            _rangeError = "Rentang tanggal wajib diisi.";
+            return;
+        }
+
+        if (to < from)
+        {
+            _rangeError = "Tanggal akhir tidak boleh sebelum tanggal awal.";
+            return;
+        }
+
+        if (to.DayNumber - from.DayNumber > 92)
+        {
+            _rangeError = "Rentang terlalu lebar. Persempit maksimal 3 bulan.";
+            return;
+        }
+
+        _rangeError = null;
+        _from = from;
+        _to = to;
+        _event = string.IsNullOrEmpty(_eventText) ? null : _eventText;
+        _page = 1;
+        _expanded.Clear();
+    }
+
+    private Task<PagedResult<AuditLogItem>> LoadAsync(CancellationToken ct) =>
+        Audit.ListAsync(new AuditLogQuery { From = _from, To = _to, EventType = _event, Page = _page }, ct);
+
+    private void Toggle(long id)
+    {
+        if (!_expanded.Remove(id)) { _expanded.Add(id); }
+    }
+}

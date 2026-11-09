@@ -1,0 +1,277 @@
+@page "/admin/roles/new"
+@page "/admin/roles/{Id:guid}"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.AccessManagement.Role.View)]
+@inject IRolesApi Roles
+@inject ApiErrorHandler Errors
+@inject NavigationManager Nav
+@inject IToastService Toasts
+@inject AuthenticationStateProvider Auth
+
+<PageTitle>@(IsNew ? "Tambah Role" : _detail?.Name ?? "Role") · GMS</PageTitle>
+<UnsavedChangesGuard HasChanges="_dirty && !_saved" />
+
+<PageHeader Title="@(IsNew ? "Tambah Role" : _detail?.Name ?? "Role")"
+            Breadcrumbs="@(new[] { new PageHeader.Crumb("Role & Hak Akses", "/admin/roles"), new PageHeader.Crumb(IsNew ? "Baru" : _detail?.Name ?? "…") })">
+    <Chips>
+        @if (_detail is { UserCount: > 0 }) { <span>Dipakai oleh @_detail.UserCount pengguna</span> }
+    </Chips>
+</PageHeader>
+
+@if (_loadProblem is not null)
+{
+    var view = ProblemPresenter.Describe(_loadProblem);
+    <ErrorState Title="@view.Title" Detail="@view.Detail" TraceId="@view.TraceId" OnRetry="@(view.Kind is ProblemKind.NotFound or ProblemKind.Forbidden ? default : EventCallback.Factory.Create(this, LoadAsync))" />
+}
+else if (_loading)
+{
+    <SkeletonRows Rows="8" Columns="6" Label="Memuat matriks hak akses" />
+}
+else
+{
+    @if (_readOnly)
+    {
+        <div class="gms-banner info" role="status">
+            <FluentIcon Value="@(new Icons.Regular.Size20.LockClosed())" Color="Color.Neutral" />
+            <div class="gms-banner-body"><p>@(_detail?.IsSystem == true ? "Role sistem tidak dapat diubah." : "Anda hanya dapat melihat role ini.")</p></div>
+        </div>
+    }
+
+    <FormSummary Errors="_problem?.Errors" Labels="_labels" />
+    @if (_problem is not null && _problem.Errors is null)
+    {
+        <ProblemBanner Problem="_problem" OnReload="LoadAsync" />
+    }
+
+    <form class="gms-form" @onsubmit="OpenSummary" @onsubmit:preventDefault novalidate>
+        <div class="gms-toolbar">
+            <div class="gms-field">
+                <label for="r-name">Nama <span class="gms-required">wajib</span></label>
+                <input id="r-name" value="@_name" maxlength="100" disabled="@_readOnly" @oninput="e => { _name = e.Value?.ToString() ?? string.Empty; _dirty = true; }" />
+            </div>
+            <div class="gms-field" style="flex:1">
+                <label for="r-desc">Deskripsi</label>
+                <input id="r-desc" value="@_description" maxlength="250" disabled="@_readOnly" @oninput="e => { _description = e.Value?.ToString() ?? string.Empty; _dirty = true; }" />
+            </div>
+            <div class="gms-field">
+                <label for="r-search">Cari resource</label>
+                <input id="r-search" type="search" value="@_filter" @oninput="e => _filter = e.Value?.ToString() ?? string.Empty" />
+            </div>
+        </div>
+
+        <p aria-live="polite"><strong>Terpilih: @_selected.Count permission</strong></p>
+
+        <div class="gms-matrix-wrap">
+            <table class="gms-table compact gms-perm">
+                <caption class="gms-sr-only">Matriks hak akses per resource dan aksi</caption>
+                <thead>
+                    <tr>
+                        <th scope="col" style="text-align:start">Resource</th>
+                        @foreach (var action in _actions)
+                        {
+                            <th scope="col">@ActionLabel(action)</th>
+                        }
+                        <th scope="col">Semua</th>
+                    </tr>
+                </thead>
+                @foreach (var group in Groups())
+                {
+                    <tbody>
+                        <tr class="gms-groupheader">
+                            <th scope="colgroup" colspan="@(_actions.Count + 2)">
+                                @group.Key
+                                @if (group.All(r => !r.Assignable))
+                                {
+                                    <span><FluentIcon Value="@(new Icons.Regular.Size16.LockClosed())" Color="Color.Neutral" /> Hanya Administrator (tidak dapat diberikan)</span>
+                                }
+                                else if (!_readOnly)
+                                {
+                                    <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Hanya baca untuk {group.Key}")" OnClick="() => ReadOnlyGroup(group)">Hanya baca</FluentButton>
+                                }
+                            </th>
+                        </tr>
+                        @foreach (var row in group)
+                        {
+                            <tr>
+                                <th scope="row">@row.Resource</th>
+                                @foreach (var action in _actions)
+                                {
+                                    <td>
+                                        @if (row.ByAction.TryGetValue(action, out var item))
+                                        {
+                                            var key = item.Key;
+                                            <input type="checkbox" checked="@_selected.Contains(key)" disabled="@(_readOnly || !item.IsAssignable)"
+                                                   aria-label="@($"{row.Resource}, {ActionLabel(action)}")" @onchange="e => Toggle(key, (bool)e.Value!)" />
+                                        }
+                                        else
+                                        {
+                                            <span class="gms-na" aria-hidden="true">–</span>
+                                        }
+                                    </td>
+                                }
+                                <td>
+                                    <input type="checkbox" checked="@PermissionMatrixLogic.IsRowFull(_selected, row)" disabled="@(_readOnly || !row.Assignable)"
+                                           aria-label="@($"{row.Resource}, semua aksi")" @onchange="e => SetRow(row, (bool)e.Value!)" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                }
+            </table>
+        </div>
+
+        <div class="gms-formactions">
+            <FluentAnchor Href="/admin/roles" Appearance="Appearance.Neutral">@(_readOnly ? "Kembali" : "Batal")</FluentAnchor>
+            @if (!_readOnly)
+            {
+                <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="@(_saving || _catalog.Count == 0)">Simpan</FluentButton>
+            }
+        </div>
+    </form>
+}
+
+<ReasonDialog Open="_summaryOpen" OpenChanged="o => _summaryOpen = o" ShowReason="false" Danger="false" ConfirmText="Simpan"
+              Title="Simpan perubahan role?" Description="@SummaryText" OnConfirm="SaveAsync" />
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private static readonly IReadOnlyDictionary<string, string> _labels = new Dictionary<string, string>
+    {
+        ["name"] = "Nama", ["permissionKeys"] = "Hak akses",
+    };
+
+    private bool IsNew => Id is null;
+    private RoleDetail? _detail;
+    private IReadOnlyList<PermissionItem> _catalog = [];
+    private IReadOnlyList<PermissionRow> _rows = [];
+    private IReadOnlyList<string> _actions = [];
+    private readonly HashSet<string> _selected = [];
+    private HashSet<string> _original = [];
+    private string _name = string.Empty, _description = string.Empty, _filter = string.Empty;
+    private bool _loading = true, _saving, _dirty, _saved, _summaryOpen, _readOnly;
+    private GmsProblemDetails? _problem, _loadProblem;
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+
+    private static string ActionLabel(string action) => action switch
+    {
+        "View" => "Lihat", "Create" => "Buat", "Edit" => "Ubah", "Deactivate" => "Nonaktifkan", "Import" => "Impor", "Delete" => "Hapus",
+        "Confirm" => "Konfirmasi", "Cancel" => "Batalkan", "Allocate" => "Alokasi", "Release" => "Rilis", "Complete" => "Selesai", "Close" => "Tutup",
+        "Reopen" => "Buka lagi", "Void" => "Void", "Correct" => "Koreksi", "Adjust" => "Sesuaikan", "Print" => "Cetak", "ResetPassword" => "Reset PW",
+        "Unlock" => "Buka kunci", "EndSession" => "Akhiri sesi", "Export" => "Ekspor", _ => action,
+    };
+
+    private string SummaryText
+    {
+        get
+        {
+            var (added, removed) = PermissionMatrixLogic.Diff(_original, _selected);
+            var users = _detail?.UserCount ?? 0;
+            var scope = users > 0 ? $" Berlaku untuk {users} pengguna pada aksi berikutnya." : string.Empty;
+            return IsNew ? $"Role baru dengan {_selected.Count} permission." : $"Tambah {added}, lepas {removed} permission.{scope}";
+        }
+    }
+
+    private IEnumerable<IGrouping<string, PermissionRow>> Groups() =>
+        _rows.Where(r => string.IsNullOrWhiteSpace(_filter) || r.Resource.Contains(_filter, StringComparison.OrdinalIgnoreCase)).GroupBy(r => r.Module);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _user = (await Auth.GetAuthenticationStateAsync()).User;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _loadProblem = await Errors.RunAsync(async () =>
+        {
+            _catalog = await Roles.GetPermissionCatalogAsync();
+            _rows = PermissionMatrixLogic.Rows(_catalog);
+            _actions = PermissionMatrixLogic.Actions(_catalog);
+            if (Id is { } id)
+            {
+                Apply(await Roles.GetAsync(id));
+            }
+        });
+        _readOnly = !IsNew && (_detail?.IsSystem == true || !_user.HasPermission(Permissions.AccessManagement.Role.Edit))
+            || IsNew && !_user.HasPermission(Permissions.AccessManagement.Role.Create);
+        _loading = false;
+    }
+
+    private void Apply(RoleDetail detail)
+    {
+        _detail = detail;
+        _name = detail.Name;
+        _description = detail.Description ?? string.Empty;
+        _selected.Clear();
+        _selected.UnionWith(detail.PermissionKeys);
+        _original = [.. detail.PermissionKeys];
+        _dirty = false;
+    }
+
+    private void Toggle(string key, bool on)
+    {
+        var released = PermissionMatrixLogic.Toggle(_selected, key, on);
+        _dirty = true;
+        if (released > 0)
+        {
+            Toasts.ShowInfo("Permission lain pada baris ini ikut dilepas.");
+        }
+    }
+
+    private void SetRow(PermissionRow row, bool on)
+    {
+        PermissionMatrixLogic.SetRow(_selected, row, on);
+        _dirty = true;
+    }
+
+    private void ReadOnlyGroup(IEnumerable<PermissionRow> rows)
+    {
+        PermissionMatrixLogic.SetReadOnly(_selected, rows);
+        _dirty = true;
+    }
+
+    private void OpenSummary()
+    {
+        _problem = null;
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _problem = new GmsProblemDetails
+            {
+                Type = Gms.Shared.Problems.ProblemTypes.ValidationFailed, Status = 422, Title = "Data tidak valid.",
+                Errors = new Dictionary<string, string[]> { ["name"] = ["Nama role wajib diisi."] },
+            };
+            return;
+        }
+
+        _summaryOpen = true;
+    }
+
+    private async Task SaveAsync(string _)
+    {
+        _saving = true;
+        try
+        {
+            var request = new SaveRoleRequest(_name.Trim(), string.IsNullOrWhiteSpace(_description) ? null : _description.Trim(), _selected.Order().ToList(), _detail?.RowVersion ?? 0);
+            if (IsNew)
+            {
+                var created = await Roles.CreateAsync(request);
+                _saved = true;
+                _dirty = false;
+                StateHasChanged();
+                await Task.Yield(); // render dahulu agar penjaga perubahan tidak menghalangi navigasi
+                Toasts.ShowSuccess($"Role {created.Name} dibuat.");
+                Nav.NavigateTo($"/admin/roles/{created.Id}");
+            }
+            else
+            {
+                Apply(await Roles.UpdateAsync(Id!.Value, request));
+                Toasts.ShowSuccess("Role disimpan.");
+            }
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

@@ -1,0 +1,300 @@
+@page "/admin/users/new"
+@page "/admin/users/{Id:guid}"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.AccessManagement.User.View)]
+@using Gms.Shared.Security
+@using Gms.Web.Infrastructure.Auth
+@using Microsoft.AspNetCore.Authorization
+@inject IUsersApi Users
+@inject IRolesApi Roles
+@inject ApiErrorHandler Errors
+@inject NavigationManager Nav
+@inject IToastService Toasts
+@inject IJSRuntime JS
+@inject AuthenticationStateProvider Auth
+
+<PageTitle>@(IsNew ? "Tambah Pengguna" : "Ubah Pengguna") · GMS</PageTitle>
+<UnsavedChangesGuard HasChanges="_dirty && !_saved" />
+
+<PageHeader Title="@(IsNew ? "Tambah Pengguna" : _detail?.UserName ?? "Pengguna")"
+            Breadcrumbs="@(new[] { new PageHeader.Crumb("Pengguna", "/admin/users"), new PageHeader.Crumb(IsNew ? "Baru" : _detail?.UserName ?? "…") })">
+    <Chips>
+        @if (_detail is not null) { <StatusChip Value="@_detail.Status" /> }
+    </Chips>
+</PageHeader>
+
+@if (_tempPassword is not null)
+{
+    <div class="gms-banner info" role="status">
+        <div>
+            <p>Password sementara — <strong>catat sekarang, tidak ditampilkan lagi</strong>:</p>
+            <p><code class="gms-temp" id="temp-password">@_tempPassword</code>
+               <FluentButton Appearance="Appearance.Neutral" OnClick="() => CopyAsync(_tempPassword)">Salin</FluentButton>
+               <FluentButton Appearance="Appearance.Lightweight" OnClick="() => _tempPassword = null">Tutup</FluentButton></p>
+            <p class="gms-sr-only" aria-live="polite">@_copyNote</p>
+        </div>
+    </div>
+}
+
+@if (_loadProblem is not null)
+{
+    var view = ProblemPresenter.Describe(_loadProblem);
+    <ErrorState Title="@view.Title" Detail="@view.Detail" TraceId="@view.TraceId" OnRetry="@(view.Kind is ProblemKind.NotFound or ProblemKind.Forbidden ? default : EventCallback.Factory.Create(this, LoadAsync))" />
+}
+else if (_loading)
+{
+    <SkeletonRows Rows="5" Columns="2" Label="Memuat pengguna" />
+}
+else
+{
+    <div class="gms-twocol">
+        <section class="gms-card" aria-labelledby="user-data">
+            <h2 id="user-data">Data Pengguna</h2>
+            <FormSummary Errors="_problem?.Errors" Labels="_labels" />
+            @if (_problem is not null && _problem.Errors is null)
+            {
+                <ProblemBanner Problem="_problem" OnReload="LoadAsync" />
+            }
+
+            <form class="gms-form" @onsubmit="SaveAsync" @onsubmit:preventDefault novalidate>
+                <label for="u-name">Username @if (IsNew) { <span class="gms-required">wajib</span> }</label>
+                <input id="u-name" value="@_userName" readonly="@(!IsNew)" disabled="@(!IsNew)" autocomplete="off" maxlength="50"
+                       aria-describedby="@(IsNew ? null : "u-name-hint")" @oninput="e => { _userName = e.Value?.ToString() ?? string.Empty; _dirty = true; }" />
+                @if (!IsNew) { <small id="u-name-hint">Username tidak dapat diubah.</small> }
+
+                <label for="u-full">Nama lengkap <span class="gms-required">wajib</span></label>
+                <input id="u-full" value="@_fullName" maxlength="100" autocomplete="off" @oninput="e => { _fullName = e.Value?.ToString() ?? string.Empty; _dirty = true; }" />
+
+                <label for="u-role">Role <span class="gms-required">wajib</span></label>
+                <select id="u-role" disabled="@(!_canEdit)" @onchange="e => { _roleId = Guid.TryParse(e.Value?.ToString(), out var g) ? g : Guid.Empty; _dirty = true; }">
+                    <option value="">Pilih role…</option>
+                    @foreach (var role in _roles)
+                    {
+                        <option value="@role.Id" selected="@(_roleId == role.Id)">@role.Name</option>
+                    }
+                </select>
+
+                @if (IsNew)
+                {
+                    <label for="u-pass">Password awal <span class="gms-required">wajib</span></label>
+                    <div class="gms-inline">
+                        <input id="u-pass" type="text" value="@_password" autocomplete="off" aria-describedby="u-pass-hint" @oninput="e => { _password = e.Value?.ToString() ?? string.Empty; _dirty = true; }" />
+                        <FluentButton Appearance="Appearance.Neutral" OnClick="Generate">Buat otomatis</FluentButton>
+                        <FluentButton Appearance="Appearance.Neutral" Disabled="@(_password.Length == 0)" OnClick="() => CopyAsync(_password)">Salin</FluentButton>
+                    </div>
+                    <small id="u-pass-hint">Pengguna wajib mengganti password saat login pertama.</small>
+                    <ul class="gms-rules" aria-live="polite">
+                        <li class="@(_password.Length >= 8 ? "gms-ok" : "gms-bad")"><FluentIcon Value="@Rule(_password.Length >= 8)" Color="Color.Neutral" /> Minimal 8 karakter</li>
+                        <li class="@(_password.Any(char.IsLetter) ? "gms-ok" : "gms-bad")"><FluentIcon Value="@Rule(_password.Any(char.IsLetter))" Color="Color.Neutral" /> Ada huruf</li>
+                        <li class="@(_password.Any(char.IsDigit) ? "gms-ok" : "gms-bad")"><FluentIcon Value="@Rule(_password.Any(char.IsDigit))" Color="Color.Neutral" /> Ada angka</li>
+                    </ul>
+                }
+
+                <div class="gms-formactions">
+                    <FluentAnchor Href="/admin/users" Appearance="Appearance.Neutral">Batal</FluentAnchor>
+                    @if (_canEdit)
+                    {
+                        <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="_saving">
+                            @if (_saving) { <FluentProgressRing Width="16px" Style="margin-inline-end:6px" /> }
+                            Simpan
+                        </FluentButton>
+                    }
+                </div>
+            </form>
+        </section>
+
+        @if (_detail is not null)
+        {
+            <aside class="gms-card" aria-labelledby="user-status">
+                <h2 id="user-status">Status Akun</h2>
+                <dl class="gms-dl">
+                    <dt>Login terakhir</dt><dd>@IdFormat.DateTime(_detail.LastLoginAt)</dd>
+                    <dt>Sesi aktif</dt><dd>@(_detail.HasActiveSession ? $"Ya · {_detail.ActiveSessionIp ?? "IP tidak diketahui"}" : "Tidak")</dd>
+                    <dt>Gagal login</dt><dd>@_detail.FailedLoginCount</dd>
+                    @if (_detail.LockedUntil is { } until) { <dt>Terkunci hingga</dt><dd>@IdFormat.DateTime(until)</dd> }
+                </dl>
+                <div class="gms-stack">
+                    @if (_user.HasPermission(Permissions.AccessManagement.User.ResetPassword))
+                    {
+                        <FluentButton Appearance="Appearance.Neutral" OnClick="() => _resetOpen = true">Reset Password</FluentButton>
+                    }
+                    @if (_detail.Status == UserStatus.Locked && _user.HasPermission(Permissions.AccessManagement.User.Unlock))
+                    {
+                        <FluentButton Appearance="Appearance.Neutral" OnClick="() => _confirm = Confirm.Unlock">Buka Kunci</FluentButton>
+                    }
+                    @if (_detail.HasActiveSession && _user.HasPermission(Permissions.AccessManagement.User.EndSession))
+                    {
+                        <FluentButton Appearance="Appearance.Neutral" OnClick="() => _confirm = Confirm.EndSession">Akhiri Sesi</FluentButton>
+                    }
+                    @if (_user.HasPermission(Permissions.AccessManagement.User.Deactivate))
+                    {
+                        var blocked = _detail.Status != UserStatus.Inactive && (_detail.IsLastActiveAdministrator || _detail.Id == _selfId);
+                        <FluentButton Appearance="Appearance.Neutral" Disabled="blocked" aria-describedby="@(blocked ? "deact-why" : null)"
+                                      OnClick="() => _confirm = _detail.Status == UserStatus.Inactive ? Confirm.Activate : Confirm.Deactivate">
+                            @(_detail.Status == UserStatus.Inactive ? "Aktifkan" : "Nonaktifkan")
+                        </FluentButton>
+                        @if (blocked)
+                        {
+                            <small id="deact-why">@(_detail.Id == _selfId ? "Anda tidak dapat menonaktifkan diri sendiri." : "Administrator aktif terakhir tidak dapat dinonaktifkan.")</small>
+                        }
+                    }
+                </div>
+            </aside>
+        }
+    </div>
+}
+
+<ReasonDialog Open="_confirm is not null" OpenChanged="o => { if (!o) _confirm = null; }" ShowReason="false"
+              Title="@ConfirmTitle" Description="@ConfirmDescription" ConfirmText="@ConfirmText" Danger="@(_confirm is Confirm.Deactivate or Confirm.EndSession)"
+              OnConfirm="RunConfirmAsync" />
+
+<ReasonDialog Open="_resetOpen" OpenChanged="o => { if (!o) { _resetOpen = false; _resetManual = string.Empty; } }" ShowReason="false"
+              Title="@($"Reset password {_detail?.UserName}")" Description="Pengguna wajib mengganti password saat login berikutnya." ConfirmText="Reset" Danger="false"
+              CanConfirm="@(_resetManual.Length == 0 || _resetManual.Length >= 8)" OnConfirm="ResetAsync">
+    <div class="gms-form">
+        <label for="reset-pass">Password baru (kosongkan untuk dibuat otomatis)</label>
+        <input id="reset-pass" type="text" autocomplete="off" value="@_resetManual" @oninput="e => _resetManual = e.Value?.ToString() ?? string.Empty" />
+    </div>
+</ReasonDialog>
+
+@code {
+    private enum Confirm { Unlock, EndSession, Deactivate, Activate }
+
+    [Parameter] public Guid? Id { get; set; }
+
+    private static readonly IReadOnlyDictionary<string, string> _labels = new Dictionary<string, string>
+    {
+        ["userName"] = "Username", ["fullName"] = "Nama lengkap", ["roleId"] = "Role", ["initialPassword"] = "Password awal",
+    };
+
+    private bool IsNew => Id is null;
+    private UserDetail? _detail;
+    private IReadOnlyList<RoleListItem> _roles = [];
+    private string _userName = string.Empty, _fullName = string.Empty, _password = string.Empty, _resetManual = string.Empty;
+    private Guid _roleId;
+    private bool _loading = true, _saving, _dirty, _saved, _resetOpen, _canEdit;
+    private GmsProblemDetails? _problem, _loadProblem;
+    private Confirm? _confirm;
+    private string? _tempPassword, _copyNote;
+    private Guid? _selfId;
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+
+    private static Icon Rule(bool ok) => ok ? new Icons.Regular.Size16.CheckmarkCircle() : new Icons.Regular.Size16.DismissCircle();
+
+    private string ConfirmTitle => _confirm switch
+    {
+        Confirm.Unlock => $"Buka kunci {_detail?.UserName}?",
+        Confirm.EndSession => $"Akhiri sesi {_detail?.UserName}?",
+        Confirm.Deactivate => $"Nonaktifkan {_detail?.UserName}?",
+        _ => $"Aktifkan {_detail?.UserName}?",
+    };
+
+    private string ConfirmDescription => _confirm switch
+    {
+        Confirm.Unlock => "Pengguna dapat login kembali dan hitungan gagal login diatur ulang.",
+        Confirm.EndSession => "Pengguna akan keluar pada aksi berikutnya.",
+        Confirm.Deactivate => "Pengguna tidak dapat login dan sesi aktifnya berakhir. Data historis tetap tersimpan.",
+        _ => "Pengguna dapat login kembali.",
+    };
+
+    private string ConfirmText => _confirm switch { Confirm.Unlock => "Buka kunci", Confirm.EndSession => "Akhiri sesi", Confirm.Deactivate => "Nonaktifkan", _ => "Aktifkan" };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _user = (await Auth.GetAuthenticationStateAsync()).User;
+        _selfId = Guid.TryParse(_user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var self) ? self : null;
+        _canEdit = _user.HasPermission(IsNew ? Permissions.AccessManagement.User.Create : Permissions.AccessManagement.User.Edit);
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _loadProblem = null;
+        _loadProblem = await Errors.RunAsync(async () =>
+        {
+            _roles = await Roles.ListAsync();
+            if (Id is { } id)
+            {
+                Apply(await Users.GetAsync(id));
+            }
+        });
+        _loading = false;
+    }
+
+    private void Apply(UserDetail detail)
+    {
+        _detail = detail;
+        _userName = detail.UserName;
+        _fullName = detail.FullName;
+        _roleId = detail.RoleId;
+        _dirty = false;
+    }
+
+    private void Generate()
+    {
+        _password = "Gms-" + Guid.NewGuid().ToString("N")[..8] + "9";
+        _dirty = true;
+    }
+
+    private async Task CopyAsync(string text)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", text);
+            _copyNote = "Disalin ke papan klip.";
+        }
+        catch (JSException)
+        {
+            _copyNote = "Gagal menyalin. Salin secara manual.";
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_saving) { return; }
+        _saving = true;
+        _problem = null;
+        _problem = await Errors.RunAsync(async () =>
+        {
+            if (IsNew)
+            {
+                var created = await Users.CreateAsync(new CreateUserRequest(_userName.Trim(), _fullName.Trim(), _roleId, _password));
+                _saved = true;
+                _dirty = false;
+                StateHasChanged();
+                await Task.Yield(); // beri kesempatan render agar penjaga perubahan melihat status tersimpan sebelum navigasi
+                Toasts.ShowSuccess($"Pengguna {created.UserName} dibuat.");
+                Nav.NavigateTo($"/admin/users/{created.Id}");
+            }
+            else
+            {
+                Apply(await Users.UpdateAsync(Id!.Value, new UpdateUserRequest(_fullName.Trim(), _roleId, _detail!.RowVersion)));
+                Toasts.ShowSuccess("Perubahan disimpan.");
+            }
+        });
+        _saving = false;
+    }
+
+    private async Task RunConfirmAsync(string _)
+    {
+        var action = _confirm!.Value;
+        switch (action)
+        {
+            case Confirm.Unlock: await Users.UnlockAsync(Id!.Value); Toasts.ShowSuccess("Kunci dibuka."); break;
+            case Confirm.EndSession: await Users.EndSessionAsync(Id!.Value); Toasts.ShowSuccess("Sesi diakhiri."); break;
+            default:
+                await Users.SetActiveAsync(Id!.Value, action == Confirm.Activate, _detail!.RowVersion);
+                Toasts.ShowSuccess(action == Confirm.Activate ? "Pengguna diaktifkan." : "Pengguna dinonaktifkan.");
+                break;
+        }
+
+        Apply(await Users.GetAsync(Id!.Value));
+    }
+
+    private async Task ResetAsync(string _)
+    {
+        var response = await Users.ResetPasswordAsync(Id!.Value, new ResetPasswordRequest(_resetManual.Length == 0 ? null : _resetManual));
+        _tempPassword = response.TemporaryPassword; // dialog menutup; password tampil sekali di banner halaman
+        _copyNote = null;
+    }
+}

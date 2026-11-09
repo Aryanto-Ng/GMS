@@ -56,9 +56,9 @@ public static class NavCatalog
         ], CollapsedByDefault: true),
         new("Administrasi",
         [
-            new("Pengguna", "/admin/users", Permissions.AccessManagement.User.View, I<Icons.Regular.Size20.Person>()),
-            new("Role & Hak Akses", "/admin/roles", Permissions.AccessManagement.Role.View, I<Icons.Regular.Size20.ShieldKeyhole>()),
-            new("Audit Log", "/admin/audit", Permissions.AccessManagement.AuditLog.View, I<Icons.Regular.Size20.ClipboardBulletListLtr>()),
+            new("Pengguna", "/admin/users", Permissions.AccessManagement.User.View, I<Icons.Regular.Size20.Person>(), Enabled: true),
+            new("Role & Hak Akses", "/admin/roles", Permissions.AccessManagement.Role.View, I<Icons.Regular.Size20.ShieldKeyhole>(), Enabled: true),
+            new("Audit Log", "/admin/audit", Permissions.AccessManagement.AuditLog.View, I<Icons.Regular.Size20.ClipboardBulletListLtr>(), Enabled: true),
         ]),
     ];
 

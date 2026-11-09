@@ -21,6 +21,9 @@ public sealed record StatusPresentation(string Label, string Tone, Icon Icon, st
     {
         PoStatus s => ForPo(s),
         WoStatus s => ForWo(s),
+        UserStatus.Active => new("Aktif", "success", Check),
+        UserStatus.Inactive => new("Nonaktif", "neutral", Cancel),
+        UserStatus.Locked => new("Terkunci", "danger", Lock, "Terlalu banyak percobaan login. Buka kunci atau tunggu hingga waktu berakhir."),
         DocStatus.Active => new("Aktif", "success", Check),
         DocStatus.Voided => new("Voided", "neutral", Cancel, "Dokumen dibatalkan; tidak dihitung.", Strike: true),
         PayrollStatus.Open => new("Open", "info", Info),

@@ -1,0 +1,81 @@
+@page "/admin/roles"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.AccessManagement.Role.View)]
+@inject IRolesApi Roles
+@inject IToastService Toasts
+@inject AuthenticationStateProvider Auth
+
+<PageTitle>Role &amp; Hak Akses · GMS</PageTitle>
+
+<PageHeader Title="Role &amp; Hak Akses" Subtitle="@(_count is null ? null : $"{_count} role")">
+    <Actions>
+        @if (_user.HasPermission(Permissions.AccessManagement.Role.Create))
+        {
+            <FluentAnchor Href="/admin/roles/new" Appearance="Appearance.Accent">Tambah Role</FluentAnchor>
+        }
+    </Actions>
+</PageHeader>
+
+<AsyncContent T="IReadOnlyList<RoleListItem>" Key="_version" Loader="LoadAsync" IsEmpty="r => r.Count == 0">
+    <EmptyContent>
+        <EmptyState Title="Belum ada role" ActionText="Tambah Role" ActionHref="/admin/roles/new" />
+    </EmptyContent>
+    <ChildContent Context="roles">
+        <table class="gms-table">
+            <caption class="gms-sr-only">Daftar role</caption>
+            <thead>
+                <tr><th scope="col">Nama</th><th scope="col">Deskripsi</th><th scope="col" class="num">Pengguna</th><th scope="col" class="num">Permission</th><th scope="col">Aksi</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var role in roles)
+                {
+                    <tr>
+                        <th scope="row">
+                            <a href="/admin/roles/@role.Id">@role.Name</a>
+                            @if (role.IsSystem) { <FluentIcon Value="@(new Icons.Regular.Size16.LockClosed())" Color="Color.Neutral" Title="Role sistem" /> <span class="gms-sr-only">(role sistem)</span> }
+                        </th>
+                        <td>@role.Description</td>
+                        <td class="num">@role.UserCount</td>
+                        <td class="num">@role.PermissionCount</td>
+                        <td class="gms-rowactions">
+                            <FluentAnchor Href="@($"/admin/roles/{role.Id}")" Appearance="Appearance.Lightweight" aria-label="@($"{(role.IsSystem ? "Lihat" : "Ubah")} {role.Name}")">@(role.IsSystem ? "Lihat" : "Ubah")</FluentAnchor>
+                            @if (_user.HasPermission(Permissions.AccessManagement.Role.Delete) && !role.IsSystem)
+                            {
+                                var inUse = role.UserCount > 0;
+                                <FluentButton Appearance="Appearance.Lightweight" Disabled="inUse" aria-label="@($"Hapus {role.Name}")" Title="@(inUse ? $"Dipakai oleh {role.UserCount} pengguna" : null)"
+                                              OnClick="() => _deleting = role">Hapus</FluentButton>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </ChildContent>
+</AsyncContent>
+
+<ReasonDialog Open="_deleting is not null" OpenChanged="o => { if (!o) _deleting = null; }" ShowReason="false"
+              Title="@($"Hapus role {_deleting?.Name}?")" Description="Role yang dihapus tidak dapat dikembalikan." ConfirmText="Hapus" OnConfirm="DeleteAsync" />
+
+@code {
+    private int _version;
+    private int? _count;
+    private RoleListItem? _deleting;
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+
+    protected override async Task OnInitializedAsync() => _user = (await Auth.GetAuthenticationStateAsync()).User;
+
+    private async Task<IReadOnlyList<RoleListItem>> LoadAsync(CancellationToken ct)
+    {
+        var list = await Roles.ListAsync(ct);
+        _count = list.Count;
+        await InvokeAsync(StateHasChanged);
+        return list;
+    }
+
+    private async Task DeleteAsync(string _)
+    {
+        var role = _deleting!;
+        await Roles.DeleteAsync(role.Id);
+        Toasts.ShowSuccess($"Role {role.Name} dihapus.");
+        _version++;
+    }
+}
