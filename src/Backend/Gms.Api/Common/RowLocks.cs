@@ -37,6 +37,14 @@ public static class RowLocks
         }
     }
 
+    /// <summary>Mengunci satu baris work_orders <c>FOR UPDATE</c> (urutan kunci ke-2, sebelum po_lines).</summary>
+    public static async Task LockWorkOrderAsync(GmsDbContext db, Guid woId, CancellationToken ct)
+    {
+        var command = Command(db, "SELECT id FROM work_orders WHERE id = @id FOR UPDATE");
+        command.Parameters.Add(new NpgsqlParameter("id", woId));
+        await RunAsync(command, ct);
+    }
+
     /// <summary>Mengunci baris po_lines <c>FOR UPDATE</c> berurutan menurut id.</summary>
     public static async Task LockPoLinesAsync(GmsDbContext db, IReadOnlyCollection<Guid> ids, CancellationToken ct)
     {

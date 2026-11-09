@@ -9,6 +9,7 @@ using Gms.Api.Features.Access.Seeding;
 using Gms.Api.Features.Access.Users;
 using Gms.Api.Features.Master;
 using Gms.Api.Features.Sales;
+using Gms.Api.Features.WorkOrders;
 using Gms.Api.Security;
 using Gms.Infrastructure.Identity;
 using Gms.Infrastructure.Persistence;
@@ -86,6 +87,7 @@ public static class ApiHost
         }
 
         services.AddScoped<PoQueries>();
+        services.AddScoped<WoQueries>();
         services.AddScoped<MasterContext>();
         services.AddScoped<NumberSequences>();
 
@@ -133,5 +135,6 @@ public static class ApiHost
         AuditEndpoints.Map(app);
         MasterEndpoints.Map(app);
         PoEndpoints.Map(app);
+        WoEndpoints.Map(app);
     }
 }

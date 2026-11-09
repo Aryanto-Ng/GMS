@@ -45,6 +45,8 @@ public static class ProblemCodes
     public const string DeliveryExceedsAllocation = "delivery.exceeds-allocation";
     public const string FgNotReady = "fg.not-ready";
     public const string WoStatusInvalid = "wo.status-invalid";
+    public const string WoQtyBelowOutput = "wo.qty-below-output";
+    public const string WoHasActivity = "wo.has-activity";
     public const string PayrollOpenPeriodExists = "payroll.open-period-exists";
     public const string PayrollNotContiguous = "payroll.not-contiguous";
     public const string PayrollStartAfterOldestOutput = "payroll.start-after-oldest-output";

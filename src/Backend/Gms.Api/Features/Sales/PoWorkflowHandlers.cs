@@ -96,19 +96,16 @@ public sealed class CancelPurchaseOrderHandler(GmsDbContext db, ICurrentUser use
             throw ProblemException.StateConflict($"PO berstatus {po.Status} tidak dapat dibatalkan.");
         }
 
-        var blockers = await queries.CancelBlockersAsync(id, ct);
-        if (blockers.Count > 0)
-        {
-            throw ProblemException.Rule("po.cancel-blocked",
-                "PO tidak dapat dibatalkan karena sudah ada pengiriman atau WO aktif. Batalkan/tutup terlebih dahulu, atau turunkan Qty melalui revisi.",
-                blockers.Select(b => new RuleViolation("po.cancel-blocked", b, null, null, b)).ToList());
-        }
+        await EnsureNotBlockedAsync(id, ct);
 
         var now = time.GetUtcNow();
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
         var lineIds = await db.PoLines.AsNoTracking().Where(l => l.PoId == id).Select(l => l.Id).ToListAsync(ct);
         await RowLocks.LockPoLinesAsync(db, lineIds, ct);
+
+        // Periksa ulang SETELAH kunci: WO/pengiriman yang dibuat bersamaan (yang juga mengunci baris PO) tidak boleh terlewat.
+        await EnsureNotBlockedAsync(id, ct);
         var lines = await db.PoLines.Where(l => l.PoId == id).ToListAsync(ct);
 
         var allocated = lines.Where(l => l.AllocatedQty > 0).ToList();
@@ -140,5 +137,16 @@ public sealed class CancelPurchaseOrderHandler(GmsDbContext db, ICurrentUser use
         await tx.CommitAsync(ct);
 
         return await queries.GetDetailAsync(id, ct);
+    }
+
+    private async Task EnsureNotBlockedAsync(Guid id, CancellationToken ct)
+    {
+        var blockers = await queries.CancelBlockersAsync(id, ct);
+        if (blockers.Count > 0)
+        {
+            throw ProblemException.Rule("po.cancel-blocked",
+                "PO tidak dapat dibatalkan karena sudah ada pengiriman atau WO aktif. Batalkan/tutup terlebih dahulu, atau turunkan Qty melalui revisi.",
+                blockers.Select(b => new RuleViolation("po.cancel-blocked", b, null, null, b)).ToList());
+        }
     }
 }

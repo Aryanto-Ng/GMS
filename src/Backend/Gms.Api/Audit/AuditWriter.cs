@@ -37,6 +37,17 @@ public static class AuditEvents
     public const string PoAllocated = "PoAllocated";
     public const string PoAllocationReleased = "PoAllocationReleased";
 
+    // Work Order
+    public const string WoCreated = "WoCreated";
+    public const string WoUpdated = "WoUpdated";
+    public const string WoQuantitiesChanged = "WoQuantitiesChanged";
+    public const string WoReleased = "WoReleased";
+    public const string WoCompleted = "WoCompleted";
+    public const string WoResumed = "WoResumed";
+    public const string WoClosed = "WoClosed";
+    public const string WoReopened = "WoReopened";
+    public const string WoCancelled = "WoCancelled";
+
     // Master Data
     public const string MasterCreated = "MasterCreated";
     public const string MasterUpdated = "MasterUpdated";

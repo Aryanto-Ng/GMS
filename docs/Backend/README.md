@@ -78,6 +78,15 @@ Modul ini pertama kali memakai invarian konsistensi ADR-004. Pola yang WAJIB dii
 
 Seeder demo PO (`PoSeeder`, Order 30): 3 PO + stok awal, hanya dengan `Seed:DemoData=true`.
 
+## Pola Work Order (`Features/WorkOrders`)
+
+- **Urutan kunci aksi WO:** `RowLocks.LockWorkOrderAsync` → `LockPoLinesAsync` (id urut) → baru memuat WO (`WoFlow.LoadLockedAsync`), lalu pasang `rowVersion` klien. Output/Serah Terima WAJIB mengunci baris WO sebelum memeriksa status (supaya Complete vs input output serial; FSD E2).
+- **Dalam Produksi dihitung ulang, bukan delta:** setelah menyimpan perubahan WO/baris, panggil `PoLifecycle.RecomputeInProductionAsync(db, poLineIds, ct)` dalam transaksi yang sama (Σ max(qty − diserahterimakan, 0) untuk WO Draft/Released/InProgress/Completed). Modul Serah Terima yang mengubah `handed_over_qty` juga WAJIB memanggilnya.
+- **Batas Sisa Rencana saat WO sendiri sudah terhitung:** limit = `RemainingPlanQty + kontribusi WO ini yang sudah ada` (`WoValidation.EnsureWithinRemainingPlanAsync` dengan kamus `own`).
+- **Pembatalan PO memeriksa ulang penahan SETELAH mengunci baris** (WO yang dibuat bersamaan ikut mengunci baris PO yang sama).
+- **Snapshot** (routing, tarif Internal × size yang dipakai WO, label) dibuat dalam satu transaksi dengan perubahan status Released dan tidak pernah diubah. Tarif tidak pernah masuk DTO selain `WoTariffSnapshotDto`.
+- `WoQueries` (manual DI) menyatukan detail, progres, daftar, opsi pembuatan, dan pratinjau; `AllowedActions` = status × permission.
+
 ## Jebakan yang Sudah Ditemukan (jangan diulang)
 
 1. **Urutkan sebelum proyeksi DTO.** `OrderBy(x => x.Seq)` pada hasil `new SomeDto(...)` tidak dapat diterjemahkan EF (500). Pola yang benar: `Join → proyeksi anonim → OrderBy → Select(new Dto(...))`.
