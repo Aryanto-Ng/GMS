@@ -1,0 +1,93 @@
+@page "/work-orders"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.WorkOrder.View)]
+@inject IWorkOrdersApi Wos
+@inject AuthenticationStateProvider Auth
+
+<PageTitle>Work Order · GMS</PageTitle>
+
+<PageHeader Title="Work Order" Subtitle="@(_total is null ? null : $"{IdFormat.Qty(_total)} WO")">
+    <Actions>
+        @if (_user.HasPermission(Permissions.WorkOrder.Create)) { <FluentAnchor Href="/work-orders/new" Appearance="Appearance.Accent">Buat WO</FluentAnchor> }
+    </Actions>
+</PageHeader>
+
+<div class="gms-toolbar" role="search">
+    <div class="gms-field">
+        <label for="wo-q">Cari kode WO / PO / customer</label>
+        <input id="wo-q" type="search" value="@_q" @onchange="e => Apply(() => _q = e.Value?.ToString())" />
+    </div>
+    <div class="gms-field">
+        <label for="wo-status">Status</label>
+        <select id="wo-status" @onchange="e => Apply(() => _status = Enum.TryParse<WoStatus>(e.Value?.ToString(), out var s) ? s : null)">
+            <option value="">Semua status</option>
+            @foreach (var s in Enum.GetValues<WoStatus>()) { <option value="@s" selected="@(_status == s)">@StatusPresentation.For(s).Label</option> }
+        </select>
+    </div>
+</div>
+
+<div class="gms-chips" role="group" aria-label="Filter cepat">
+    <button type="button" class="gms-chipbtn @(_late ? "on" : null)" aria-pressed="@(_late ? "true" : "false")" @onclick="() => { _late = !_late; _page = 1; }">Terlambat</button>
+    <button type="button" class="gms-chipbtn @(_waitClose ? "on" : null)" aria-pressed="@(_waitClose ? "true" : "false")" @onclick="() => { _waitClose = !_waitClose; _page = 1; }">Menunggu Close</button>
+</div>
+
+<AsyncContent T="PagedResult<WoListItem>" Key="@($"{_page}|{_q}|{_status}|{_late}|{_waitClose}")" Loader="LoadAsync" IsEmpty="r => r.TotalCount == 0">
+    <EmptyContent>
+        <EmptyState Icon="@(new Icons.Regular.Size48.Box())" Title="@(HasFilter ? "Tidak ada WO untuk filter ini" : "Belum ada Work Order")"
+                    ActionText="@(HasFilter ? "Reset filter" : _user.HasPermission(Permissions.WorkOrder.Create) ? "Buat WO" : null)" ActionHref="@(HasFilter ? null : "/work-orders/new")" OnAction="Reset" />
+    </EmptyContent>
+    <ChildContent Context="result">
+        <table class="gms-table">
+            <caption class="gms-sr-only">Daftar Work Order</caption>
+            <thead><tr><th scope="col">Kode WO</th><th scope="col">PO</th><th scope="col">Customer</th><th scope="col">FG</th><th scope="col">Status</th><th scope="col" class="num">Qty</th><th scope="col">Progres</th><th scope="col">Target</th></tr></thead>
+            <tbody>
+                @foreach (var wo in result.Items)
+                {
+                    <tr>
+                        <th scope="row"><a href="/work-orders/@wo.Id">@wo.Code</a></th>
+                        <td><a href="/purchase-orders/@wo.PoId">@wo.PoCode</a></td><td>@wo.CustomerName</td><td>@wo.FgCode</td>
+                        <td><StatusChip Value="@wo.Status" /></td>
+                        <td class="num">@IdFormat.Qty(wo.TotalQty)</td>
+                        <td><div class="gms-stack-bar" aria-hidden="true"><span class="gms-seg success" style="width:@Math.Min(100m, wo.ProgressPercent)%"></span></div> @IdFormat.Number(wo.ProgressPercent, 1)%@(wo.ProgressPercent > 100 ? " (kelebihan)" : string.Empty)</td>
+                        <td>@IdFormat.Date(wo.TargetDate) @if (wo.IsLate) { <span class="gms-bad"><FluentIcon Value="@(new Icons.Regular.Size16.Clock())" Color="Color.Neutral" /> Terlambat</span> }</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <PagerBar Page="result.Page" PageSize="result.PageSize" TotalCount="result.TotalCount" PageChanged="p => _page = p" />
+    </ChildContent>
+</AsyncContent>
+
+@code {
+    private string? _q;
+    private WoStatus? _status;
+    private bool _late, _waitClose;
+    private int _page = 1;
+    private int? _total;
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+
+    [SupplyParameterFromQuery(Name = "terlambat")] public bool? QTerlambat { get; set; }
+
+    [SupplyParameterFromQuery(Name = "menungguClose")] public bool? QMenungguClose { get; set; }
+
+    private bool HasFilter => _q is not null || _status is not null || _late || _waitClose;
+
+    protected override async Task OnInitializedAsync() => _user = (await Auth.GetAuthenticationStateAsync()).User;
+
+    protected override void OnParametersSet()
+    {
+        if (QTerlambat == true) { _late = true; }
+        if (QMenungguClose == true) { _waitClose = true; }
+    }
+
+    private async Task<PagedResult<WoListItem>> LoadAsync(CancellationToken ct)
+    {
+        var result = await Wos.ListAsync(new WoListQuery { Page = _page, Q = _q, Status = _status, Terlambat = _late, MenungguClose = _waitClose }, ct);
+        _total = result.TotalCount;
+        await InvokeAsync(StateHasChanged);
+        return result;
+    }
+
+    private void Apply(Action change) { change(); _page = 1; }
+
+    private void Reset() { _q = null; _status = null; _late = _waitClose = false; _page = 1; }
+}

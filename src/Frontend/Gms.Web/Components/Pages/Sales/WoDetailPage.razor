@@ -1,0 +1,246 @@
+@page "/work-orders/{Id:guid}"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.WorkOrder.View)]
+@inject IWorkOrdersApi Wos
+@inject ApiErrorHandler Errors
+@inject AuthenticationStateProvider Auth
+@inject IToastService Toasts
+
+<PageTitle>@(_wo?.Code ?? "WO") · GMS</PageTitle>
+
+@if (_loadProblem is not null)
+{
+    var view = ProblemPresenter.Describe(_loadProblem);
+    <PageHeader Title="WO" Breadcrumbs="@(new[] { new PageHeader.Crumb("Work Order", "/work-orders"), new PageHeader.Crumb("…") })" />
+    <ErrorState Title="@view.Title" Detail="@view.Detail" TraceId="@view.TraceId" OnRetry="@(view.Kind is ProblemKind.NotFound or ProblemKind.Forbidden ? default : EventCallback.Factory.Create(this, LoadAsync))" />
+}
+else if (_wo is null)
+{
+    <SkeletonRows Rows="6" Columns="4" Label="Memuat WO" />
+}
+else
+{
+    <PageHeader Title="@_wo.Code" Subtitle="@($"{_wo.PoCode} · {_wo.CustomerName} · {_wo.FgCode}")" Breadcrumbs="@(new[] { new PageHeader.Crumb("Work Order", "/work-orders"), new PageHeader.Crumb(_wo.Code) })">
+        <Chips><StatusChip Value="@_wo.Status" /></Chips>
+        <Actions>
+            @if (Can(WoActions.Edit, Permissions.WorkOrder.Edit)) { <FluentAnchor Href="@($"/work-orders/{_wo.Id}/edit")" Appearance="Appearance.Neutral">Ubah</FluentAnchor> }
+            @if (Can(WoActions.EditQuantities, Permissions.WorkOrder.Edit)) { <FluentButton Appearance="Appearance.Neutral" OnClick="OpenQty">Ubah Qty</FluentButton> }
+            @if (Can(WoActions.Release, Permissions.WorkOrder.Release)) { <FluentButton Appearance="Appearance.Accent" OnClick="() => OpenAsync(Act.Release)">Rilis</FluentButton> }
+            @if (Can(WoActions.Complete, Permissions.WorkOrder.Complete)) { <FluentButton Appearance="Appearance.Accent" OnClick="() => OpenAsync(Act.Complete)">Tandai Selesai</FluentButton> }
+            @if (Can(WoActions.Resume, Permissions.WorkOrder.Complete)) { <FluentButton Appearance="Appearance.Neutral" OnClick="() => OpenAsync(Act.Resume)">Buka Kembali</FluentButton> }
+            @if (Can(WoActions.Close, Permissions.WorkOrder.Close)) { <FluentButton Appearance="Appearance.Accent" OnClick="() => OpenAsync(Act.Close)">Close</FluentButton> }
+            @if (Can(WoActions.Reopen, Permissions.WorkOrder.Reopen)) { <FluentButton Appearance="Appearance.Neutral" OnClick="() => OpenAsync(Act.Reopen)">Reopen</FluentButton> }
+            @if (Can(WoActions.Cancel, Permissions.WorkOrder.Cancel)) { <FluentButton Appearance="Appearance.Neutral" OnClick="() => OpenAsync(Act.Cancel)">Batalkan</FluentButton> }
+        </Actions>
+    </PageHeader>
+
+    @if (_wo.Status == WoStatus.Cancelled && !string.IsNullOrEmpty(_wo.CancelReason))
+    {
+        <div class="gms-banner warning" role="status"><div class="gms-banner-body"><p>Dibatalkan: @_wo.CancelReason</p></div></div>
+    }
+
+    <div class="gms-welcome" aria-label="Ringkasan">
+        <MetricCard Label="Qty WO" Value="@IdFormat.Qty(_wo.TotalQty)" />
+        <MetricCard Label="Progres" Value="@($"{IdFormat.Number(_wo.ProgressPercent, 1)}%")" />
+        <MetricCard Label="Diserahterimakan" Value="@IdFormat.Qty(_wo.HandedOverQty)" />
+        <MetricCard Label="Belum diserahterimakan" Value="@IdFormat.Qty(_wo.UnhandedQty)" />
+        <MetricCard Label="Sisa di vendor" Value="@IdFormat.Qty(_wo.OutstandingAtVendorQty)" />
+    </div>
+    <p class="gms-note">Mulai @IdFormat.Date(_wo.StartDate) · Target @IdFormat.Date(_wo.TargetDate)@(string.IsNullOrEmpty(_wo.Notes) ? string.Empty : $" · {_wo.Notes}")</p>
+
+    <div role="tablist" aria-label="Bagian WO" class="gms-tabs">
+        @foreach (var tab in Tabs())
+        {
+            <button type="button" role="tab" aria-selected="@(_tab == tab.Tab ? "true" : "false")" class="@(_tab == tab.Tab ? "active" : null)" @onclick="() => _tab = tab.Tab">@tab.Label</button>
+        }
+    </div>
+
+    @switch (_tab)
+    {
+        case Tab.Progress:
+            <AsyncContent T="WoProgressDto" Key="@($"{_wo.RowVersion}")" Loader="ct => Wos.GetProgressAsync(_wo.Id, ct)">
+                <ChildContent Context="progress"><ProgressMatrix Data="progress" /></ChildContent>
+            </AsyncContent>
+            break;
+        case Tab.Lines:
+            <table class="gms-table compact" role="tabpanel">
+                <caption class="gms-sr-only">Baris WO</caption>
+                <thead><tr><th scope="col">Color</th><th scope="col">Size</th><th scope="col" class="num">Qty WO</th><th scope="col" class="num">Diserahterimakan</th><th scope="col" class="num">Sisa Rencana PO</th></tr></thead>
+                <tbody>
+                    @foreach (var l in _wo.Lines)
+                    {
+                        <tr><th scope="row">@l.ColorSize.ColorName</th><td>@l.ColorSize.SizeCode</td><td class="num">@IdFormat.Qty(l.Qty)</td><td class="num">@IdFormat.Qty(l.HandedOverQty)</td><td class="num">@IdFormat.Qty(l.PoRemainingPlanQty)</td></tr>
+                    }
+                </tbody>
+            </table>
+            break;
+        case Tab.Tariff:
+            <AsyncContent T="WoTariffSnapshotDto" Key="@($"{_wo.Status}")" Loader="ct => Wos.GetTariffSnapshotAsync(_wo.Id, ct)">
+                <ChildContent Context="snap">
+                    <p class="gms-note">Snapshot saat dirilis pada @IdFormat.DateTime(snap.ReleasedAt) oleh @(snap.ReleasedByName ?? "—"). Hanya baca.</p>
+                    <table class="gms-table compact" role="tabpanel">
+                        <caption class="gms-sr-only">Snapshot tarif</caption>
+                        <thead><tr><th scope="col">Langkah</th>@foreach (var s in snap.Sizes) { <th scope="col" class="num">@s.Code</th> }</tr></thead>
+                        <tbody>
+                            @foreach (var step in snap.Steps.Where(s => s.ProcessType == ProcessType.Internal))
+                            {
+                                <tr><th scope="row">@step.Seq @step.ProcessName</th>
+                                    @foreach (var size in snap.Sizes)
+                                    {
+                                        var rate = snap.Rates.FirstOrDefault(r => r.Seq == step.Seq && r.SizeId == size.Id);
+                                        <td class="num">@(rate is null ? "—" : IdFormat.Rate(rate.Rate))</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </ChildContent>
+            </AsyncContent>
+            break;
+        default:
+            <AsyncContent T="IReadOnlyList<WoStatusHistoryItem>" Key="@($"{_wo.RowVersion}")" Loader="ct => Wos.GetStatusHistoryAsync(_wo.Id, ct)" IsEmpty="r => r.Count == 0">
+                <ChildContent Context="history">
+                    <ol class="gms-timeline" role="tabpanel">
+                        @foreach (var h in history)
+                        {
+                            <li><strong>@(h.FromStatus is null ? "Dibuat" : $"{StatusPresentation.For(h.FromStatus.Value).Label} → {StatusPresentation.For(h.ToStatus).Label}")</strong>
+                                · @IdFormat.DateTime(h.ChangedAt) · @(h.ChangedByName ?? "—")@(string.IsNullOrEmpty(h.Reason) ? string.Empty : $" · {h.Reason}")</li>
+                        }
+                    </ol>
+                </ChildContent>
+            </AsyncContent>
+            break;
+    }
+
+    <ReasonDialog Open="_act == Act.Release" OpenChanged="Closed" ShowReason="false" Danger="false" ConfirmText="Rilis WO" Title="Rilis WO?"
+                  CanConfirm="@(_release?.CanRelease == true)" OnConfirm="DoRelease">
+        @if (_release is not null)
+        {
+            <ul class="gms-readiness">
+                @foreach (var c in _release.Checks)
+                {
+                    <li class="@(c.Ok ? "gms-ok" : "gms-bad")"><FluentIcon Value="@(c.Ok ? (Icon)new Icons.Regular.Size16.CheckmarkCircle() : new Icons.Regular.Size16.DismissCircle())" Color="Color.Neutral" />
+                        <span class="gms-sr-only">@(c.Ok ? "Terpenuhi:" : "Belum terpenuhi:")</span> @c.Message
+                        @if (!c.Ok && !string.IsNullOrEmpty(c.FixTarget)) { <a href="@c.FixTarget">Perbaiki ▸</a> }</li>
+                }
+            </ul>
+            <p>Snapshot: @_release.RoutingStepCount langkah routing dan @_release.TariffCellCount sel tarif. <strong>Routing dan tarif dibekukan dan tidak dapat diubah.</strong></p>
+        }
+    </ReasonDialog>
+
+    <ReasonDialog Open="_act == Act.Complete" OpenChanged="Closed" ShowReason="false" Danger="false" ConfirmText="Tandai Selesai" Title="Tandai Selesai?"
+                  Description="@(_wo.OutstandingAtVendorQty > 0 ? $"Masih ada {IdFormat.Qty(_wo.OutstandingAtVendorQty)} pcs di vendor. Input output akan diblokir." : "Input output akan diblokir.")"
+                  OnConfirm="DoComplete" />
+
+    <ReasonDialog Open="_act == Act.Resume" OpenChanged="Closed" Danger="false" ConfirmText="Buka Kembali" Title="Buka kembali ke In Progress?"
+                  OnConfirm="DoResume" />
+
+    <ReasonDialog Open="_act == Act.Close" OpenChanged="Closed" ShowReason="false" Danger="true" ConfirmText="Close WO" Title="Close WO?"
+                  OnConfirm="DoClose">
+        @if (_close is not null)
+        {
+            <p>Dalam Produksi menjadi 0. Sisa kebutuhan @IdFormat.Qty(_close.ReturnedToPoPlanQty) pcs kembali ke Sisa Rencana PO.</p>
+            @if (_close.UnhandedCells.Count > 0)
+            {
+                <p class="gms-warn" role="status"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" /> Output belum diserahterimakan:
+                    @string.Join(", ", _close.UnhandedCells.Select(c => $"{c.ColorSize.ColorName} {c.ColorSize.SizeCode} {IdFormat.Qty(c.Qty)}"))</p>
+            }
+        }
+    </ReasonDialog>
+
+    <ReasonDialog Open="_act == Act.Reopen" OpenChanged="Closed" Danger="false" ConfirmText="Reopen WO" Title="Reopen WO?"
+                  OnConfirm="DoReopen" />
+
+    <ReasonDialog Open="_act == Act.Cancel" OpenChanged="Closed" Danger="true" ConfirmText="Batalkan WO" Title="Batalkan WO?"
+                  Description="Hanya dapat dibatalkan bila belum ada aktivitas." OnConfirm="DoCancel" />
+
+    <ReasonDialog Open="_act == Act.Qty" OpenChanged="Closed" ShowReason="false" Danger="false" ConfirmText="Simpan Qty" Title="Ubah Qty WO"
+                  Description="Batas minimum = output proses pertama; maksimum = Qty sekarang + Sisa Rencana PO (diperiksa server)."
+                  CanConfirm="@(_qty.Values.All(v => int.TryParse(v, out var n) && n >= 0))"
+                  OnConfirm="DoQty">
+        @foreach (var l in _wo.Lines)
+        {
+            <TextField Label="@($"{l.ColorSize.ColorName} · {l.ColorSize.SizeCode} (sisa rencana PO {IdFormat.Qty(l.PoRemainingPlanQty)})")" InputMode="numeric" MaxLength="7"
+                       Value="@_qty[l.PoLineId]" ValueChanged="v => _qty[l.PoLineId] = v ?? string.Empty" />
+        }
+    </ReasonDialog>
+}
+
+@code {
+    private enum Tab { Progress, Lines, Tariff, History }
+
+    private enum Act { None, Release, Complete, Resume, Close, Reopen, Cancel, Qty }
+
+    [Parameter] public Guid Id { get; set; }
+
+    private WoDto? _wo;
+    private GmsProblemDetails? _loadProblem;
+    private Tab _tab = Tab.Progress;
+    private Act _act;
+    private WoReleasePreviewDto? _release;
+    private WoClosePreviewDto? _close;
+    private readonly Dictionary<Guid, string> _qty = [];
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+
+    private bool Can(string action, string permission) => _wo is not null && _wo.AllowedActions.Contains(action) && _user.HasPermission(permission);
+
+    private IEnumerable<(Tab Tab, string Label)> Tabs()
+    {
+        yield return (Tab.Progress, "Progres");
+        yield return (Tab.Lines, "Baris");
+        if (_user.HasPermission(Permissions.WorkOrder.Tarif.View) && _wo!.ReleasedAt is not null) { yield return (Tab.Tariff, "Tarif"); }
+        yield return (Tab.History, "Riwayat");
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _user = (await Auth.GetAuthenticationStateAsync()).User;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync() => _loadProblem = await Errors.RunAsync(async () => _wo = await Wos.GetAsync(Id));
+
+    private void Closed(bool open)
+    {
+        if (!open) { _act = Act.None; }
+    }
+
+    private async Task OpenAsync(Act act)
+    {
+        _release = null;
+        _close = null;
+        var problem = await Errors.RunAsync(async () =>
+        {
+            if (act == Act.Release) { _release = await Wos.PreviewReleaseAsync(Id); }
+            if (act == Act.Close) { _close = await Wos.PreviewCloseAsync(Id); }
+        });
+        if (problem is null) { _act = act; }
+    }
+
+    private void OpenQty()
+    {
+        _qty.Clear();
+        foreach (var l in _wo!.Lines) { _qty[l.PoLineId] = l.Qty.ToString(); }
+        _act = Act.Qty;
+    }
+
+    private Task DoRelease(string _) => Run(() => Wos.ReleaseAsync(Id, new WoActionRequest(null, _wo!.RowVersion)), "WO dirilis.");
+
+    private Task DoComplete(string _) => Run(() => Wos.CompleteAsync(Id, new WoActionRequest(null, _wo!.RowVersion)), "WO ditandai selesai.");
+
+    private Task DoResume(string reason) => Run(() => Wos.ResumeAsync(Id, new WoActionRequest(reason, _wo!.RowVersion)), "WO dibuka kembali.");
+
+    private Task DoClose(string _) => Run(() => Wos.CloseAsync(Id, new WoActionRequest(null, _wo!.RowVersion)), "WO di-close.");
+
+    private Task DoReopen(string reason) => Run(() => Wos.ReopenAsync(Id, new WoActionRequest(reason, _wo!.RowVersion)), "WO dibuka kembali (Completed).");
+
+    private Task DoCancel(string reason) => Run(() => Wos.CancelAsync(Id, new WoActionRequest(reason, _wo!.RowVersion)), "WO dibatalkan.");
+
+    private Task DoQty(string _) => Run(() => Wos.UpdateQuantitiesAsync(Id,
+        new UpdateWoQuantitiesRequest(_wo!.Lines.Select(l => new SaveWoLine(l.PoLineId, int.Parse(_qty[l.PoLineId]))).ToList(), _wo.RowVersion)), "Qty WO disimpan.");
+
+    private async Task Run(Func<Task<WoDto>> action, string success)
+    {
+        _wo = await action();
+        Toasts.ShowSuccess(success);
+    }
+}

@@ -1,0 +1,68 @@
+@* Matriks Progres WO (WorkOrder-UI.md 2.3): baris = langkah routing, kolom = Color → Size. Nilai dari server; tidak dihitung ulang di klien kecuali tampilan. *@
+@if (Data.Steps.All(s => s.TotalOutput == 0 && s.SentTotal == 0))
+{
+    <p class="gms-note"><FluentIcon Value="@(new Icons.Regular.Size16.Info())" Color="Color.Neutral" /> Belum ada output.</p>
+}
+
+<div class="gms-matrix-wrap">
+    <table class="gms-table compact gms-progress-matrix">
+        <caption class="gms-sr-only">Matriks progres per langkah, Color, dan Size</caption>
+        <thead>
+            <tr>
+                <th scope="col" rowspan="2">Langkah</th>
+                @foreach (var group in Groups)
+                {
+                    <th scope="colgroup" colspan="@group.Count()" class="num">@group.Key</th>
+                }
+                <th scope="col" rowspan="2" class="num">Total</th>
+                <th scope="col" rowspan="2" class="num">%</th>
+                <th scope="col" rowspan="2">Status</th>
+            </tr>
+            <tr>
+                @foreach (var line in Data.Columns)
+                {
+                    <th scope="col" class="num">@line.ColorSize.SizeCode</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var step in Data.Steps)
+            {
+                <tr>
+                    <th scope="row">@step.Seq @step.ProcessName <span class="gms-muted">(@(step.ProcessType == ProcessType.Internal ? "Internal" : "Vendor"))</span></th>
+                    @if (step.ProcessType == ProcessType.Vendor)
+                    {
+                        <td colspan="@Data.Columns.Count" class="gms-muted">Terkirim @IdFormat.Qty(step.SentTotal) · Diterima @IdFormat.Qty(step.TotalOutput) · Sisa di vendor @IdFormat.Qty(step.OutstandingAtVendor)</td>
+                    }
+                    else
+                    {
+                        @foreach (var line in Data.Columns)
+                        {
+                            var cell = step.Cells.FirstOrDefault(c => c.WoLineId == line.Id);
+                            <td class="num" aria-label="@($"{step.ProcessName}, {line.ColorSize.ColorName} {line.ColorSize.SizeCode}: {cell?.Output ?? 0} dari {cell?.Target ?? line.Qty}")">
+                                @(cell?.Output ?? 0)@if (cell is not null && cell.Output > cell.Target) { <span class="gms-over" title="Kelebihan produksi">+@(cell.Output - cell.Target)</span> }
+                            </td>
+                        }
+                    }
+
+                    <td class="num">@IdFormat.Qty(step.TotalOutput) / @IdFormat.Qty(step.TotalTarget)</td>
+                    <td class="num">@IdFormat.Number(step.Percent, 1)%</td>
+                    <td>@StateLabel(step.State)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public WoProgressDto Data { get; set; } = default!;
+
+    private IEnumerable<IGrouping<string, WoLineDto>> Groups => Data.Columns.GroupBy(c => c.ColorSize.ColorName);
+
+    private static RenderFragment StateLabel(StepState state) => state switch
+    {
+        StepState.Done => b => b.AddMarkupContent(0, "<span class=\"gms-ok\">✓ Selesai</span>"),
+        StepState.InProgress => b => b.AddMarkupContent(0, "<span>◔ Berjalan</span>"),
+        _ => b => b.AddMarkupContent(0, "<span class=\"gms-muted\">○ Belum Mulai</span>"),
+    };
+}

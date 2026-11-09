@@ -1,0 +1,225 @@
+@page "/work-orders/new"
+@page "/work-orders/{Id:guid}/edit"
+@attribute [Authorize]
+@inject IWorkOrdersApi Wos
+@inject IPurchaseOrdersApi Pos
+@inject ApiErrorHandler Errors
+@inject NavigationManager Nav
+@inject IToastService Toasts
+@inject AuthenticationStateProvider Auth
+
+<PageTitle>@(IsNew ? "Buat WO" : "Ubah WO Draft") · GMS</PageTitle>
+<UnsavedChangesGuard HasChanges="_dirty && !_saved" />
+
+<PageHeader Title="@(IsNew ? "Buat Work Order" : $"Ubah {_wo?.Code}")" Breadcrumbs="@(new[] { new PageHeader.Crumb("Work Order", "/work-orders"), new PageHeader.Crumb(IsNew ? "Baru" : _wo?.Code ?? "…") })" />
+
+@if (_denied)
+{
+    <ErrorState Title="Anda tidak memiliki akses" Detail="Izin untuk membuat atau mengubah WO diperlukan." />
+}
+else if (_loadProblem is not null)
+{
+    var view = ProblemPresenter.Describe(_loadProblem);
+    <ErrorState Title="@view.Title" Detail="@view.Detail" TraceId="@view.TraceId" OnRetry="@(view.Kind is ProblemKind.NotFound or ProblemKind.Forbidden ? default : EventCallback.Factory.Create(this, LoadAsync))" />
+}
+else if (_loading)
+{
+    <SkeletonRows Rows="5" Columns="3" Label="Memuat form WO" />
+}
+else
+{
+    <FormSummary Errors="_problem?.Errors" Labels="_labels" />
+    @if (_problem is not null && _problem.Errors is null) { <ProblemBanner Problem="_problem" OnReload="LoadAsync" /> }
+
+    <form @onsubmit="SaveAsync" @onsubmit:preventDefault novalidate>
+        <section class="gms-card gms-form" aria-labelledby="wo-sel">
+            <h2 id="wo-sel">Pilih PO dan FG</h2>
+            <LookupSelect Label="PO" Items="_poItems" Value="_poId" ValueChanged="OnPoChangedAsync" Required="true" ShowCode="true" Disabled="@(!IsNew)" />
+            @if (_options is not null && _options.Fgs.Count == 0)
+            {
+                <EmptyState Title="Semua kebutuhan PO sudah direncanakan" />
+            }
+            else if (_options is not null)
+            {
+                <LookupSelect Label="FG" Items="_fgItems" Value="_fgId" ValueChanged="OnFgChanged" Required="true" ShowCode="true" Disabled="@(!IsNew)" />
+            }
+
+            @if (_fg is not null)
+            {
+                <p>Status FG: <StatusChip Value="@(_fg.IsReady ? "ready" : "not-ready")" /></p>
+                @if (!_fg.IsReady)
+                {
+                    <ul class="gms-readiness">
+                        @foreach (var item in _fg.Readiness.Where(i => !i.Ok))
+                        {
+                            <li class="gms-bad"><FluentIcon Value="@(new Icons.Regular.Size16.DismissCircle())" Color="Color.Neutral" /> @item.Message</li>
+                        }
+                    </ul>
+                    <p><a href="/master/fgs/@_fg.FgId">Buka FG di Master Data</a> · Draft tetap dapat disimpan.</p>
+                }
+            }
+        </section>
+
+        @if (_fg is not null)
+        {
+            <section class="gms-card" aria-labelledby="wo-qty">
+                <h2 id="wo-qty">Qty WO per Color × Size</h2>
+                <SizeMatrixGrid Caption="Qty WO" RowHeader="Color" Rows="_rows" Columns="_columns" Values="_values" CellInfo="CellInfo" ShowMax="true" OnChanged="() => _dirty = true" />
+                <p><strong>Total: @IdFormat.Qty(_values.All.Sum(v => v.Qty)) pcs</strong></p>
+            </section>
+
+            <section class="gms-card gms-form" aria-labelledby="wo-sched">
+                <h2 id="wo-sched">Jadwal</h2>
+                <TextField Label="Mulai" Type="date" Value="@_start" ValueChanged="v => { _start = v; _dirty = true; }" />
+                <TextField Label="Target selesai" Type="date" Value="@_target" ValueChanged="v => { _target = v; _dirty = true; }" />
+                <TextField Label="Keterangan" Value="@_notes" ValueChanged="v => { _notes = v; _dirty = true; }" MaxLength="250" Multiline="true" />
+            </section>
+
+            <div class="gms-formactions">
+                <FluentAnchor Href="@(IsNew ? "/work-orders" : $"/work-orders/{Id}")" Appearance="Appearance.Neutral">Batal</FluentAnchor>
+                <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="_saving">Simpan Draft</FluentButton>
+            </div>
+        }
+    </form>
+}
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    [SupplyParameterFromQuery(Name = "poId")] public Guid? QueryPoId { get; set; }
+
+    private static readonly IReadOnlyDictionary<string, string> _labels = new Dictionary<string, string>
+    {
+        ["lines"] = "Qty", ["targetDate"] = "Target selesai", ["startDate"] = "Mulai",
+    };
+
+    private bool IsNew => Id is null;
+    private WoDto? _wo;
+    private IReadOnlyList<LookupItem> _poItems = [], _fgItems = [];
+    private WoCreationOptionsDto? _options;
+    private WoCreationFgOption? _fg;
+    private Guid? _poId, _fgId;
+    private IReadOnlyList<MatrixRow> _rows = [];
+    private IReadOnlyList<MatrixColumn> _columns = [];
+    private MatrixValues _values = new();
+    private Dictionary<(string, string), WoCreationCell> _cellMap = [];
+    private string? _start, _target, _notes;
+    private bool _loading = true, _dirty, _saved, _saving, _denied;
+    private GmsProblemDetails? _problem, _loadProblem;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var user = (await Auth.GetAuthenticationStateAsync()).User;
+        _denied = !user.HasPermission(IsNew ? Permissions.WorkOrder.Create : Permissions.WorkOrder.Edit);
+        if (_denied) { _loading = false; return; }
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _loadProblem = await Errors.RunAsync(async () =>
+        {
+            var active = new List<LookupItem>();
+            foreach (var status in new[] { PoStatus.Confirmed, PoStatus.InProgress })
+            {
+                active.AddRange((await Pos.ListAsync(new PoListQuery { Status = status, PageSize = 200 })).Items.Select(p => new LookupItem(p.Id, p.Code, p.CustomerName)));
+            }
+
+            _poItems = active;
+            if (Id is { } id)
+            {
+                _wo = await Wos.GetAsync(id);
+                _poId = _wo.PoId;
+                _start = _wo.StartDate?.ToString("yyyy-MM-dd");
+                _target = _wo.TargetDate?.ToString("yyyy-MM-dd");
+                _notes = _wo.Notes;
+                _poItems = [new LookupItem(_wo.PoId, _wo.PoCode, _wo.CustomerName)];
+                await LoadOptionsAsync(_wo.PoId, _wo.FgId, _wo.Lines.ToDictionary(l => l.PoLineId, l => l.Qty));
+            }
+            else if (QueryPoId is { } qp && _poItems.Any(p => p.Id == qp))
+            {
+                _poId = qp;
+                await LoadOptionsAsync(qp, null, null);
+            }
+
+            _dirty = false;
+        });
+        _loading = false;
+    }
+
+    private async Task LoadOptionsAsync(Guid poId, Guid? fgId, Dictionary<Guid, int>? existing)
+    {
+        _options = await Wos.GetCreationOptionsAsync(poId);
+        var fgs = _options.Fgs.ToList();
+        if (fgId is { } wanted && fgs.All(f => f.FgId != wanted)) { fgs.Add(new WoCreationFgOption(wanted, _wo!.FgCode, _wo.FgName, true, [], [])); }
+        _fgItems = fgs.Select(f => new LookupItem(f.FgId, f.FgCode, f.FgName)).ToList();
+        _fgId = fgId;
+        _fg = null;
+        if (fgId is not null) { BuildGrid(fgs.First(f => f.FgId == fgId), existing); }
+    }
+
+    private async Task OnPoChangedAsync(Guid? poId)
+    {
+        _poId = poId;
+        _fg = null;
+        _fgId = null;
+        _options = null;
+        _problem = await Errors.RunAsync(async () => { if (poId is { } id) { await LoadOptionsAsync(id, null, null); } });
+    }
+
+    private void OnFgChanged(Guid? fgId)
+    {
+        _fgId = fgId;
+        _fg = null;
+        if (fgId is { } id && _options?.Fgs.FirstOrDefault(f => f.FgId == id) is { } option) { BuildGrid(option, null); }
+    }
+
+    private void BuildGrid(WoCreationFgOption option, Dictionary<Guid, int>? existing)
+    {
+        _fg = option;
+        var cells = option.Cells;
+        _rows = cells.Select(c => c.ColorSize).DistinctBy(c => c.ColorId).Select(c => new MatrixRow(c.ColorId.ToString(), c.ColorName)).ToList();
+        _columns = cells.Select(c => c.ColorSize).DistinctBy(c => c.SizeId).OrderBy(c => c.SizeSortOrder).Select(c => new MatrixColumn(c.SizeId.ToString(), c.SizeCode)).ToList();
+        _cellMap = cells.ToDictionary(c => (c.ColorSize.ColorId.ToString(), c.ColorSize.SizeId.ToString()));
+        _values = new MatrixValues();
+        if (existing is not null)
+        {
+            foreach (var cell in cells.Where(c => existing.ContainsKey(c.PoLineId))) { _values.Set(cell.ColorSize.ColorId.ToString(), cell.ColorSize.SizeId.ToString(), existing[cell.PoLineId]); }
+        }
+    }
+
+    /// <summary>Sel berlaku hanya bila ada baris PO; batas = Sisa Rencana (hasil server; mode ubah ditambah Qty draft saat ini tidak dihitung server).</summary>
+    private MatrixCellInfo CellInfo(string row, string col) =>
+        _cellMap.TryGetValue((row, col), out var cell) ? new MatrixCellInfo(Max: cell.RemainingPlanQty) : new MatrixCellInfo(Enabled: false);
+
+    private async Task SaveAsync()
+    {
+        _problem = null;
+        if (_poId is null || _fgId is null) { _problem = Local("lines", "PO dan FG wajib dipilih."); return; }
+        var lines = _values.All.Where(v => v.Qty > 0).Select(v => new SaveWoLine(_cellMap[(v.Row, v.Column)].PoLineId, v.Qty)).ToList();
+        if (lines.Count == 0) { _problem = Local("lines", "Minimal satu Qty terisi."); return; }
+        DateOnly? start = DateOnly.TryParseExact(_start, "yyyy-MM-dd", out var s) ? s : null;
+        DateOnly? target = DateOnly.TryParseExact(_target, "yyyy-MM-dd", out var t) ? t : null;
+        if (start is { } a && target is { } b && b < a) { _problem = Local("targetDate", "Target selesai tidak boleh sebelum tanggal mulai."); return; }
+
+        _saving = true;
+        _problem = await Errors.RunAsync(async () =>
+        {
+            var request = new SaveWoRequest(_poId.Value, _fgId.Value, start, target, string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim(), lines, _wo?.RowVersion ?? 0);
+            var saved = IsNew ? await Wos.CreateAsync(request) : await Wos.UpdateDraftAsync(Id!.Value, request);
+            _saved = true;
+            _dirty = false;
+            StateHasChanged();
+            await Task.Yield();
+            Toasts.ShowSuccess($"WO {saved.Code} disimpan sebagai Draft.");
+            Nav.NavigateTo($"/work-orders/{saved.Id}");
+        });
+        _saving = false;
+    }
+
+    private static GmsProblemDetails Local(string field, string message) => new()
+    {
+        Type = ProblemTypes.ValidationFailed, Status = 422, Title = "Data belum valid.", Errors = new Dictionary<string, string[]> { [field] = [message] },
+    };
+}

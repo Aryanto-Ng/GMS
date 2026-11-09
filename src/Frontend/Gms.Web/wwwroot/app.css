@@ -236,3 +236,5 @@ tr.gms-inactive { opacity: .7; }
 .gms-block.dup { border-color: var(--gms-error); }
 .gms-block-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
 .gms-block-head input { font: inherit; color: var(--gms-fg); background: var(--gms-bg); border: 1px solid var(--gms-stroke); border-radius: 4px; padding: 4px 8px; }
+.gms-timeline { padding-inline-start: 18px; display: flex; flex-direction: column; gap: 6px; }
+.gms-over { color: var(--gms-warning); font-weight: 700; margin-inline-start: 4px; }
