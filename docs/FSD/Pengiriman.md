@@ -188,6 +188,6 @@ Tidak ada halaman Static SSR pada modul ini. WebAssembly **tidak dipakai**.
 | Q3 | Satu surat jalan untuk satu PO | **Disetujui** |
 | Q4 | Void diizinkan walau PO sudah Completed (PO kembali In Progress) | **Disetujui** |
 | Q5 | Cetak Surat Jalan PDF ditarik ke fase 1 | **Disetujui** |
-| Q6 | Daftar barang berbentuk matriks ukuran (baris FG + Color, kolom Size) | Default SA, perlu konfirmasi |
-| Q7 | Cetakan ulang diberi penanda "CETAK ULANG", surat jalan Voided ber-watermark "DIBATALKAN" | Default SA, perlu konfirmasi |
-| Q8 | Tiga kolom tanda tangan: Pengirim, Sopir, Penerima | Default SA, perlu konfirmasi |
+| Q6 | Daftar barang berbentuk matriks ukuran (baris FG + Color, kolom Size) | **Disetujui** (2026-11-10) |
+| Q7 | Cetakan ulang diberi penanda "CETAK ULANG", surat jalan Voided ber-watermark "DIBATALKAN" | **Disetujui** (2026-11-10) |
+| Q8 | Tiga kolom tanda tangan: Pengirim, Sopir, Penerima | **Disetujui** (2026-11-10) |
