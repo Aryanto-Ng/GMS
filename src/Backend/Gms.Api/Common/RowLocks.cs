@@ -90,6 +90,32 @@ public static class RowLocks
         await RunAsync(command, ct);
     }
 
+    /// <summary>
+    /// Memastikan baris stock_balances ada (INSERT ... ON CONFLICT DO NOTHING) lalu mengunci semuanya urut (fg, color, size).
+    /// Wajib untuk operasi yang boleh membuat saldo baru: mengunci baris yang belum ada tidak menyerialkan dua pembuat bersamaan.
+    /// </summary>
+    public static async Task EnsureAndLockStockAsync(
+        GmsDbContext db, IEnumerable<(Guid FgId, Guid ColorId, Guid SizeId)> keys, CancellationToken ct)
+    {
+        var ordered = keys.Distinct().OrderBy(k => k.FgId).ThenBy(k => k.ColorId).ThenBy(k => k.SizeId).ToList();
+        foreach (var key in ordered)
+        {
+            var insert = Command(db, """
+                INSERT INTO stock_balances (fg_id, color_id, size_id, on_hand, allocated)
+                VALUES (@fg, @color, @size, 0, 0) ON CONFLICT DO NOTHING
+                """);
+            insert.Parameters.Add(new NpgsqlParameter("fg", key.FgId));
+            insert.Parameters.Add(new NpgsqlParameter("color", key.ColorId));
+            insert.Parameters.Add(new NpgsqlParameter("size", key.SizeId));
+            await using (insert)
+            {
+                await insert.ExecuteNonQueryAsync(ct);
+            }
+
+            await LockStockAsync(db, key.FgId, key.ColorId, key.SizeId, ct);
+        }
+    }
+
     /// <summary>Mengunci banyak baris stok dalam urutan kunci (fg, color, size) yang konsisten.</summary>
     public static async Task LockStockAsync(
         GmsDbContext db, IEnumerable<(Guid FgId, Guid ColorId, Guid SizeId)> keys, CancellationToken ct)

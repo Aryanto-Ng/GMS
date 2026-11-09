@@ -237,6 +237,13 @@ Impor (Material, FG, Pekerja):
 | GET | `/stock/opening-balance/import-template` | `StokFG.Import` |
 | POST | `/stock/opening-balance/import?dryRun=` (multipart) | `StokFG.Import` |
 
+**Catatan implementasi (backend, 2026-11-09):**
+- Tambahan rute: `POST /handovers/fg/preview` (perkiraan alokasi otomatis vs stok bebas, `SerahTerimaFG.Create`) dan `POST /stock/adjustments/preview` (`StokFG.Adjust`). Pratinjau menjalankan jalur kode yang sama lalu rollback.
+- `POST /handovers/fg` membalas 201 `HandoverFgResultDto { id, autoAllocatedQty, freeStockQty, poCode }`; `/correct` membalas 200 dengan DTO yang sama; `/void` dan `/stock/adjustments` membalas 204; `POST /handovers/material` membalas 201 `{ id }`.
+- Galat: 409 `handover.exceeds-output` (melebihi output langkah terakhir − sudah diserahterimakan; `violations[].limit` = batas terbaru), 409 `stock.insufficient` (void/koreksi/penyesuaian membuat stok fisik atau tersedia negatif; pesan membedakan "sudah dikirim" vs "dialokasikan ke PO lain"), 409 `wo.status-invalid` bila WO bukan In Progress/Completed. Void output langkah terakhir yang membuat output < diserahterimakan ditolak `output.below-downstream`.
+- Impor saldo awal: kolom `fg_code,color_code,size_code,qty,date`; `dryRun` bawaan true; bersifat menambah; baris yang kombinasinya sudah punya saldo awal tetap valid dengan pesan peringatan.
+- Kartu stok: saldo berjalan = Σ qty semua entri dengan id ≤ entri tersebut (tidak terpengaruh filter tanggal), terbaru di atas.
+
 ### 4.7 Pengiriman
 | Metode | Rute | Izin |
 |---|---|---|

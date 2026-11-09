@@ -236,6 +236,22 @@ public sealed class StepLedger(GmsDbContext db, TimeProvider time, AppTimeZone z
             }
         }
 
+        // Invarian tambahan (FSD Serah Terima 2.2/E5): output langkah terakhir ≥ total diserahterimakan.
+        if (ctx.Steps.Count > 0)
+        {
+            var lastSeq = ctx.Steps[^1].Seq;
+            foreach (var line in ctx.Lines.Where(l => l.HandedOverQty > 0))
+            {
+                var last = Of(line.Id, lastSeq);
+                if (last.Qty < line.HandedOverQty)
+                {
+                    var subject = $"{ctx.Label(line)} · langkah {lastSeq} ({ctx.Steps[^1].Name})";
+                    violations.Add(new RuleViolation(ProblemCodes.OutputBelowDownstream, subject, last.Qty, line.HandedOverQty,
+                        $"{subject}: output akan menjadi {last.Qty}, sementara {line.HandedOverQty} sudah diserahterimakan ke stok FG."));
+                }
+            }
+        }
+
         await AddPerVendorViolationsAsync(ctx, violations, ct);
         return violations;
     }

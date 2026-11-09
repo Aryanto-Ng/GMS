@@ -99,6 +99,15 @@ Semua perubahan ledger output/vendor melewati `StepLedger` (jangan menulis `wo_s
 6. Riwayat gabungan (`EntryQueries`) memakai `Concat` dua proyeksi ke kelas `Row` yang sama; pembatasan lihat per permission dilakukan sebelum union.
 7. Tes konkurensi memakai `AssertLedgerInvariantAsync` (saldo proyeksi = Σ ledger aktif dan rantai terpenuhi).
 
+## Pola Serah Terima & Stok FG (`Features/Inventory`)
+
+- **`HandoverEngine`** adalah satu-satunya tempat yang mengubah `stock_balances` terkait serah terima. Urutan kunci: WO → `po_lines` (id urut) → `stock_balances` (fg, color, size) lewat `RowLocks.EnsureAndLockStockAsync` (membuat baris bila belum ada, baru mengunci: mengunci baris yang belum ada tidak menyerialkan dua pembuat).
+- **Semua perubahan dilakukan di memori pada entitas terkunci lalu disimpan sekali** (`Apply`/`Reverse` → `CheckFinalState` → `SaveAsync`). Dengan begitu CHECK database hanya melihat kondisi akhir dan koreksi (= `Reverse` + `Apply`) tidak terhalang keadaan sementara. `SaveAsync` memetakan pelanggaran CHECK (23514) menjadi 409 sebagai jaring pengaman, bukan 500.
+- **`in_production_qty` dijaga di memori** (`SetHanded`: selisih `max(qty WO − diserahterimakan, 0)`), bukan lewat `RecomputeInProductionAsync`, karena UPDATE terpisah akan menimbulkan pelanggaran CHECK sesaat `delivered + allocated + in_production ≤ qty`.
+- **Alokasi otomatis** = `min(qty, max(Qty WO − sudah diserahterimakan, 0))` ke baris PO asal, 0 bila PO bukan Confirmed/In Progress (E4). Void melepas `min(AutoAllocatedQty, allocated saat ini)`.
+- **Kartu stok**: urut `id` (identity), saldo berjalan dihitung dari Σ qty id ≤ baris (tidak terpengaruh filter tanggal).
+- **Modul Pengiriman** nanti: kurangi `OnHand`, konsumsi alokasi (`Consume`), tambah `delivered_qty`; kunci sama (po_lines → stok) dan WAJIB memakai pola "ubah di memori → cek kondisi akhir → simpan sekali".
+
 ## Jebakan yang Sudah Ditemukan (jangan diulang)
 
 1. **Urutkan sebelum proyeksi DTO.** `OrderBy(x => x.Seq)` pada hasil `new SomeDto(...)` tidak dapat diterjemahkan EF (500). Pola yang benar: `Join → proyeksi anonim → OrderBy → Select(new Dto(...))`.
@@ -107,6 +116,9 @@ Semua perubahan ledger output/vendor melewati `StepLedger` (jangan menulis `wo_s
 4. **Mengganti seluruh routing/tarif (salin dari FG):** hapus dengan `ExecuteDeleteAsync` di luar change tracker lebih dulu, baru `Add`, agar tidak bentrok dengan kunci unik `(fg_id, process_id)`.
 
 5. **Daftar khusus harus tetap memakai `ApplySort` kelas dasar.** Daftar FG pernah mengabaikan `sort` (selalu urut kode) karena override `ListAsync` menulis `OrderBy` sendiri; tertangkap saat tes lain menambah data. Gunakan `ApplySort(set, query.Sort)`.
+
+6. **Jangan memfilter/mengurutkan di atas DTO berkonstruktor.** Query stok pertama kali 500 karena `Where(r => r.ColorSize.ColorId == ...)` pada `StockRow`. Proyeksikan ke kelas skalar privat, filter/urut/halaman di server, baru ubah ke DTO di memori (lihat `StockQueries.S`).
+7. **`audit_logs.target_id` maksimal 100 karakter.** Jangan menggabungkan beberapa GUID; pakai id agregat dan taruh sisanya di nilai audit.
 
 ## Catatan Teknis
 

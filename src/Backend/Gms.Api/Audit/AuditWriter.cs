@@ -57,6 +57,15 @@ public static class AuditEvents
     public const string VendorMovementVoided = "VendorMovementVoided";
     public const string VendorMovementCorrected = "VendorMovementCorrected";
 
+    // Serah Terima & Stok FG
+    public const string HandoverFgCreated = "HandoverFgCreated";
+    public const string HandoverFgVoided = "HandoverFgVoided";
+    public const string HandoverFgCorrected = "HandoverFgCorrected";
+    public const string MaterialHandoverCreated = "MaterialHandoverCreated";
+    public const string MaterialHandoverVoided = "MaterialHandoverVoided";
+    public const string StockAdjusted = "StockAdjusted";
+    public const string StockOpeningImported = "StockOpeningImported";
+
     // Master Data
     public const string MasterCreated = "MasterCreated";
     public const string MasterUpdated = "MasterUpdated";

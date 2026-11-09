@@ -8,6 +8,7 @@ using Gms.Api.Features.Access.Roles;
 using Gms.Api.Features.Access.Seeding;
 using Gms.Api.Features.Access.Users;
 using Gms.Api.Features.Master;
+using Gms.Api.Features.Inventory;
 using Gms.Api.Features.Production;
 using Gms.Api.Features.Sales;
 using Gms.Api.Features.WorkOrders;
@@ -91,6 +92,10 @@ public static class ApiHost
         services.AddScoped<WoQueries>();
         services.AddScoped<StepLedger>();
         services.AddScoped<EntryQueries>();
+        services.AddScoped<HandoverEngine>();
+        services.AddScoped<HandoverFgQueries>();
+        services.AddScoped<MaterialHandoverQueries>();
+        services.AddScoped<StockQueries>();
         services.AddScoped<MasterContext>();
         services.AddScoped<NumberSequences>();
 
@@ -140,5 +145,6 @@ public static class ApiHost
         PoEndpoints.Map(app);
         WoEndpoints.Map(app);
         ProductionEndpoints.Map(app);
+        InventoryEndpoints.Map(app);
     }
 }

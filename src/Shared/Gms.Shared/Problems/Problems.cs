@@ -47,6 +47,7 @@ public static class ProblemCodes
     public const string WoStatusInvalid = "wo.status-invalid";
     public const string WoQtyBelowOutput = "wo.qty-below-output";
     public const string WoHasActivity = "wo.has-activity";
+    public const string HandoverExceedsOutput = "handover.exceeds-output";
     public const string PayrollDateBeforeFirstPeriod = "payroll.date-before-first-period";
     public const string PayrollOpenPeriodExists = "payroll.open-period-exists";
     public const string PayrollNotContiguous = "payroll.not-contiguous";
