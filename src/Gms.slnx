@@ -12,6 +12,7 @@
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="Tests/Gms.Api.Tests/Gms.Api.Tests.csproj" />
+    <Project Path="Tests/Gms.E2E.Tests/Gms.E2E.Tests.csproj" />
     <Project Path="Tests/Gms.Web.Tests/Gms.Web.Tests.csproj" />
   </Folder>
 </Solution>

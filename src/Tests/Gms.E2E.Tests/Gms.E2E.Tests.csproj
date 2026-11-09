@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Tes E2E (Playwright) terhadap tumpukan NYATA: PostgreSQL (Testcontainers) + Gms.Api + Gms.Web sebagai proses terpisah (UseMock=false).
+       Butuh Docker dan browser Playwright: `pwsh bin/Debug/net10.0/playwright.ps1 install chromium`. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <NoWarn>$(NoWarn);xUnit1051</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.Playwright" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\Gms.Shared\Gms.Shared.csproj" />
+    <!-- Hanya untuk urutan build: DLL dijalankan sebagai proses, tidak dirujuk sebagai pustaka. -->
+    <ProjectReference Include="..\..\Backend\Gms.Api\Gms.Api.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\Frontend\Gms.Web\Gms.Web.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+</Project>
