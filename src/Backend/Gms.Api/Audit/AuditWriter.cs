@@ -66,6 +66,13 @@ public static class AuditEvents
     public const string StockAdjusted = "StockAdjusted";
     public const string StockOpeningImported = "StockOpeningImported";
 
+    // Pengiriman
+    public const string DeliveryCreated = "DeliveryCreated";
+    public const string DeliveryInfoUpdated = "DeliveryInfoUpdated";
+    public const string DeliveryVoided = "DeliveryVoided";
+    public const string DeliveryCorrected = "DeliveryCorrected";
+    public const string DeliveryPrinted = "DeliveryPrinted";
+
     // Master Data
     public const string MasterCreated = "MasterCreated";
     public const string MasterUpdated = "MasterUpdated";

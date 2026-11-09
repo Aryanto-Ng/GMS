@@ -98,7 +98,7 @@ public static class PoHelpers
             .SumAsync(l => (int?)l.AllocatedQty) ?? 0;
         var sumLedger = await db.PoAllocations.AsNoTracking()
             .Join(db.PoLines.Where(l => l.FgId == fgId && l.ColorId == colorId && l.SizeId == sizeId), a => a.PoLineId, l => l.Id, (a, l) => a)
-            .SumAsync(a => (int?)(a.Kind == AllocationKind.Allocate ? a.Qty : a.Kind == AllocationKind.Release ? -a.Qty : 0)) ?? 0;
+            .SumAsync(a => (int?)(a.Kind == AllocationKind.Allocate || a.Kind == AllocationKind.ReverseConsume ? a.Qty : -a.Qty)) ?? 0;
 
         Assert.Equal(sumLines, stock.Allocated);
         Assert.Equal(sumLines, sumLedger);

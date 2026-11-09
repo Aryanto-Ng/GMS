@@ -294,6 +294,9 @@ public sealed class HandoverFgTests(ApiFixture fixture)
 
         var preview = (await H.Api.PostAsync(Url("correct/preview"), new CorrectHandoverFgRequest("x", Today(), null, null, null, Cells((s.LineS, 5)).ToList()), H.AdminToken)).Ok().As<ImpactPreview>();
         Assert.True(preview.CanProceed);
+        var badPreview = (await H.Api.PostAsync(Url("correct/preview"), new CorrectHandoverFgRequest("x", Today(), null, null, null, Cells((s.LineS, 31)).ToList()), H.AdminToken)).Ok().As<ImpactPreview>();
+        Assert.False(badPreview.CanProceed); // pratinjau menjelaskan pelanggaran, bukan gagal
+        Assert.Equal(ProblemCodes.HandoverExceedsOutput, badPreview.Violations[0].Code);
         Assert.Equal((30, 30), await H.StockAsync(s.World.Fg.Fg.Id, s.World.Color.Id, s.World.Small.Id)); // pratinjau tidak mengubah apa pun
 
         await H.VoidHandoverAsync(result.Id);

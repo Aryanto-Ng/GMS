@@ -229,8 +229,22 @@ public sealed class CorrectHandoverFgHandler(GmsDbContext db, HandoverEngine eng
             ReceivedBy = HandoverRules.Clean(request.ReceivedBy), Notes = HandoverRules.Clean(request.Notes),
             ReplacesId = old.Id, CreatedAt = now, CreatedBy = user.Id,
         };
-        var estimates = engine.Apply(state, replacement, cells, user.Id, now);
-        var violations = engine.CheckFinalState(state);
+        var estimates = new List<CellEstimate>();
+        var violations = new List<RuleViolation>();
+        try
+        {
+            estimates = engine.Apply(state, replacement, cells, user.Id, now);
+        }
+        catch (ProblemException ex) when (dryRun && ex.Violations is { Count: > 0 })
+        {
+            violations.AddRange(ex.Violations); // pratinjau menjelaskan pelanggaran alih-alih gagal
+        }
+
+        if (violations.Count == 0)
+        {
+            violations.AddRange(engine.CheckFinalState(state));
+        }
+
         if (dryRun)
         {
             var preview = HandoverEngine.BuildImpact(state, violations, ["Dokumen lama di-void dan diganti dokumen baru dalam satu transaksi."]);
