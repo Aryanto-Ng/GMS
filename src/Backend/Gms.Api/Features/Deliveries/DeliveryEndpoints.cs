@@ -47,6 +47,12 @@ public static class DeliveryEndpoints
         g.MapPost("/{id:guid}/correct/preview", async (Guid id, CorrectDeliveryRequest request, CorrectDeliveryHandler handler, CancellationToken ct) =>
             Results.Ok(await handler.PreviewAsync(id, request, ct))).RequirePermission(Permissions.Pengiriman.Correct);
 
+        g.MapGet("/{id:guid}/pdf", async (Guid id, GetDeliveryPdfHandler handler, CancellationToken ct) =>
+        {
+            var file = await handler.HandleAsync(id, ct);
+            return Results.File(file.Bytes, file.ContentType, file.FileName);
+        }).RequirePermission(Permissions.Pengiriman.Print);
+
         g.MapPost("/{id:guid}/correct", async (Guid id, CorrectDeliveryRequest request, CorrectDeliveryHandler handler, CancellationToken ct) =>
             Results.Ok(await handler.HandleAsync(id, request, ct))).RequirePermission(Permissions.Pengiriman.Correct);
     }

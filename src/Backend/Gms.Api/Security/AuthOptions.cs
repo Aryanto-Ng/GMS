@@ -38,4 +38,27 @@ public sealed class AppOptions
     public const string SectionName = "App";
 
     public string TimeZone { get; set; } = "Asia/Jakarta";
+
+    /// <summary>Kop dokumen Comfi (surat jalan). Boleh kosong: PDF tetap dibuat (FSD Pengiriman E12).</summary>
+    public CompanyOptions Comfi { get; set; } = new();
+
+    /// <summary>Kop dokumen Konveksi (slip gaji).</summary>
+    public CompanyOptions Konveksi { get; set; } = new();
+
+    public PdfOptions Pdf { get; set; } = new();
+}
+
+public sealed class CompanyOptions
+{
+    public string Name { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+}
+
+public sealed class PdfOptions
+{
+    /// <summary>
+    /// Folder berisi <c>Regular.ttf</c> dan <c>Bold.ttf</c> (font berlisensi terbuka, mis. Liberation Sans) untuk Linux/Docker.
+    /// Di Windows font sistem dipakai. Relatif terhadap folder aplikasi bila tidak absolut.
+    /// </summary>
+    public string FontDirectory { get; set; } = "Fonts";
 }

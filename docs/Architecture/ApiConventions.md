@@ -259,6 +259,7 @@ Impor (Material, FG, Pekerja):
 - Tambahan rute: `GET /deliveries/eligible-pos?q=` (pemilih PO: Confirmed/In Progress dengan sisa kebutuhan > 0, maks 100, `Pengiriman.Create`) dan `PUT /deliveries/{id}/info` memakai `UpdateDeliveryInfoRequest` (dengan `rowVersion`).
 - `POST /deliveries` membalas 201 `DeliveryDto`; `/void` dan `/correct` membalas 200 `DeliveryDto` (`/correct` = dokumen pengganti). Pratinjau memakai jalur kode yang sama lalu rollback, dan untuk koreksi menjelaskan pelanggaran (`canProceed: false`) alih-alih 409.
 - Galat: 409 `delivery.exceeds-allocation` (qty > min(Dialokasikan, Qty − Terkirim); `violations[].limit` = batas terbaru), 409 `state-conflict` (PO bukan Confirmed/In Progress; void/koreksi pada PO Cancelled; dokumen sudah Voided), 409 `concurrency-conflict` (info basi).
+- `GET /deliveries/{id}/pdf` membalas `application/pdf` (nama berkas `<kode SJ>.pdf`), menaikkan `print_count` secara atomik dan mencatat audit. 503 `service-unavailable` bila font PDF belum tersedia (Linux tanpa `Fonts/Regular.ttf` + `Bold.ttf`). Metadata dokumen: Title `Surat Jalan <kode>`, Subject berisi `DIBATALKAN` dan/atau `CETAK ULANG`.
 - Status PO diturunkan dari pengiriman aktif: Confirmed → In Progress pada pengiriman pertama, Completed saat semua baris terkirim penuh, kembali In Progress saat void/koreksi membuatnya tidak terpenuhi (tercatat `PoStatusChanged`).
 
 ### 4.8 Payroll

@@ -11,6 +11,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Pembuat PDF bersama (surat jalan, slip gaji). MIT; diizinkan user 2026-11-08. Versi terpusat di Directory.Packages.props. -->
+    <PackageReference Include="PDFsharp-MigraDoc" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Gms.Infrastructure\Gms.Infrastructure.csproj" />
     <ProjectReference Include="..\Gms.Domain\Gms.Domain.csproj" />
     <ProjectReference Include="..\..\Shared\Gms.Shared\Gms.Shared.csproj" />

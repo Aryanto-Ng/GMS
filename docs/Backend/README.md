@@ -108,6 +108,14 @@ Semua perubahan ledger output/vendor melewati `StepLedger` (jangan menulis `wo_s
 - **Kartu stok**: urut `id` (identity), saldo berjalan dihitung dari Σ qty id ≤ baris (tidak terpengaruh filter tanggal).
 - **Modul Pengiriman** nanti: kurangi `OnHand`, konsumsi alokasi (`Consume`), tambah `delivered_qty`; kunci sama (po_lines → stok) dan WAJIB memakai pola "ubah di memori → cek kondisi akhir → simpan sekali".
 
+## Pola Pengiriman dan Dokumen PDF (`Features/Deliveries`, `Documents`)
+
+- **`DeliveryEngine`** mengikuti pola serah terima: kunci seluruh baris PO (urut id) → `EnsureAndLockStockAsync` → ubah di memori (`Apply` / `Reverse`) → `CheckFinalState` → `SaveAsync` (pelanggaran CHECK dipetakan 409). Kunci stok WAJIB meski kunci baris PO sudah ada: stok dipakai bersama lintas PO (tes "dua PO + penyesuaian" membuktikan lost-update bila kunci dihapus).
+- **Status PO** diturunkan lewat `PoLifecycle.MarkInProgressAsync` + `RecomputeCompletionAsync` setelah simpan, dalam transaksi yang sama.
+- **Pratinjau koreksi** menangkap pelanggaran dari `Apply` dan mengembalikannya sebagai `canProceed: false` (bukan 409).
+- **PDF:** semua dokumen memakai `PdfFonts.EnsureInitialized` (font sistem di Windows, `Regular.ttf`/`Bold.ttf` dari `App:Pdf:FontDirectory` di Linux) dan keluarga logis "Arial". Pembuat dokumen murni (`DeliveryPdfBuilder.Build(model)`) tanpa akses basis data sehingga mudah diuji; handler yang mengumpulkan data. Tes membaca hasil dengan `PdfReader` (jumlah halaman, ukuran A4, metadata); teks tidak diekstrak, jadi penanda status juga ditulis ke `Info.Subject`.
+- Pembuatan PDF di dalam transaksi pencatatan (cetak gagal ⇒ `print_count` dan audit ikut batal).
+
 ## Jebakan yang Sudah Ditemukan (jangan diulang)
 
 1. **Urutkan sebelum proyeksi DTO.** `OrderBy(x => x.Seq)` pada hasil `new SomeDto(...)` tidak dapat diterjemahkan EF (500). Pola yang benar: `Join → proyeksi anonim → OrderBy → Select(new Dto(...))`.

@@ -366,3 +366,47 @@ public sealed class CorrectDeliveryHandler(
         return (replacement.Id, null);
     }
 }
+
+/// <summary>
+/// Cetak Surat Jalan PDF (AC-PG-17..23). <c>print_count</c> dinaikkan atomik dalam transaksi yang sama dengan pembuatan PDF dan audit,
+/// sehingga pencetakan yang gagal tidak tercatat. Cetakan ke-2 dst. dari surat jalan aktif diberi "CETAK ULANG"; Voided ber-watermark.
+/// </summary>
+public sealed class GetDeliveryPdfHandler(
+    GmsDbContext db, ICurrentUser user, IAuditWriter audit, TimeProvider time, AppTimeZone zone,
+    Microsoft.Extensions.Options.IOptions<Gms.Api.Security.AppOptions> options)
+{
+    public async Task<FileContent> HandleAsync(Guid id, CancellationToken ct)
+    {
+        var doc = await db.Deliveries.AsNoTracking().Include(d => d.Lines).SingleOrDefaultAsync(d => d.Id == id, ct)
+                  ?? throw ProblemException.NotFound("Surat jalan");
+
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE deliveries SET print_count = print_count + 1 WHERE id = {id}", ct);
+        var printCount = await db.Deliveries.AsNoTracking().Where(d => d.Id == id).Select(d => d.PrintCount).SingleAsync(ct);
+
+        var po = await db.PurchaseOrders.AsNoTracking().Where(p => p.Id == doc.PoId)
+            .Select(p => new { p.Code, p.CustomerPoNumber, p.CustomerId }).SingleAsync(ct);
+        var customer = await db.Customers.AsNoTracking().Where(c => c.Id == po.CustomerId).Select(c => new { c.Name, c.Address }).SingleAsync(ct);
+        var lines = await (
+            from l in db.DeliveryLines.AsNoTracking()
+            where l.DeliveryId == id
+            join p in db.PoLines on l.PoLineId equals p.Id
+            join f in db.Fgs on p.FgId equals f.Id
+            join c in db.Colors on p.ColorId equals c.Id
+            join s in db.Sizes on p.SizeId equals s.Id
+            select new Gms.Api.Documents.PrintLine(f.Code, f.Name, c.Code, c.Name, s.SortOrder, s.Code, l.Qty)).ToListAsync(ct);
+        var printedBy = await db.Users.AsNoTracking().Where(u => u.Id == user.Id).Select(u => u.FullName).FirstOrDefaultAsync(ct) ?? user.UserName ?? "-";
+
+        var voided = doc.Status == DocStatus.Voided;
+        var model = new Gms.Api.Documents.DeliveryPrintModel(
+            doc.Code, doc.DeliveryDate, po.Code, po.CustomerPoNumber, customer.Name, customer.Address, doc.RecipientName, doc.Vehicle, doc.Driver,
+            doc.Notes, options.Value.Comfi.Name, options.Value.Comfi.Address, lines, voided, doc.VoidReason,
+            IsReprint: !voided && printCount > 1, printedBy, zone.Now(time));
+        var bytes = Gms.Api.Documents.DeliveryPdfBuilder.Build(model, options.Value.Pdf.FontDirectory);
+
+        audit.Add(AuditEvents.DeliveryPrinted, "Delivery", id.ToString(), null, new { doc.Code, printCount, voided });
+        await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+        return new FileContent($"{doc.Code}.pdf", "application/pdf", bytes);
+    }
+}

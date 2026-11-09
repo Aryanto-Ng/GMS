@@ -22,6 +22,8 @@ public sealed class AppTimeZone
         }
     }
 
+    public DateTime Now(TimeProvider time) => TimeZoneInfo.ConvertTime(time.GetUtcNow(), _zone).DateTime;
+
     public DateOnly Today(TimeProvider time) => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(time.GetUtcNow(), _zone).DateTime);
 
     /// <summary>Awal hari (00:00 lokal) sebagai instan UTC.</summary>
