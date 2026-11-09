@@ -1,6 +1,7 @@
 using Gms.Shared.Access;
 using Gms.Shared.CustomerPo;
 using Gms.Shared.Master;
+using Gms.Shared.Production;
 using Gms.Shared.WorkOrders;
 using Gms.Web.Components;
 using Gms.Web.Infrastructure.Auth;
@@ -73,6 +74,8 @@ services.AddSingleton<MockFgApi>();
 services.AddSingleton<MockImportApi>();
 services.AddSingleton<MockPoApi>();
 services.AddSingleton<MockWoApi>();
+services.AddSingleton<MockProductionApi>();
+services.AddScoped<IProductionApi>(sp => api.UseMock ? sp.GetRequiredService<MockProductionApi>() : ActivatorUtilities.CreateInstance<HttpProductionApi>(sp));
 services.AddScoped<IWorkOrdersApi>(sp => api.UseMock ? sp.GetRequiredService<MockWoApi>() : ActivatorUtilities.CreateInstance<HttpWoApi>(sp));
 services.AddScoped<IPurchaseOrdersApi>(sp => api.UseMock ? sp.GetRequiredService<MockPoApi>() : ActivatorUtilities.CreateInstance<HttpPoApi>(sp));
 services.AddScoped<IImportApi>(sp => api.UseMock ? sp.GetRequiredService<MockImportApi>() : ActivatorUtilities.CreateInstance<HttpImportApi>(sp));

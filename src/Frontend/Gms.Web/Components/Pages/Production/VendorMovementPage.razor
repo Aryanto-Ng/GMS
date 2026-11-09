@@ -1,0 +1,172 @@
+@page "/production/vendor"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.VendorJob.Create)]
+@inject IProductionApi Production
+@inject IWorkOrdersApi Wos
+@inject IVendorApi Vendors
+@inject ApiErrorHandler Errors
+@inject IToastService Toasts
+
+<PageTitle>Kirim/Terima Vendor · GMS</PageTitle>
+<UnsavedChangesGuard HasChanges="_dirty" />
+
+<PageHeader Title="Kirim / Terima Vendor" />
+
+<div role="tablist" aria-label="Jenis gerakan" class="gms-tabs">
+    <button type="button" role="tab" aria-selected="@(_kind == VendorMovementKind.Send ? "true" : "false")" class="@(_kind == VendorMovementKind.Send ? "active" : null)" @onclick="() => SwitchKind(VendorMovementKind.Send)">Kirim</button>
+    <button type="button" role="tab" aria-selected="@(_kind == VendorMovementKind.Receive ? "true" : "false")" class="@(_kind == VendorMovementKind.Receive ? "active" : null)" @onclick="() => SwitchKind(VendorMovementKind.Receive)">Terima</button>
+</div>
+
+<div class="gms-toolbar">
+    <LookupSelect Label="WO" Items="_woItems" Value="_woId" ValueChanged="OnWoChangedAsync" Required="true" ShowCode="true" />
+    <LookupSelect Label="Proses vendor" Items="_stepItems" Value="_stepKey" ValueChanged="OnStepChangedAsync" Required="true" Disabled="@(_woId is null)" Placeholder="Pilih proses…" />
+    <LookupSelect Label="Vendor" Items="_vendorItems" Value="_vendorId" ValueChanged="OnVendorChangedAsync" Required="true" Placeholder="Pilih vendor…" />
+    <TextField Label="Tanggal" Type="date" Value="@_date" ValueChanged="v => _date = v" Required="true" />
+    <TextField Label="No. Dokumen" Value="@_docNo" ValueChanged="v => _docNo = v" MaxLength="50" />
+    <TextField Label="Keterangan" Value="@_notes" ValueChanged="v => _notes = v" MaxLength="250" />
+</div>
+
+@if (_loadProblem is not null)
+{
+    <ProblemBanner Problem="_loadProblem" OnReload="LoadContextAsync" />
+}
+else if (_ctx is null)
+{
+    <EmptyState Title="Pilih WO, proses vendor, dan vendor untuk mulai" />
+}
+else
+{
+    @if (_ctx.BlockedReason is not null) { <div class="gms-banner warning" role="alert"><div class="gms-banner-body"><p>@_ctx.BlockedReason</p></div></div> }
+    <FormSummary Errors="_problem?.Errors" />
+    @if (_problem is not null && _problem.Errors is null) { <ProblemBanner Problem="_problem" OnReload="LoadContextAsync" /> }
+
+    @if (_kind == VendorMovementKind.Receive && _ctx.Columns.All(c => c.MaxReceive == 0))
+    {
+        <EmptyState Title="Belum ada barang di vendor" Description="Kirim barang ke vendor ini lebih dulu." />
+    }
+    else
+    {
+        <SizeMatrixGrid Caption="@(_kind == VendorMovementKind.Send ? "Qty kirim" : "Qty terima")" RowHeader="" Rows="_row" Columns="_columns" Values="_values" CellInfo="CellInfo" ShowMax="true" Compact="true" OnChanged="() => _dirty = true" />
+        <div class="gms-formactions">
+            <FluentButton Appearance="Appearance.Accent" Disabled="@(_saving || _ctx.BlockedReason is not null)" OnClick="SaveAsync">Simpan</FluentButton>
+        </div>
+    }
+
+    @if (_ctx.Vendors.Count > 0)
+    {
+        <section class="gms-card" aria-labelledby="vsum">
+            <h2 id="vsum">Ringkasan Vendor</h2>
+            <table class="gms-table compact">
+                <thead><tr><th scope="col">Vendor</th><th scope="col" class="num">Terkirim</th><th scope="col" class="num">Diterima</th><th scope="col" class="num">Sisa</th></tr></thead>
+                <tbody>@foreach (var v in _ctx.Vendors) { <tr><th scope="row">@v.VendorName</th><td class="num">@IdFormat.Qty(v.Sent)</td><td class="num">@IdFormat.Qty(v.Received)</td><td class="num">@IdFormat.Qty(v.Outstanding)</td></tr> }</tbody>
+            </table>
+        </section>
+    }
+}
+
+@code {
+    private static readonly IReadOnlyList<MatrixRow> _row = [new("qty", "Qty")];
+
+    private VendorMovementKind _kind = VendorMovementKind.Send;
+    private IReadOnlyList<LookupItem> _woItems = [], _stepItems = [], _vendorItems = [];
+    private Dictionary<Guid, int> _seqOf = [];
+    private Guid? _woId, _stepKey, _vendorId;
+    private string? _date, _docNo, _notes;
+    private VendorContextDto? _ctx;
+    private GmsProblemDetails? _problem, _loadProblem;
+    private IReadOnlyList<MatrixColumn> _columns = [];
+    private MatrixValues _values = new();
+    private bool _dirty, _saving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _date = DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(IdFormat.Offset).DateTime).ToString("yyyy-MM-dd");
+        await Errors.RunAsync(async () =>
+        {
+            var list = new List<LookupItem>();
+            foreach (var status in new[] { WoStatus.Released, WoStatus.InProgress })
+            {
+                list.AddRange((await Wos.ListAsync(new WoListQuery { Status = status, PageSize = 200 })).Items.Select(w => new LookupItem(w.Id, w.Code, w.FgCode)));
+            }
+
+            _woItems = list;
+            _vendorItems = await Vendors.LookupAsync(null);
+        });
+    }
+
+    private async Task SwitchKind(VendorMovementKind kind)
+    {
+        _kind = kind;
+        _values = new MatrixValues();
+        _dirty = false;
+        await LoadContextAsync();
+    }
+
+    private async Task OnWoChangedAsync(Guid? id)
+    {
+        _woId = id;
+        _stepKey = null;
+        _ctx = null;
+        _stepItems = [];
+        if (id is null) { return; }
+        _loadProblem = await Errors.RunAsync(async () =>
+        {
+            var progress = await Wos.GetProgressAsync(id.Value);
+            _seqOf = [];
+            var items = new List<LookupItem>();
+            foreach (var s in progress.Steps.Where(s => s.ProcessType == ProcessType.Vendor))
+            {
+                var key = Guid.NewGuid();
+                _seqOf[key] = s.Seq;
+                items.Add(new LookupItem(key, s.ProcessCode, $"{s.Seq} {s.ProcessName}"));
+            }
+
+            _stepItems = items;
+        });
+    }
+
+    private async Task OnStepChangedAsync(Guid? key) { _stepKey = key; await LoadContextAsync(); }
+
+    private async Task OnVendorChangedAsync(Guid? id) { _vendorId = id; await LoadContextAsync(); }
+
+    private async Task LoadContextAsync()
+    {
+        _ctx = null;
+        _loadProblem = null;
+        if (_woId is null || _stepKey is null) { return; }
+        _loadProblem = await Errors.RunAsync(async () =>
+        {
+            _ctx = await Production.GetVendorContextAsync(_woId.Value, _seqOf[_stepKey.Value], _vendorId);
+            _columns = _ctx.Columns.Select(c => new MatrixColumn(c.WoLineId.ToString(), $"{c.ColorSize.ColorName} {c.ColorSize.SizeCode}")).ToList();
+        });
+    }
+
+    private MatrixCellInfo CellInfo(string row, string col) =>
+        _ctx?.Columns.FirstOrDefault(c => c.WoLineId.ToString() == col) is { } c ? new MatrixCellInfo(Max: _kind == VendorMovementKind.Send ? c.MaxSend : c.MaxReceive) : new MatrixCellInfo();
+
+    private async Task SaveAsync()
+    {
+        _problem = null;
+        if (_vendorId is null || !DateOnly.TryParseExact(_date, "yyyy-MM-dd", out var date) || !_values.All.Any(v => v.Qty > 0))
+        {
+            _problem = new GmsProblemDetails
+            {
+                Type = ProblemTypes.ValidationFailed, Status = 422, Title = "Data belum valid.",
+                Errors = new Dictionary<string, string[]> { ["cells"] = ["Vendor, tanggal, dan minimal satu Qty wajib diisi."] },
+            };
+            return;
+        }
+
+        _saving = true;
+        _problem = await Errors.RunAsync(async () =>
+        {
+            await Production.SaveVendorMovementAsync(new SaveVendorMovementRequest(_woId!.Value, _seqOf[_stepKey!.Value], _vendorId.Value, _kind, date,
+                string.IsNullOrWhiteSpace(_docNo) ? null : _docNo.Trim(), string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim(),
+                _values.All.Where(v => v.Qty > 0).Select(v => new WoLineQty(Guid.Parse(v.Column), v.Qty)).ToList()));
+            Toasts.ShowSuccess(_kind == VendorMovementKind.Send ? "Pengiriman tersimpan." : "Penerimaan tersimpan.");
+            _values = new MatrixValues();
+            _dirty = false;
+            await LoadContextAsync();
+        });
+        _saving = false;
+    }
+}

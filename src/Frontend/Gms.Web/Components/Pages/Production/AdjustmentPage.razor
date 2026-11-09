@@ -1,0 +1,119 @@
+@page "/production/adjustments"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.ProductionOutput.Adjust)]
+@inject IProductionApi Production
+@inject IWorkOrdersApi Wos
+@inject IWorkerApi Workers
+@inject ApiErrorHandler Errors
+@inject IToastService Toasts
+
+<PageTitle>Penyesuaian Output · GMS</PageTitle>
+<UnsavedChangesGuard HasChanges="_dirty" />
+
+<PageHeader Title="Penyesuaian Output" Subtitle="Untuk periode gaji yang sudah ditutup." />
+
+<div class="gms-banner info" role="status"><div class="gms-banner-body"><p>Upah penyesuaian dihitung dengan tarif snapshot WO dan masuk ke periode yang memuat Tanggal Kerja penyesuaian.</p></div></div>
+
+<FormSummary Errors="_problem?.Errors" Labels="_labels" />
+@if (_problem is not null && _problem.Errors is null) { <ProblemBanner Problem="_problem" /> }
+
+<form class="gms-form gms-card" @onsubmit="SaveAsync" @onsubmit:preventDefault novalidate>
+    <LookupSelect Label="WO" Items="_woItems" Value="_woId" ValueChanged="OnWoChangedAsync" Required="true" ShowCode="true" />
+    <LookupSelect Label="Proses" Items="_stepItems" Value="_stepKey" ValueChanged="v => { _stepKey = v; _dirty = true; }" Required="true" Disabled="@(_woId is null)" Placeholder="Pilih proses…" />
+    <LookupSelect Label="Pekerja" Items="_workerItems" @bind-Value="_worker" Required="true" ShowCode="true" />
+    <TextField Label="Tanggal Asal" Type="date" Value="@_original" ValueChanged="v => { _original = v; _dirty = true; }" Required="true" Hint="Harus berada pada periode gaji tertutup." />
+    <TextField Label="Tanggal Kerja penyesuaian" Type="date" Value="@_date" ValueChanged="v => { _date = v; _dirty = true; }" Required="true" Hint="Periode terbuka." />
+    <TextField Label="Alasan" Value="@_reason" ValueChanged="v => { _reason = v; _dirty = true; }" MaxLength="500" Multiline="true" Required="true" />
+
+    @if (_lines.Count > 0)
+    {
+        <h2>Qty (boleh negatif)</h2>
+        @foreach (var l in _lines)
+        {
+            <TextField Label="@($"{l.ColorSize.ColorName} · {l.ColorSize.SizeCode}")" InputMode="numeric" MaxLength="8" Value="@_qty[l.PoLineId]" ValueChanged="v => { _qty[l.PoLineId] = v ?? string.Empty; _dirty = true; }" />
+        }
+    }
+
+    <div class="gms-formactions">
+        <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="_saving">Simpan penyesuaian</FluentButton>
+    </div>
+</form>
+
+@code {
+    private static readonly IReadOnlyDictionary<string, string> _labels = new Dictionary<string, string>
+    {
+        ["originalDate"] = "Tanggal Asal", ["reason"] = "Alasan", ["cells"] = "Qty", ["workerId"] = "Pekerja", ["seq"] = "Proses",
+    };
+
+    private IReadOnlyList<LookupItem> _woItems = [], _stepItems = [], _workerItems = [];
+    private Dictionary<Guid, int> _seqOf = [];
+    private IReadOnlyList<WoLineDto> _lines = [];
+    private readonly Dictionary<Guid, string> _qty = [];
+    private Guid? _woId, _stepKey, _worker;
+    private string? _original, _date, _reason;
+    private GmsProblemDetails? _problem;
+    private bool _dirty, _saving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _date = DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(IdFormat.Offset).DateTime).ToString("yyyy-MM-dd");
+        await Errors.RunAsync(async () =>
+        {
+            _woItems = (await Wos.ListAsync(new WoListQuery { PageSize = 200 })).Items.Where(w => w.Status is WoStatus.Released or WoStatus.InProgress).Select(w => new LookupItem(w.Id, w.Code, w.FgCode)).ToList();
+            _workerItems = await Workers.LookupAsync(null);
+        });
+    }
+
+    private async Task OnWoChangedAsync(Guid? id)
+    {
+        _woId = id;
+        _stepKey = null;
+        _stepItems = [];
+        _lines = [];
+        _qty.Clear();
+        if (id is null) { return; }
+        await Errors.RunAsync(async () =>
+        {
+            var progress = await Wos.GetProgressAsync(id.Value);
+            _seqOf = [];
+            var items = new List<LookupItem>();
+            foreach (var s in progress.Steps.Where(s => s.ProcessType == ProcessType.Internal)) { var key = Guid.NewGuid(); _seqOf[key] = s.Seq; items.Add(new LookupItem(key, s.ProcessCode, $"{s.Seq} {s.ProcessName}")); }
+            _stepItems = items;
+            _lines = progress.Columns;
+            foreach (var l in _lines) { _qty[l.PoLineId] = string.Empty; }
+        });
+    }
+
+    private async Task SaveAsync()
+    {
+        _problem = null;
+        if (_woId is null || _stepKey is null || _worker is null || !DateOnly.TryParseExact(_original, "yyyy-MM-dd", out var original) || !DateOnly.TryParseExact(_date, "yyyy-MM-dd", out var date))
+        {
+            _problem = Local("originalDate", "WO, proses, pekerja, Tanggal Asal, dan Tanggal Kerja wajib diisi.");
+            return;
+        }
+
+        var cells = new List<WoLineQty>();
+        foreach (var (line, text) in _qty.Where(q => !string.IsNullOrWhiteSpace(q.Value)))
+        {
+            if (!IdNumber.TryParseInt(text, out var n, out var error)) { _problem = Local("cells", error ?? "Qty tidak valid."); return; }
+            if (n != 0) { cells.Add(new WoLineQty(line, n)); }
+        }
+
+        if (cells.Count == 0) { _problem = Local("cells", "Isi minimal satu Qty."); return; }
+        _saving = true;
+        _problem = await Errors.RunAsync(async () =>
+        {
+            await Production.CreateAdjustmentAsync(new AdjustmentRequest(_woId.Value, _seqOf[_stepKey.Value], _worker.Value, original, date, _reason?.Trim() ?? string.Empty, cells));
+            Toasts.ShowSuccess("Penyesuaian tersimpan.");
+            _dirty = false;
+            foreach (var key in _qty.Keys.ToList()) { _qty[key] = string.Empty; }
+            _reason = null;
+        });
+        _saving = false;
+    }
+
+    private static GmsProblemDetails Local(string field, string message) => new()
+    {
+        Type = ProblemTypes.ValidationFailed, Status = 422, Title = "Data belum valid.", Errors = new Dictionary<string, string[]> { [field] = [message] },
+    };
+}

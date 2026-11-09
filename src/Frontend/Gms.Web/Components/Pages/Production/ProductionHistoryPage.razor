@@ -1,0 +1,192 @@
+@page "/production/history"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.ProductionOutput.View)]
+@inject IProductionApi Production
+@inject IWorkOrdersApi Wos
+@inject IWorkerApi Workers
+@inject ApiErrorHandler Errors
+@inject AuthenticationStateProvider Auth
+@inject IToastService Toasts
+
+<PageTitle>Riwayat Produksi · GMS</PageTitle>
+
+<PageHeader Title="Riwayat Produksi" Subtitle="@(_total is null ? null : $"{IdFormat.Qty(_total)} catatan")" />
+
+<div class="gms-toolbar" role="search">
+    <div class="gms-field">
+        <label for="h-wo">WO</label>
+        <select id="h-wo" @onchange="e => Apply(() => _wo = Guid.TryParse(e.Value?.ToString(), out var g) ? g : null)">
+            <option value="">Semua WO</option>
+            @foreach (var w in _woItems) { <option value="@w.Id" selected="@(_wo == w.Id)">@w.Code</option> }
+        </select>
+    </div>
+    <div class="gms-field">
+        <label for="h-kind">Jenis</label>
+        <select id="h-kind" @onchange="e => Apply(() => _kind = Enum.TryParse<EntryKind>(e.Value?.ToString(), out var k) ? k : null)">
+            <option value="">Semua jenis</option>
+            @foreach (var k in Enum.GetValues<EntryKind>()) { <option value="@k" selected="@(_kind == k)">@KindLabel(k)</option> }
+        </select>
+    </div>
+    <div class="gms-field">
+        <label><input type="checkbox" checked="@_voided" @onchange="e => Apply(() => _voided = (bool)e.Value!)" /> Tampilkan Void</label>
+    </div>
+</div>
+
+<AsyncContent T="PagedResult<EntryListItem>" Key="@($"{_version}|{_page}|{_wo}|{_kind}|{_voided}")" Loader="LoadAsync" IsEmpty="r => r.TotalCount == 0">
+    <EmptyContent>
+        <EmptyState Icon="@(new Icons.Regular.Size48.Box())" Title="@(_wo is null && _kind is null && !_voided ? "Belum ada catatan produksi" : "Tidak ada hasil")" ActionText="@(_wo is null && _kind is null && !_voided ? null : "Reset filter")" OnAction="Reset" />
+    </EmptyContent>
+    <ChildContent Context="result">
+        <table class="gms-table compact">
+            <caption class="gms-sr-only">Riwayat produksi</caption>
+            <thead><tr><th scope="col">Waktu input</th><th scope="col">WO</th><th scope="col">Proses</th><th scope="col">Pekerja/Vendor</th><th scope="col">Tgl kerja</th><th scope="col">Jenis</th><th scope="col" class="num">Qty</th><th scope="col">Status</th><th scope="col">Aksi</th></tr></thead>
+            <tbody>
+                @foreach (var e in result.Items)
+                {
+                    <tr class="@(e.Status == DocStatus.Voided ? "gms-inactive" : null)">
+                        <td>@IdFormat.DateTime(e.CreatedAt)</td>
+                        <td><a href="/work-orders/@e.WoId">@e.WoCode</a></td>
+                        <td>@e.ProcessName</td>
+                        <td>@(e.WorkerName ?? e.VendorName ?? "—")</td>
+                        <td>@IdFormat.Date(e.WorkDate)</td>
+                        <td>@KindLabel(e.Kind)</td>
+                        <td class="num">@if (e.Status == DocStatus.Voided) { <s>@IdFormat.Qty(e.TotalQty)</s> } else { @IdFormat.Qty(e.TotalQty) }</td>
+                        <td>
+                            <StatusChip Value="@e.Status" Tooltip="@e.VoidReason" />
+                            @if (e.ReplacedById is not null) { <small class="gms-muted">digantikan</small> }
+                            @if (e.ReplacesId is not null) { <small class="gms-muted">menggantikan</small> }
+                        </td>
+                        <td class="gms-rowactions">
+                            <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Detail {e.WoCode} {e.ProcessName}")" OnClick="() => ShowDetail(e)">Detail</FluentButton>
+                            @if (e.Status == DocStatus.Active && _user.HasPermission(VoidPermission(e.Kind)))
+                            {
+                                <FluentButton Appearance="Appearance.Lightweight" Disabled="@(!e.CanVoid)" Title="@e.DisabledReason" aria-label="@($"Void entri {e.WorkerName ?? e.VendorName} {IdFormat.Date(e.WorkDate)}")" OnClick="() => _voiding = e">Void</FluentButton>
+                            }
+
+                            @if (e.Status == DocStatus.Active && e.Kind == EntryKind.Output && _user.HasPermission(Permissions.ProductionOutput.Correct))
+                            {
+                                <FluentButton Appearance="Appearance.Lightweight" Disabled="@(!e.CanCorrect)" Title="@e.DisabledReason" aria-label="@($"Koreksi entri {e.WorkerName} {IdFormat.Date(e.WorkDate)}")" OnClick="() => StartCorrect(e)">Koreksi</FluentButton>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <PagerBar Page="result.Page" PageSize="result.PageSize" TotalCount="result.TotalCount" PageChanged="p => _page = p" />
+    </ChildContent>
+</AsyncContent>
+
+@if (_detail is not null)
+{
+    <section class="gms-card" aria-labelledby="entry-detail">
+        <h2 id="entry-detail">Detail entri — @_detail.Item.WoCode · @_detail.Item.ProcessName</h2>
+        <ul>
+            @foreach (var l in _detail.Lines) { <li>@l.ColorSize.ColorName · @l.ColorSize.SizeCode: @IdFormat.Qty(l.Qty)</li> }
+        </ul>
+        <p class="gms-note">Dibuat @IdFormat.DateTime(_detail.Item.CreatedAt) oleh @(_detail.Item.CreatedByName ?? "—")@(string.IsNullOrEmpty(_detail.Reason) ? string.Empty : $" · Alasan: {_detail.Reason}")@(string.IsNullOrEmpty(_detail.Item.VoidReason) ? string.Empty : $" · Void: {_detail.Item.VoidReason}")</p>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="() => _detail = null">Tutup</FluentButton>
+    </section>
+}
+
+<ReasonDialog Open="_voiding is not null" OpenChanged="o => { if (!o) _voiding = null; }" Danger="true" ConfirmText="Void entri"
+              Title="@(_voiding is null ? string.Empty : $"Batalkan entri ini? {_voiding.ProcessName} · {_voiding.WorkerName ?? _voiding.VendorName} · {IdFormat.Date(_voiding.WorkDate)} · {IdFormat.Qty(_voiding.TotalQty)} pcs")"
+              LoadPreview="PreviewVoidAsync" OnConfirm="VoidAsync" />
+
+<ReasonDialog Open="_correcting is not null" OpenChanged="o => { if (!o) _correcting = null; }" Danger="false" ConfirmText="Simpan koreksi" Title="Koreksi output"
+              CanConfirm="@(_correctPreview?.CanProceed == true)" OnConfirm="CorrectAsync">
+    @if (_correcting is not null && _correctDetail is not null)
+    {
+        <div class="gms-form">
+            <LookupSelect Label="Pekerja" Items="_workerItems" Value="_cWorker" ValueChanged="v => { _cWorker = v; _correctPreview = null; }" Required="true" ShowCode="true" />
+            <TextField Label="Tanggal kerja" Type="date" Value="@_cDate" ValueChanged="v => { _cDate = v; _correctPreview = null; }" />
+            @foreach (var l in _correctDetail.Lines)
+            {
+                <TextField Label="@($"{l.ColorSize.ColorName} · {l.ColorSize.SizeCode}")" InputMode="numeric" MaxLength="7" Value="@_cQty[l.WoLineId]" ValueChanged="v => { _cQty[l.WoLineId] = v ?? string.Empty; _correctPreview = null; }" />
+            }
+        </div>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="CheckCorrectionAsync">Periksa dampak</FluentButton>
+        @if (_correctPreview is not null) { <ImpactPreviewTable Preview="_correctPreview" /> }
+    }
+</ReasonDialog>
+
+@code {
+    private IReadOnlyList<LookupItem> _woItems = [], _workerItems = [];
+    private Guid? _wo, _cWorker;
+    private EntryKind? _kind;
+    private bool _voided;
+    private int _page = 1, _version;
+    private int? _total;
+    private EntryDetailDto? _detail, _correctDetail;
+    private EntryListItem? _voiding, _correcting;
+    private ImpactPreview? _correctPreview;
+    private string? _cDate;
+    private readonly Dictionary<Guid, string> _cQty = [];
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+
+    private static string KindLabel(EntryKind k) => k switch { EntryKind.Output => "Output", EntryKind.Adjustment => "Penyesuaian", EntryKind.VendorSend => "Kirim vendor", _ => "Terima vendor" };
+
+    private static string VoidPermission(EntryKind k) => k is EntryKind.VendorSend or EntryKind.VendorReceive ? Permissions.VendorJob.Void : Permissions.ProductionOutput.Void;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _user = (await Auth.GetAuthenticationStateAsync()).User;
+        await Errors.RunAsync(async () =>
+        {
+            _woItems = (await Wos.ListAsync(new WoListQuery { PageSize = 200 })).Items.Select(w => new LookupItem(w.Id, w.Code, w.FgCode)).ToList();
+            _workerItems = await Workers.LookupAsync(null);
+        });
+    }
+
+    private async Task<PagedResult<EntryListItem>> LoadAsync(CancellationToken ct)
+    {
+        var result = await Production.ListEntriesAsync(new EntryListQuery { Page = _page, WoId = _wo, Kind = _kind, IncludeVoided = _voided }, ct);
+        _total = result.TotalCount;
+        await InvokeAsync(StateHasChanged);
+        return result;
+    }
+
+    private void Apply(Action change) { change(); _page = 1; }
+
+    private void Reset() { _wo = null; _kind = null; _voided = false; _page = 1; }
+
+    private async Task ShowDetail(EntryListItem e) => await Errors.RunAsync(async () => _detail = await Production.GetEntryAsync(e.Id));
+
+    private Task<ImpactPreview> PreviewVoidAsync(CancellationToken ct) =>
+        _voiding!.Kind is EntryKind.VendorSend or EntryKind.VendorReceive ? Production.PreviewVoidVendorMovementAsync(_voiding.Id, ct) : Production.PreviewVoidAsync(_voiding.Id, ct);
+
+    private async Task VoidAsync(string reason)
+    {
+        var e = _voiding!;
+        var request = new ReasonRequest(reason);
+        if (e.Kind is EntryKind.VendorSend or EntryKind.VendorReceive) { await Production.VoidVendorMovementAsync(e.Id, request); } else { await Production.VoidAsync(e.Id, request); }
+        Toasts.ShowSuccess("Entri di-void.");
+        _version++;
+    }
+
+    private async Task StartCorrect(EntryListItem e)
+    {
+        _correctPreview = null;
+        var problem = await Errors.RunAsync(async () => _correctDetail = await Production.GetEntryAsync(e.Id));
+        if (problem is not null) { return; }
+        _cWorker = e.WorkerId;
+        _cDate = e.WorkDate.ToString("yyyy-MM-dd");
+        _cQty.Clear();
+        foreach (var l in _correctDetail!.Lines) { _cQty[l.WoLineId] = l.Qty.ToString(); }
+        _correcting = e;
+    }
+
+    private CorrectOutputRequest BuildCorrection(string reason) => new(reason, _cWorker ?? Guid.Empty, DateOnly.ParseExact(_cDate!, "yyyy-MM-dd"),
+        _cQty.Where(q => int.TryParse(q.Value, out var n) && n > 0).Select(q => new WoLineQty(q.Key, int.Parse(q.Value))).ToList());
+
+    private async Task CheckCorrectionAsync()
+    {
+        if (_cWorker is null || !DateOnly.TryParseExact(_cDate, "yyyy-MM-dd", out _)) { return; }
+        await Errors.RunAsync(async () => _correctPreview = await Production.PreviewCorrectOutputAsync(_correcting!.Id, BuildCorrection(string.Empty)));
+    }
+
+    private async Task CorrectAsync(string reason)
+    {
+        await Production.CorrectOutputAsync(_correcting!.Id, BuildCorrection(reason));
+        Toasts.ShowSuccess("Koreksi disimpan.");
+        _version++;
+    }
+}

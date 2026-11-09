@@ -1,0 +1,228 @@
+@page "/production/output"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.ProductionOutput.Create)]
+@inject IProductionApi Production
+@inject IWorkOrdersApi Wos
+@inject IWorkerApi Workers
+@inject ApiErrorHandler Errors
+@inject IToastService Toasts
+
+<PageTitle>Input Output · GMS</PageTitle>
+<UnsavedChangesGuard HasChanges="_dirty" />
+
+<PageHeader Title="Input Output" Subtitle="Output pekerja per langkah, Color, dan Size (semua-atau-tidak-sama-sekali)." />
+
+<div class="gms-toolbar">
+    <LookupSelect Label="WO" Items="_woItems" Value="_woId" ValueChanged="OnWoChangedAsync" Required="true" ShowCode="true" />
+    <LookupSelect Label="Proses" Items="_stepItems" Value="_seqId" ValueChanged="OnStepChangedAsync" Required="true" Disabled="@(_woId is null)" Placeholder="Pilih proses…" />
+    <TextField Label="Tanggal Kerja" Type="date" Value="@_date" ValueChanged="OnDateChangedAsync" Required="true" />
+</div>
+
+@if (_ctx is null && _loadProblem is null)
+{
+    <EmptyState Icon="@(new Icons.Regular.Size48.Box())" Title="Pilih WO dan proses untuk mulai" />
+}
+else if (_loadProblem is not null)
+{
+    <ProblemBanner Problem="_loadProblem" OnReload="LoadContextAsync" />
+}
+else if (_ctx is not null)
+{
+    @if (_ctx.BlockedReason is not null)
+    {
+        <div class="gms-banner warning" role="alert"><div class="gms-banner-body"><p>@_ctx.BlockedReason <a href="/work-orders/@_ctx.WoId">Buka WO</a></p></div></div>
+    }
+
+    <p class="gms-note">
+        @if (_ctx.IsFirstStep) { <span>Proses pertama: bebas. Kumulatif @IdFormat.Qty(_ctx.CurrentTotal) dari Qty WO @IdFormat.Qty(_ctx.AvailableTotal + _ctx.CurrentTotal) · Sisa terhadap Qty WO @IdFormat.Qty(_ctx.AvailableTotal).</span> }
+        else { <span>Output proses sebelumnya @IdFormat.Qty(_ctx.PreviousStepTotal) · Sudah @_ctx.ProcessName @IdFormat.Qty(_ctx.CurrentTotal) · Tersedia @IdFormat.Qty(_ctx.AvailableTotal)</span> }
+    </p>
+
+    <FormSummary Errors="_problem?.Errors" />
+    @if (_problem is not null && _problem.Errors is null) { <ProblemBanner Problem="_problem" OnReload="LoadContextAsync" /> }
+    @foreach (var warning in _warnings) { <div class="gms-banner warning" role="status"><div class="gms-banner-body"><p>@warning</p></div></div> }
+
+    <div class="gms-inline">
+        <LookupSelect Label="Tambah pekerja" Items="_available" @bind-Value="_addWorker" ShowCode="true" Placeholder="Cari kode/nama…" />
+        <FluentButton Appearance="Appearance.Neutral" Disabled="@(_addWorker is null || _ctx.BlockedReason is not null)" OnClick="AddWorker">Tambah pekerja</FluentButton>
+    </div>
+
+    @if (_rows.Count == 0)
+    {
+        <EmptyState Title="Belum ada pekerja" Description="Tambahkan pekerja lalu isi Qty per Color dan Size." />
+    }
+    else
+    {
+        <SizeMatrixGrid Caption="Output per pekerja" RowHeader="Pekerja" Rows="_rows" Columns="_columns" Values="_values" CellInfo="CellInfo" ShowMax="true" Compact="true" OnChanged="() => _dirty = true" />
+        <ul class="gms-chips" aria-label="Pekerja pada tabel">
+            @foreach (var row in _rows)
+            {
+                <li class="gms-chipbtn">@row.Label <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Hapus {row.Label}")" OnClick="() => RemoveWorker(row)">✕</FluentButton></li>
+            }
+        </ul>
+        <div class="gms-formactions">
+            @if (_dirty) { <span class="gms-note" role="status">● Belum disimpan</span> }
+            <span class="gms-note">@_rows.Count pekerja · @IdFormat.Qty(_values.All.Sum(v => v.Qty)) pcs</span>
+            <FluentButton Appearance="Appearance.Accent" Disabled="@(_saving || _ctx.BlockedReason is not null)" OnClick="() => SaveAsync(false)">Simpan</FluentButton>
+        </div>
+    }
+}
+
+<ReasonDialog Open="_confirmExceed" OpenChanged="o => _confirmExceed = o" ShowReason="false" Danger="false" ConfirmText="Ya, simpan" Title="Melebihi Qty WO"
+              Description="@_exceedText" OnConfirm="_ => SaveCoreAsync(true)" />
+
+@code {
+    private IReadOnlyList<LookupItem> _woItems = [], _stepItems = [], _available = [], _allWorkers = [];
+    private Dictionary<Guid, int> _seqOf = [];
+    private Guid? _woId, _seqId, _addWorker;
+    private string? _date;
+    private InputContextDto? _ctx;
+    private GmsProblemDetails? _problem, _loadProblem;
+    private readonly List<MatrixRow> _rows = [];
+    private IReadOnlyList<MatrixColumn> _columns = [];
+    private MatrixValues _values = new();
+    private List<string> _warnings = [];
+    private bool _dirty, _saving, _confirmExceed;
+    private string _exceedText = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _date = DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(IdFormat.Offset).DateTime).ToString("yyyy-MM-dd");
+        await Errors.RunAsync(async () =>
+        {
+            var list = new List<LookupItem>();
+            foreach (var status in new[] { WoStatus.Released, WoStatus.InProgress })
+            {
+                list.AddRange((await Wos.ListAsync(new WoListQuery { Status = status, PageSize = 200 })).Items.Select(w => new LookupItem(w.Id, w.Code, $"{w.FgCode} · {w.CustomerName}")));
+            }
+
+            _woItems = list;
+            _allWorkers = await Workers.LookupAsync(null);
+            RefreshAvailable();
+        });
+    }
+
+    private async Task OnWoChangedAsync(Guid? id)
+    {
+        _woId = id;
+        _seqId = null;
+        _ctx = null;
+        ClearRows();
+        _stepItems = [];
+        if (id is null) { return; }
+        _loadProblem = await Errors.RunAsync(async () =>
+        {
+            var progress = await Wos.GetProgressAsync(id.Value);
+            _seqOf = [];
+            var items = new List<LookupItem>();
+            foreach (var s in progress.Steps.Where(s => s.ProcessType == ProcessType.Internal))
+            {
+                var key = Guid.NewGuid();
+                _seqOf[key] = s.Seq;
+                items.Add(new LookupItem(key, s.ProcessCode, $"{s.Seq} {s.ProcessName}"));
+            }
+
+            _stepItems = items;
+        });
+    }
+
+    private async Task OnStepChangedAsync(Guid? key)
+    {
+        _seqId = key;
+        ClearRows();
+        await LoadContextAsync();
+    }
+
+    private async Task OnDateChangedAsync(string? date)
+    {
+        _date = date;
+        await LoadContextAsync();
+    }
+
+    private async Task LoadContextAsync()
+    {
+        _ctx = null;
+        _loadProblem = null;
+        if (_woId is null || _seqId is null || !DateOnly.TryParseExact(_date, "yyyy-MM-dd", out var date)) { return; }
+        _loadProblem = await Errors.RunAsync(async () =>
+        {
+            _ctx = await Production.GetInputContextAsync(_woId.Value, _seqOf[_seqId.Value], date);
+            _columns = _ctx.Columns.Select(c => new MatrixColumn(c.WoLineId.ToString(), $"{c.ColorSize.ColorName} {c.ColorSize.SizeCode}")).ToList();
+        });
+    }
+
+    private void ClearRows()
+    {
+        _rows.Clear();
+        _values = new MatrixValues();
+        _dirty = false;
+        _problem = null;
+        _warnings = [];
+        RefreshAvailable();
+    }
+
+    private void RefreshAvailable() => _available = _allWorkers.Where(w => _rows.All(r => r.Key != w.Id.ToString())).ToList();
+
+    private void AddWorker()
+    {
+        if (_addWorker is { } id && _allWorkers.FirstOrDefault(w => w.Id == id) is { } w)
+        {
+            _rows.Add(new MatrixRow(w.Id.ToString(), $"{w.Code} {w.Name}"));
+            _addWorker = null;
+            RefreshAvailable();
+        }
+    }
+
+    private void RemoveWorker(MatrixRow row)
+    {
+        _rows.Remove(row);
+        foreach (var cell in _values.All.Where(v => v.Row == row.Key).ToList()) { _values.Set(cell.Row, cell.Column, null); }
+        RefreshAvailable();
+        _dirty = _values.All.Any();
+    }
+
+    /// <summary>Batas tersedia per kolom dari server; proses pertama tanpa batas keras.</summary>
+    private MatrixCellInfo CellInfo(string row, string col) =>
+        _ctx?.Columns.FirstOrDefault(c => c.WoLineId.ToString() == col) is { MaxAllowed: { } max } ? new MatrixCellInfo(Max: max) : new MatrixCellInfo();
+
+    private async Task SaveAsync(bool confirm)
+    {
+        _problem = null;
+        if (!_values.All.Any(v => v.Qty > 0)) { _problem = new GmsProblemDetails { Type = ProblemTypes.ValidationFailed, Status = 422, Title = "Data belum valid.", Errors = new Dictionary<string, string[]> { ["rows"] = ["Isi minimal satu Qty."] } }; return; }
+        await SaveCoreAsync(confirm);
+    }
+
+    private async Task SaveCoreAsync(bool confirm)
+    {
+        _saving = true;
+        try
+        {
+            var request = new SaveOutputsRequest(_woId!.Value, _seqOf[_seqId!.Value], DateOnly.ParseExact(_date!, "yyyy-MM-dd"),
+                _rows.Select(r => new OutputRow(Guid.Parse(r.Key), _values.All.Where(v => v.Row == r.Key && v.Qty > 0).Select(v => new WoLineQty(Guid.Parse(v.Column), v.Qty)).ToList())).ToList(), confirm);
+            SaveOutputsResult result;
+            try { result = await Production.SaveOutputsAsync(request); }
+            catch (ApiException ex) when (!confirm && ex.Problem.Code == ProblemCodes.OutputExceedsWoQtyNeedsConfirmation)
+            {
+                _exceedText = ex.Problem.Detail ?? "Output melebihi Qty WO.";
+                _confirmExceed = true;
+                return;
+            }
+
+            _warnings = result.Warnings.ToList();
+            Toasts.ShowSuccess($"{result.WorkerCount} entri tersimpan ({IdFormat.Qty(result.TotalQty)} pcs).");
+            ClearRows();
+            await LoadContextAsync();
+        }
+        catch (ApiException) when (confirm)
+        {
+            throw; // tampil di dalam dialog konfirmasi
+        }
+        catch (ApiException ex)
+        {
+            if (!Errors.TryHandleSessionEnd(ex.Problem)) { _problem = ex.Problem; await LoadContextAsync(); } // batas bisa berubah: muat ulang, input dipertahankan
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

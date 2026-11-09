@@ -33,9 +33,9 @@ public static class NavCatalog
         ]),
         new("Produksi",
         [
-            new("Input Output", "/production/output", Permissions.ProductionOutput.Create, I<Icons.Regular.Size20.TableEdit>()),
-            new("Kirim/Terima Vendor", "/production/vendor", Permissions.VendorJob.View, I<Icons.Regular.Size20.ArrowUpload>()),
-            new("Riwayat Produksi", "/production/history", Permissions.ProductionOutput.View, I<Icons.Regular.Size20.History>()),
+            new("Input Output", "/production/output", Permissions.ProductionOutput.Create, I<Icons.Regular.Size20.TableEdit>(), Enabled: true),
+            new("Kirim/Terima Vendor", "/production/vendor", Permissions.VendorJob.View, I<Icons.Regular.Size20.ArrowUpload>(), Enabled: true),
+            new("Riwayat Produksi", "/production/history", Permissions.ProductionOutput.View, I<Icons.Regular.Size20.History>(), Enabled: true),
         ]),
         new("Penggajian",
         [
