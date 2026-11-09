@@ -1,0 +1,6 @@
+@page "/master/materials/import"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.MasterData.Material.Import)]
+
+<PageTitle>Impor Material · GMS</PageTitle>
+
+<ImportWizard Entity="ImportEntity.Material" Title="Material" ListHref="/master/materials" />

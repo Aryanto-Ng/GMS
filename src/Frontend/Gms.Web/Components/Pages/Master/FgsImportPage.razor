@@ -1,0 +1,6 @@
+@page "/master/fgs/import"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.MasterData.FG.Import)]
+
+<PageTitle>Impor FG · GMS</PageTitle>
+
+<ImportWizard Entity="ImportEntity.Fg" Title="FG" ListHref="/master/fgs" />

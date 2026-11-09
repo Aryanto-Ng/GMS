@@ -15,12 +15,12 @@ Proyek: `src/Frontend/Gms.Web`; tes: `src/Tests/Gms.Web.Tests` (bUnit + xunit.v3
 - Format tanpa ketergantungan ICU: `IdFormat` (tanggal, qty `12.500`, `Rp 1.250.000`, tarif ≤5 desimal; zona WIB), `IdNumber` (parser ketat; "1.5" ditolak karena ambigu).
 
 ## Komponen bersama (`Components/Shared`)
-PageHeader, MetricCard, EmptyState, ErrorState, SkeletonRows, PagerBar, StatusChip, ProblemBanner, FormSummary, AsyncContent, UnsavedChangesGuard, ImpactPreviewTable, ReasonDialog, SizeMatrixGrid (+ `SizeMatrixLogic`). Status selalu ikon + teks; galat menampilkan `traceId`.
+PageHeader, MetricCard, EmptyState, ErrorState, SkeletonRows, PagerBar, StatusChip, ProblemBanner, FormSummary, AsyncContent, UnsavedChangesGuard, ImpactPreviewTable, ReasonDialog (`ShowReason="false"` = konfirmasi biasa), SizeMatrixGrid (+ `SizeMatrixLogic`), MasterList (Daftar Master Generik), TextField, LookupSelect, ImportWizard. Status selalu ikon + teks; galat menampilkan `traceId`.
 
 ## Render mode
 Interactive Server untuk halaman kerja; Static SSR untuk halaman akun (sesuai FSD).
 
 ## Belum / berikutnya
-- Halaman per modul (urutan di `CHECKPOINT.md` 5.1–5.9) + `HttpXxxApi`/`MockXxxApi`.
-- Komponen: Daftar Master Generik, Wizard Import CSV, Matriks Progres.
+- Selesai: 5.0 fondasi, 5.1 Access, 5.2 Master Data. Berikutnya 5.3 Customer PO (urutan di `CHECKPOINT.md`).
+- Komponen tersisa: Matriks Progres (bersama modul WO).
 - Perilaku JS (keyboard/tempel grid, dialog native) diuji via Playwright (QA).

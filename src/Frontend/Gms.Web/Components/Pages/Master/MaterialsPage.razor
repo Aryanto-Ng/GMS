@@ -10,7 +10,7 @@
 
 <MasterList @ref="_list" TItem="MaterialDto" Title="Material" Noun="material" Loader="Materials.ListAsync" IsActive="d => d.IsActive" Label="d => d.Name"
             SetActive="ToggleAsync" CreatePermission="@Permissions.MasterData.Material.Create" EditPermission="@Permissions.MasterData.Material.Edit"
-            DeactivatePermission="@Permissions.MasterData.Material.Deactivate"
+            DeactivatePermission="@Permissions.MasterData.Material.Deactivate" ImportPermission="@Permissions.MasterData.Material.Import" ImportHref="/master/materials/import"
             OnCreate="OpenCreate" OnEdit="OpenEdit">
     <Header><th scope="col">Kode</th><th scope="col">Nama</th><th scope="col">Kategori</th><th scope="col">Satuan</th></Header>
     <Row Context="d"><th scope="row">@d.Code</th><td>@d.Name</td><td>@d.CategoryName</td><td>@d.UomCode</td></Row>

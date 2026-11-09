@@ -1,0 +1,6 @@
+@page "/master/workers/import"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.MasterData.Pekerja.Import)]
+
+<PageTitle>Impor Pekerja · GMS</PageTitle>
+
+<ImportWizard Entity="ImportEntity.Worker" Title="Pekerja" ListHref="/master/workers" />

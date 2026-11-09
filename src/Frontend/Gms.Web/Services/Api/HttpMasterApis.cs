@@ -71,3 +71,21 @@ public sealed class HttpFgApi(GmsApiClient client) : HttpMasterCrud<FgListItem, 
 
     public Task<FgDto> CopyFromAsync(Guid fgId, CopyFgRequest request, CancellationToken ct = default) => _client.PostAsync<FgDto>($"{Base(fgId)}/copy-from", request, ct);
 }
+
+/// <summary>Impor CSV master (template dan unggah multipart). Unggah memakai dry-run bawaan agar tidak menulis tanpa sengaja.</summary>
+public sealed class HttpImportApi(GmsApiClient client) : IImportApi
+{
+    private static string Route(ImportEntity entity) => entity switch
+    {
+        ImportEntity.Material => "materials",
+        ImportEntity.Fg => "fgs",
+        ImportEntity.Worker => "workers",
+        _ => throw new NotSupportedException($"Impor {entity} tidak tersedia di modul Master Data."),
+    };
+
+    public Task<FileContent> GetTemplateAsync(ImportEntity entity, CancellationToken ct = default) =>
+        client.DownloadAsync($"/api/v1/master/{Route(entity)}/import-template", ct);
+
+    public Task<ImportResultDto> ImportAsync(ImportEntity entity, Stream csv, string fileName, bool dryRun, CancellationToken ct = default) =>
+        client.PostFileAsync<ImportResultDto>($"/api/v1/master/{Route(entity)}/import?dryRun={(dryRun ? "true" : "false")}", "file", csv, fileName, ct);
+}

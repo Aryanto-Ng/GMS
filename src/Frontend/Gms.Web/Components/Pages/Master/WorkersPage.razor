@@ -9,7 +9,7 @@
 
 <MasterList @ref="_list" TItem="WorkerDto" Title="Pekerja" Noun="pekerja" Loader="Workers.ListAsync" IsActive="d => d.IsActive" Label="d => d.Name"
             SetActive="ToggleAsync" CreatePermission="@Permissions.MasterData.Pekerja.Create" EditPermission="@Permissions.MasterData.Pekerja.Edit"
-            DeactivatePermission="@Permissions.MasterData.Pekerja.Deactivate"
+            DeactivatePermission="@Permissions.MasterData.Pekerja.Deactivate" ImportPermission="@Permissions.MasterData.Pekerja.Import" ImportHref="/master/workers/import"
             OnCreate="OpenCreate" OnEdit="OpenEdit">
     <Header><th scope="col">Kode</th><th scope="col">Nama</th><th scope="col">Proses utama</th><th scope="col">Tgl masuk</th></Header>
     <Row Context="d"><th scope="row">@d.Code</th><td>@d.Name</td><td>@(d.MainProcessName ?? "—")</td><td>@IdFormat.Date(d.JoinDate)</td></Row>

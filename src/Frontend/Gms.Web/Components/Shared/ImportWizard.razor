@@ -1,0 +1,182 @@
+@inject IImportApi Imports
+@inject FileDownloader Downloader
+@inject ApiErrorHandler Errors
+@inject IToastService Toasts
+
+@* Wizard Impor CSV 3 langkah (MasterData-UI.md bagian 4): Unggah → Periksa (dry-run) → Konfirmasi. Semua-atau-tidak-sama-sekali. *@
+<PageHeader Title="@($"Impor {Title}")" Breadcrumbs="@(new[] { new PageHeader.Crumb(Title, ListHref), new PageHeader.Crumb("Impor") })" />
+
+<ol class="gms-stepper" aria-label="Langkah impor">
+    @foreach (var (n, label) in new[] { (1, "Unggah"), (2, "Periksa"), (3, "Konfirmasi") })
+    {
+        <li aria-current="@(_step == n ? "step" : null)" class="@(_step == n ? "current" : null)">@n. @label</li>
+    }
+</ol>
+
+@if (_problem is not null)
+{
+    <ProblemBanner Problem="_problem" />
+}
+
+@if (_step == 1)
+{
+    <section class="gms-card" aria-labelledby="imp-up">
+        <h2 id="imp-up">Unggah berkas CSV</h2>
+        <ul>
+            <li>Format UTF-8, pemisah koma atau titik koma.</li>
+            <li>Maksimal 2.000 baris dan 2 MB.</li>
+            <li>Judul kolom harus sama dengan template. @if (Entity == ImportEntity.Fg) { <span>Kolom <code>sizes</code> memakai pemisah <code>|</code>, contoh <code>S|M|L|XL</code>.</span> }</li>
+        </ul>
+        <p><FluentButton Appearance="Appearance.Neutral" OnClick="DownloadTemplateAsync">Unduh template</FluentButton></p>
+        <div class="gms-field">
+            <label for="imp-file">Pilih berkas (.csv)</label>
+            <InputFile id="imp-file" accept=".csv,text/csv" OnChange="OnFileAsync" disabled="@_busy" />
+        </div>
+        @if (_busy)
+        {
+            <div class="gms-progress" role="progressbar" aria-label="Memeriksa berkas"></div>
+            <p role="status">Memeriksa berkas…</p>
+        }
+    </section>
+}
+else if (_step == 2 && _result is not null)
+{
+    <section class="gms-card" aria-labelledby="imp-check">
+        <h2 id="imp-check">Hasil pemeriksaan</h2>
+        <p role="status"><strong>@_result.TotalRows baris:</strong> @_result.ValidRows valid, @_result.ErrorRows error — <span class="gms-muted">@_fileName</span></p>
+        @if (_result.ErrorRows > 0)
+        {
+            <label><input type="checkbox" checked="@_onlyErrors" @onchange="e => _onlyErrors = (bool)e.Value!" /> Hanya error</label>
+        }
+
+        <table class="gms-table compact">
+            <caption class="gms-sr-only">Hasil per baris</caption>
+            <thead><tr><th scope="col" class="num">No</th><th scope="col">@KeyHeader</th><th scope="col">Status</th><th scope="col">Pesan</th></tr></thead>
+            <tbody>
+                @foreach (var row in _result.Rows.Where(r => !_onlyErrors || !r.IsValid))
+                {
+                    <tr class="@(row.IsValid ? null : "violation")">
+                        <td class="num">@row.RowNumber</td>
+                        <td>@(row.Key ?? "—")</td>
+                        <td>
+                            @if (row.IsValid) { <span class="gms-ok"><FluentIcon Value="@(new Icons.Regular.Size16.CheckmarkCircle())" Color="Color.Neutral" /> Valid</span> }
+                            else { <span class="gms-bad"><FluentIcon Value="@(new Icons.Regular.Size16.DismissCircle())" Color="Color.Neutral" /> Error</span> }
+                        </td>
+                        <td>@row.Message</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="gms-formactions">
+            @if (_result.ErrorRows > 0)
+            {
+                <span class="gms-bad" role="alert">Perbaiki berkas dan unggah ulang.</span>
+            }
+
+            <FluentButton Appearance="Appearance.Neutral" OnClick="Restart">Unggah ulang</FluentButton>
+            <FluentButton Appearance="Appearance.Accent" Disabled="@(_result.ErrorRows > 0 || _result.TotalRows == 0)" OnClick="() => _step = 3">Lanjut</FluentButton>
+        </div>
+    </section>
+}
+else if (_step == 3 && _result is not null)
+{
+    <section class="gms-card" aria-labelledby="imp-confirm">
+        <h2 id="imp-confirm">Konfirmasi impor</h2>
+        <p>@_result.ValidRows @Title akan ditambahkan. Proses ini tidak dapat dibatalkan; koreksi dilakukan lewat daftar.</p>
+        <div class="gms-formactions">
+            <FluentButton Appearance="Appearance.Neutral" Disabled="_busy" OnClick="() => _step = 2">Kembali</FluentButton>
+            <FluentButton Appearance="Appearance.Accent" Disabled="_busy" OnClick="CommitAsync">
+                @if (_busy) { <FluentProgressRing Width="16px" Style="margin-inline-end:6px" /> }
+                Impor sekarang
+            </FluentButton>
+        </div>
+    </section>
+}
+else if (_step == 4 && _result is not null)
+{
+    <section class="gms-card" aria-labelledby="imp-done">
+        <h2 id="imp-done">Impor selesai</h2>
+        <p role="status">@_result.ValidRows @Title berhasil ditambahkan.</p>
+        <p><FluentAnchor Href="@ListHref" Appearance="Appearance.Accent">Lihat daftar @Title</FluentAnchor></p>
+    </section>
+}
+
+@code {
+    private int _step = 1;
+    private bool _busy, _onlyErrors;
+    private byte[] _bytes = [];
+    private string _fileName = string.Empty;
+    private ImportResultDto? _result;
+    private GmsProblemDetails? _problem;
+
+    [Parameter, EditorRequired] public ImportEntity Entity { get; set; }
+
+    /// <summary>Nama entitas untuk judul dan pesan (mis. "Material").</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired] public string ListHref { get; set; } = string.Empty;
+
+    private string KeyHeader => Entity == ImportEntity.Worker ? "Nama" : "Kode";
+
+    private async Task DownloadTemplateAsync()
+    {
+        _problem = await Errors.RunAsync(async () => await Downloader.SaveAsync(await Imports.GetTemplateAsync(Entity)));
+    }
+
+    private async Task OnFileAsync(InputFileChangeEventArgs e)
+    {
+        _problem = null;
+        var file = e.File;
+        if (file.Size > 2 * 1024 * 1024)
+        {
+            _problem = new GmsProblemDetails
+            {
+                Type = ProblemTypes.ImportInvalid, Status = 422, Title = "Berkas ditolak.", Detail = "Ukuran berkas melebihi 2 MB. Pecah menjadi beberapa berkas.",
+            };
+            return;
+        }
+
+        _busy = true;
+        _problem = await Errors.RunAsync(async () =>
+        {
+            using var ms = new MemoryStream();
+            await using (var stream = file.OpenReadStream(2 * 1024 * 1024 + 1)) { await stream.CopyToAsync(ms); }
+            _bytes = ms.ToArray();
+            _fileName = file.Name;
+            _result = await Imports.ImportAsync(Entity, new MemoryStream(_bytes), _fileName, dryRun: true);
+            _onlyErrors = _result.ErrorRows > 0;
+            _step = 2;
+        });
+        _busy = false;
+    }
+
+    private void Restart()
+    {
+        _step = 1;
+        _result = null;
+        _bytes = [];
+        _problem = null;
+    }
+
+    private async Task CommitAsync()
+    {
+        _busy = true;
+        _problem = await Errors.RunAsync(async () =>
+        {
+            var result = await Imports.ImportAsync(Entity, new MemoryStream(_bytes), _fileName, dryRun: false);
+            if (result.Committed)
+            {
+                _result = result;
+                _step = 4;
+                Toasts.ShowSuccess($"{result.ValidRows} {Title} diimpor.");
+            }
+            else
+            {
+                _result = result; // data berubah sejak pemeriksaan: tampilkan hasil terbaru dan minta periksa ulang
+                _step = 2;
+            }
+        });
+        _busy = false;
+    }
+}

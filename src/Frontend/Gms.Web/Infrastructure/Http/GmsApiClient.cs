@@ -96,7 +96,17 @@ public sealed class GmsApiClient(IHttpClientFactory factory, ISessionTokenProvid
         return new FileContent(name, response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream", bytes);
     }
 
-    private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, object? body, CancellationToken ct)
+    /// <summary>Unggah berkas multipart (mis. impor CSV). Bearer dipakai; antiforgery tidak berlaku untuk API.</summary>
+    public async Task<T> PostFileAsync<T>(string path, string fieldName, Stream content, string fileName, CancellationToken ct = default)
+    {
+        using var form = new MultipartFormDataContent();
+        var file = new StreamContent(content);
+        file.Headers.ContentType = new MediaTypeHeaderValue("text/csv");
+        form.Add(file, fieldName, fileName);
+        return await ReadAsync<T>(await SendAsync(HttpMethod.Post, path, null, ct, form), ct);
+    }
+
+    private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, object? body, CancellationToken ct, HttpContent? content = null)
     {
         var http = factory.CreateClient(HttpClientName);
         using var request = new HttpRequestMessage(method, path);
@@ -105,7 +115,11 @@ public sealed class GmsApiClient(IHttpClientFactory factory, ISessionTokenProvid
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
 
-        if (body is not null)
+        if (content is not null)
+        {
+            request.Content = content;
+        }
+        else if (body is not null)
         {
             request.Content = new StringContent(JsonSerializer.Serialize(body, WebJson.Options), Encoding.UTF8, "application/json");
         }

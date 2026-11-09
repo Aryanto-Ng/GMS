@@ -7,7 +7,7 @@
 <PageTitle>FG · GMS</PageTitle>
 
 <MasterList TItem="FgListItem" Title="FG" Noun="FG" Loader="Fgs.ListAsync" IsActive="d => d.IsActive" Label="d => d.Name" SetActive="ToggleAsync"
-            CreatePermission="@Permissions.MasterData.FG.Create" DeactivatePermission="@Permissions.MasterData.FG.Deactivate"
+            CreatePermission="@Permissions.MasterData.FG.Create" DeactivatePermission="@Permissions.MasterData.FG.Deactivate" ImportPermission="@Permissions.MasterData.FG.Import" ImportHref="/master/fgs/import"
             OnCreate="@(() => Nav.NavigateTo("/master/fgs/new"))" RowLink="FgLink"
             ExtraKey="@(_readyOnly ? "ready" : null)" QueryFactory="q => new FgListQuery { Page = q.Page, PageSize = q.PageSize, Q = q.Q, Status = q.Status, ReadyOnly = _readyOnly }">
     <ExtraFilters>
