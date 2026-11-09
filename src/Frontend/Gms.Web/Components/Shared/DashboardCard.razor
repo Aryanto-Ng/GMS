@@ -1,0 +1,46 @@
+@typeparam T
+@inject AuthenticationStateProvider Auth
+
+@* Kartu Beranda: dimuat independen (skeleton → isi / galat berisi traceId + Coba lagi), izin per widget (kartu tanpa izin tidak dirender), nol = nilai netral. *@
+@if (_allowed)
+{
+    <section class="gms-dcard @SizeClass" role="region" aria-label="@Title">
+        <h3>@if (Href is not null) { <a href="@Href">@Title</a> } else { @Title }</h3>
+        <AsyncContent T="T" Key="Refresh" Loader="Loader" Skeleton="Skeleton">
+            <ChildContent Context="data">@ChildContent(data)</ChildContent>
+        </AsyncContent>
+    </section>
+}
+
+@code {
+    private bool _allowed;
+
+    private static readonly RenderFragment Skeleton = b =>
+    {
+        b.OpenComponent<SkeletonRows>(0);
+        b.AddAttribute(1, "Rows", 2);
+        b.AddAttribute(2, "Columns", 2);
+        b.AddAttribute(3, "Label", "Memuat kartu");
+        b.CloseComponent();
+    };
+
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    /// <summary>Izin yang diperlukan widget; kartu disembunyikan bila tidak dimiliki.</summary>
+    [Parameter, EditorRequired] public string Permission { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired] public Func<CancellationToken, Task<T>> Loader { get; set; } = default!;
+
+    [Parameter, EditorRequired] public RenderFragment<T> ChildContent { get; set; } = default!;
+
+    /// <summary>Tautan judul/angka ke modul tujuan (parameter query sama dengan chip cepat modul).</summary>
+    [Parameter] public string? Href { get; set; }
+
+    /// <summary>Kelas ukuran: small, medium, wide.</summary>
+    [Parameter] public string SizeClass { get; set; } = "medium";
+
+    /// <summary>Naikkan untuk memuat ulang (tombol Segarkan).</summary>
+    [Parameter] public int Refresh { get; set; }
+
+    protected override async Task OnInitializedAsync() => _allowed = (await Auth.GetAuthenticationStateAsync()).User.HasPermission(Permission);
+}

@@ -1,28 +1,155 @@
 @page "/"
 @inject AuthenticationStateProvider Auth
+@inject IDashboardApi Dashboard
 
 <PageTitle>Beranda · GMS</PageTitle>
 
-<PageHeader Title="Beranda" Subtitle="@($"Selamat datang, {_name}")" />
+<PageHeader Title="@($"Selamat datang, {_name}")" Subtitle="@($"Diperbarui {_updated}")">
+    <Actions>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="RefreshAsync">Segarkan</FluentButton>
+    </Actions>
+</PageHeader>
+<p class="gms-sr-only" role="status" aria-live="polite">@_announce</p>
 
-<div class="gms-welcome">
-    <MetricCard Label="Peran Anda" Value="@_role" Description="Hak akses mengikuti peran ini." />
-    <MetricCard Label="Hak akses" Value="@_permissionCount.ToString()" Description="Menu hanya menampilkan yang boleh Anda lihat." />
-</div>
+@if (_quick.Count > 0)
+{
+    <section class="gms-dcard wide" role="region" aria-label="Aksi Cepat">
+        <h3>Aksi Cepat</h3>
+        <div class="gms-inline">
+            @foreach (var (label, href) in _quick.Take(6)) { <FluentAnchor Href="@href" Appearance="Appearance.Neutral">@label</FluentAnchor> }
+        </div>
+    </section>
+}
 
-<EmptyState Icon="@(new Icons.Regular.Size48.Home())" Title="Modul sedang disiapkan"
-            Description="Menu dan ringkasan kerja akan tampil di sini seiring modul diselesaikan satu per satu." />
+@if (_widgetCount == 0)
+{
+    <EmptyState Icon="@(new Icons.Regular.Size48.Home())" Title="Belum ada ringkasan untuk peran Anda" Description="Gunakan menu di sebelah kiri untuk membuka modul yang boleh Anda akses." />
+}
+
+@foreach (var area in _areas)
+{
+    <h2 class="gms-area">@area</h2>
+    <div class="gms-dgrid">
+        @switch (area)
+        {
+            case "Produksi":
+                <DashboardCard T="OutputTodayWidget" Title="Output Hari Ini" Permission="@Permissions.ProductionOutput.View" Loader="Dashboard.GetOutputTodayAsync" Href="/production/history" Refresh="_refresh" SizeClass="medium">
+                    <p class="gms-big">@IdFormat.Qty(context.TotalQty) <small>pcs</small></p>
+                    @if (context.TotalQty == 0) { <p class="gms-ok"><FluentIcon Value="@(new Icons.Regular.Size16.CheckmarkCircle())" Color="Color.Neutral" /> Belum ada output hari ini</p> }
+                    <ul>@foreach (var p in context.ByProcess) { <li>@p.ProcessName @IdFormat.Qty(p.Qty)</li> }</ul>
+                </DashboardCard>
+                <DashboardCard T="WoRunningWidget" Title="WO Berjalan" Permission="@Permissions.WorkOrder.View" Loader="Dashboard.GetWoRunningAsync" Href="/work-orders" Refresh="_refresh" SizeClass="wide">
+                    <p>Released <strong>@context.Released</strong> · In Progress <strong>@context.InProgress</strong> · Selesai menunggu Close <strong>@context.CompletedAwaitingClose</strong></p>
+                    <ul class="gms-wolist">
+                        @foreach (var w in context.Items)
+                        {
+                            <li><a href="/work-orders/@w.Id">@w.Code</a> @w.FgCode
+                                <span role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@Math.Min(100, (int)w.ProgressPercent)" aria-valuetext="@($"{IdFormat.Number(w.ProgressPercent, 1)} persen")" class="gms-stack-bar" style="display:inline-flex;width:90px"><span class="gms-seg success" style="width:@Math.Min(100m, w.ProgressPercent)%"></span></span>
+                                @IdFormat.Number(w.ProgressPercent, 1)% · Target @IdFormat.Date(w.TargetDate)</li>
+                        }
+                    </ul>
+                </DashboardCard>
+                <DashboardCard T="VendorBalanceWidget" Title="Sisa di Vendor" Permission="@Permissions.VendorJob.View" Loader="Dashboard.GetVendorBalanceAsync" Href="/production/history" Refresh="_refresh" SizeClass="small">
+                    <p class="gms-big">@IdFormat.Qty(context.TotalQty) <small>pcs</small></p>
+                    <ul>@foreach (var v in context.ByVendor) { <li>@v.VendorName @IdFormat.Qty(v.Qty)</li> }</ul>
+                </DashboardCard>
+                <DashboardCard T="UnhandedOverWidget" Title="Belum Diserahterimakan" Permission="@Permissions.SerahTerimaFG.View" Loader="Dashboard.GetUnhandedOverAsync" Href="/handovers/fg" Refresh="_refresh" SizeClass="wide">
+                    <p class="gms-big">@IdFormat.Qty(context.TotalQty) <small>pcs</small></p>
+                    @if (context.TotalQty == 0) { <p class="gms-ok"><FluentIcon Value="@(new Icons.Regular.Size16.CheckmarkCircle())" Color="Color.Neutral" /> Semua output sudah diserahterimakan</p> }
+                    <ul>@foreach (var i in context.Items) { <li><a href="/work-orders/@i.WoId">@i.WoCode</a> · @IdFormat.Qty(i.Qty)</li> }</ul>
+                </DashboardCard>
+                <DashboardCard T="WoLateWidget" Title="WO Terlambat" Permission="@Permissions.WorkOrder.View" Loader="Dashboard.GetWoLateAsync" Href="/work-orders?terlambat=true" Refresh="_refresh" SizeClass="small">
+                    @if (context.Count == 0) { <p class="gms-ok"><FluentIcon Value="@(new Icons.Regular.Size16.CheckmarkCircle())" Color="Color.Neutral" /> 0 WO terlambat</p> }
+                    else { <p class="gms-big gms-bad"><FluentIcon Value="@(new Icons.Regular.Size20.Clock())" Color="Color.Neutral" /> @context.Count WO terlambat</p> }
+                </DashboardCard>
+                break;
+            case "Penjualan":
+                <DashboardCard T="PoLateWidget" Title="PO Terlambat" Permission="@Permissions.CustomerPO.View" Loader="Dashboard.GetPoLateAsync" Href="/purchase-orders?terlambat=true" Refresh="_refresh" SizeClass="medium">
+                    @if (context.PoCount == 0) { <p class="gms-ok"><FluentIcon Value="@(new Icons.Regular.Size16.CheckmarkCircle())" Color="Color.Neutral" /> 0 PO terlambat</p> }
+                    else { <p class="gms-big gms-bad"><FluentIcon Value="@(new Icons.Regular.Size20.Clock())" Color="Color.Neutral" /> @context.PoCount PO terlambat · @IdFormat.Qty(context.ShortageQty) pcs</p> }
+                    <ul>@foreach (var i in context.Items) { <li><a href="/purchase-orders/@i.PoId">@i.Code</a> @i.CustomerName −@(i.DaysLate)h</li> }</ul>
+                </DashboardCard>
+                <DashboardCard T="DueSoonWidget" Title="Jatuh Tempo 7 Hari" Permission="@Permissions.CustomerPO.View" Loader="Dashboard.GetDueSoonAsync" Href="/purchase-orders?jatuhTempo7=true" Refresh="_refresh" SizeClass="small">
+                    <p class="gms-big">@context.PoCount PO · @IdFormat.Qty(context.Qty) pcs</p>
+                </DashboardCard>
+                <DashboardCard T="PoNoCustomerNumberWidget" Title="PO Belum Ada No. Customer" Permission="@Permissions.CustomerPO.View" Loader="Dashboard.GetPoNoCustomerNumberAsync" Href="/purchase-orders?poCustomerKosong=true" Refresh="_refresh" SizeClass="small">
+                    @if (context.PoCount == 0) { <p class="gms-ok"><FluentIcon Value="@(new Icons.Regular.Size16.CheckmarkCircle())" Color="Color.Neutral" /> Semua PO punya nomor</p> }
+                    else { <p class="gms-big gms-warn"><FluentIcon Value="@(new Icons.Regular.Size20.Warning())" Color="Color.Neutral" /> @context.PoCount PO</p> }
+                </DashboardCard>
+                <DashboardCard T="UnplannedDemandWidget" Title="Kebutuhan Belum Terencana" Permission="@Permissions.CustomerPO.View" Loader="Dashboard.GetUnplannedDemandAsync" Href="/purchase-orders?sisaRencana=true" Refresh="_refresh" SizeClass="small">
+                    <p class="gms-big">@IdFormat.Qty(context.Qty) pcs · @context.PoCount PO</p>
+                </DashboardCard>
+                break;
+            case "Gudang":
+                <DashboardCard T="StockSummaryWidget" Title="Stok FG" Permission="@Permissions.StokFG.View" Loader="Dashboard.GetStockSummaryAsync" Href="/stock" Refresh="_refresh" SizeClass="wide">
+                    <p>Fisik <strong>@IdFormat.Qty(context.OnHand)</strong> · Teralokasi <strong>@IdFormat.Qty(context.Allocated)</strong> · Tersedia <strong>@IdFormat.Qty(context.Available)</strong></p>
+                    <ul>@foreach (var f in context.TopFgs) { <li>@f.FgCode · @IdFormat.Qty(f.Available)</li> }</ul>
+                </DashboardCard>
+                break;
+            case "Penggajian":
+                <DashboardCard T="PayrollPeriodWidget" Title="Periode Gaji" Permission="@Permissions.Payroll.View" Loader="Dashboard.GetPayrollPeriodAsync" Href="/payroll" Refresh="_refresh" SizeClass="medium">
+                    @if (!context.HasOpenPeriod)
+                    {
+                        <p>Belum ada periode terbuka.@(context.SuggestedNextStart is { } next ? $" Mulai periode berikutnya mulai {IdFormat.Date(next)}." : string.Empty)</p>
+                        <FluentAnchor Href="/payroll" Appearance="Appearance.Neutral">Buat Periode</FluentAnchor>
+                    }
+                    else
+                    {
+                        <p><strong>@context.Code</strong> · Open <span class="gms-warn">(BELUM FINAL)</span></p>
+                        <p>@context.WorkerCount pekerja · Rp @IdFormat.Number(context.ProvisionalTotal)* · sisa @context.DaysLeft hari</p>
+                        <FluentAnchor Href="@($"/payroll/{context.PeriodId}")" Appearance="Appearance.Neutral">Buka</FluentAnchor>
+                    }
+                </DashboardCard>
+                break;
+            default:
+                <DashboardCard T="SecurityWidget" Title="Keamanan Akun" Permission="@Permissions.AccessManagement.AuditLog.View" Loader="Dashboard.GetSecurityAsync" Href="/admin/audit" Refresh="_refresh" SizeClass="small">
+                    <p><FluentIcon Value="@(new Icons.Regular.Size16.LockClosed())" Color="Color.Neutral" /> <strong>@context.LockedAccounts</strong> akun terkunci · <strong>@context.FailedLogins24h</strong> login gagal (24 jam)</p>
+                    <a href="/admin/users">Lihat pengguna</a>
+                </DashboardCard>
+                break;
+        }
+    </div>
+}
 
 @code {
-    private string _name = string.Empty;
-    private string _role = string.Empty;
-    private int _permissionCount;
+    private static readonly (string Area, string[] Permissions)[] AreaMap =
+    [
+        ("Produksi", [Gms.Shared.Security.Permissions.ProductionOutput.View, Gms.Shared.Security.Permissions.WorkOrder.View, Gms.Shared.Security.Permissions.VendorJob.View, Gms.Shared.Security.Permissions.SerahTerimaFG.View]),
+        ("Penjualan", [Gms.Shared.Security.Permissions.CustomerPO.View]),
+        ("Gudang", [Gms.Shared.Security.Permissions.StokFG.View]),
+        ("Penggajian", [Gms.Shared.Security.Permissions.Payroll.View]),
+        ("Administrasi", [Gms.Shared.Security.Permissions.AccessManagement.AuditLog.View]),
+    ];
+
+    private string _name = string.Empty, _updated = string.Empty, _announce = string.Empty;
+    private List<string> _areas = [];
+    private List<(string Label, string Href)> _quick = [];
+    private int _widgetCount, _refresh;
 
     protected override async Task OnInitializedAsync()
     {
         var user = (await Auth.GetAuthenticationStateAsync()).User;
         _name = user.DisplayName();
-        _role = user.FindFirstValue(GmsClaims.RoleName) ?? "-";
-        _permissionCount = user.FindAll(GmsClaims.Permission).Count();
+        _updated = IdFormat.DateTime(DateTimeOffset.UtcNow);
+
+        // Area paling relevan (paling banyak widget yang boleh dilihat) tampil lebih dahulu; area tanpa izin tidak ditampilkan.
+        var scored = AreaMap.Select(a => (a.Area, Score: a.Permissions.Count(user.HasPermission))).Where(a => a.Score > 0).OrderByDescending(a => a.Score).ToList();
+        _areas = scored.Select(a => a.Area).ToList();
+        _widgetCount = scored.Sum(a => a.Score);
+        _quick = new (string, string, string)[]
+        {
+            ("Input Output", "/production/output", Permissions.ProductionOutput.Create), ("Kirim/Terima Vendor", "/production/vendor", Permissions.VendorJob.Create),
+            ("Serah Terima FG", "/handovers/fg/new", Permissions.SerahTerimaFG.Create), ("Serah Terima Material", "/handovers/material/new", Permissions.SerahTerimaMaterial.Create),
+            ("Buat PO", "/purchase-orders/new", Permissions.CustomerPO.Create), ("Buat Surat Jalan", "/deliveries/new", Permissions.Pengiriman.Create),
+            ("Buat WO", "/work-orders/new", Permissions.WorkOrder.Create),
+        }.Where(q => user.HasPermission(q.Item3)).Select(q => (q.Item1, q.Item2)).ToList();
+    }
+
+    private async Task RefreshAsync()
+    {
+        _refresh++;
+        _updated = IdFormat.DateTime(DateTimeOffset.UtcNow);
+        _announce = "Beranda diperbarui";
+        await Task.CompletedTask;
     }
 }

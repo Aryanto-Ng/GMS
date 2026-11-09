@@ -32,6 +32,8 @@ public sealed class ProductionRig
     public MockInventoryApi Inventory { get; }
     public MockDeliveriesApi Deliveries { get; }
     public MockPayrollApi Payroll { get; }
+    public MockAccessStore Access { get; } = new();
+    public MockDashboardApi Dashboard { get; }
 
     public ProductionRig()
     {
@@ -44,7 +46,8 @@ public sealed class ProductionRig
         Inventory = new MockInventoryApi(Pos, Wos, Production, Fgs, Colors, Sizes, Materials);
         Deliveries = new MockDeliveriesApi(Pos, Inventory, Customers);
         Payroll = new MockPayrollApi(Production, Wos, Workers, Processes, Sizes);
-        Production.Today = Inventory.Today = Deliveries.Today = Payroll.Today = () => new DateOnly(2026, 11, 9);
+        Dashboard = new MockDashboardApi(Pos, Wos, Production, Inventory, Payroll, Access);
+        Production.Today = Inventory.Today = Deliveries.Today = Payroll.Today = Dashboard.Today = () => new DateOnly(2026, 11, 9);
     }
 
     public static Guid WoId => MockWoApi.SeedWoId;

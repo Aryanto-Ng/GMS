@@ -21,6 +21,6 @@ PageHeader, MetricCard, EmptyState, ErrorState, SkeletonRows, PagerBar, StatusCh
 Interactive Server untuk halaman kerja; Static SSR untuk halaman akun (sesuai FSD).
 
 ## Belum / berikutnya
-- Selesai: 5.0 fondasi, 5.1 Access, 5.2 Master Data. Berikutnya 5.3 Customer PO (urutan di `CHECKPOINT.md`).
+- Selesai: seluruh modul (5.0–5.9). Berikutnya: QA (smoke terhadap API nyata, Playwright) dan DevOps.
 - Komponen tersisa: Matriks Progres (bersama modul WO).
 - Perilaku JS (keyboard/tempel grid, dialog native) diuji via Playwright (QA).

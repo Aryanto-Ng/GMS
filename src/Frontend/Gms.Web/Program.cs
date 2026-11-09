@@ -1,5 +1,6 @@
 using Gms.Shared.Access;
 using Gms.Shared.CustomerPo;
+using Gms.Shared.Dashboard;
 using Gms.Shared.Deliveries;
 using Gms.Shared.Inventory;
 using Gms.Shared.Master;
@@ -81,6 +82,8 @@ services.AddSingleton<MockProductionApi>();
 services.AddSingleton<MockInventoryApi>();
 services.AddSingleton<MockDeliveriesApi>();
 services.AddSingleton<MockPayrollApi>();
+services.AddSingleton<MockDashboardApi>();
+services.AddScoped<IDashboardApi>(sp => api.UseMock ? sp.GetRequiredService<MockDashboardApi>() : ActivatorUtilities.CreateInstance<HttpDashboardApi>(sp));
 services.AddScoped<IPayrollApi>(sp => api.UseMock ? sp.GetRequiredService<MockPayrollApi>() : ActivatorUtilities.CreateInstance<HttpPayrollApi>(sp));
 services.AddScoped<IDeliveriesApi>(sp => api.UseMock ? sp.GetRequiredService<MockDeliveriesApi>() : ActivatorUtilities.CreateInstance<HttpDeliveriesApi>(sp));
 services.AddScoped<IInventoryApi>(sp => api.UseMock ? sp.GetRequiredService<MockInventoryApi>() : ActivatorUtilities.CreateInstance<HttpInventoryApi>(sp));
