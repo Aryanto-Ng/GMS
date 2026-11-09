@@ -1,0 +1,184 @@
+@inject IFgApi Fgs
+@inject IProcessApi Processes
+@inject ApiErrorHandler Errors
+@inject IToastService Toasts
+
+<UnsavedChangesGuard HasChanges="_dirty" />
+
+<AsyncContent T="bool" Key="@($"{Fg.Id}|{_reload}")" Loader="LoadAsync">
+    <ChildContent Context="loaded">
+        @if (_problem is not null)
+        {
+            <ProblemBanner Problem="_problem" OnReload="() => _reload++" />
+        }
+
+        <section class="gms-card" aria-labelledby="routing-title">
+            <h2 id="routing-title">Routing (alur produksi berurutan)</h2>
+            @if (_steps.Count == 0)
+            {
+                <EmptyState Title="Routing belum disusun" Description="Tambahkan proses pertama." />
+            }
+            else
+            {
+                <ol class="gms-steps">
+                    @for (var i = 0; i < _steps.Count; i++)
+                    {
+                        var index = i;
+                        var step = _steps[i];
+                        <li>
+                            <span class="gms-step-no">@(i + 1)</span>
+                            <span class="gms-step-name">@step.Name <span class="gms-muted">· @step.Code</span></span>
+                            <span class="gms-chip neutral">@(step.Type == ProcessType.Internal ? "Internal" : "Vendor")</span>
+                            @if (CanEdit)
+                            {
+                                <span class="gms-rowactions">
+                                    <FluentButton Appearance="Appearance.Lightweight" Disabled="@(index == 0)" aria-label="@($"Naikkan {step.Name}")" OnClick="() => Move(index, -1)">↑</FluentButton>
+                                    <FluentButton Appearance="Appearance.Lightweight" Disabled="@(index == _steps.Count - 1)" aria-label="@($"Turunkan {step.Name}")" OnClick="() => Move(index, 1)">↓</FluentButton>
+                                    <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Hapus langkah {step.Name}")" OnClick="() => Remove(index)">✕</FluentButton>
+                                </span>
+                            }
+                        </li>
+                    }
+                </ol>
+            }
+
+            @if (CanEdit)
+            {
+                <div class="gms-inline">
+                    <div class="gms-field">
+                        <label for="add-process">Tambah proses</label>
+                        <select id="add-process" @onchange="e => _toAdd = Guid.TryParse(e.Value?.ToString(), out var g) ? g : null">
+                            <option value="">Pilih proses…</option>
+                            @foreach (var p in _available)
+                            {
+                                <option value="@p.Id" selected="@(_toAdd == p.Id)">@p.Name (@p.Code)</option>
+                            }
+                        </select>
+                    </div>
+                    <FluentButton Appearance="Appearance.Neutral" Disabled="@(_toAdd is null)" OnClick="Add">Tambah</FluentButton>
+                </div>
+            }
+
+            <p class="gms-note"><FluentIcon Value="@(new Icons.Regular.Size16.Info())" Color="Color.Neutral" /> Perubahan hanya berlaku untuk Work Order yang dirilis setelah ini.</p>
+            @if (_steps.Count == 0 && _dirty)
+            {
+                <p class="gms-bad" role="alert">Minimal 1 langkah.</p>
+            }
+
+            @if (CanEdit)
+            {
+                <div class="gms-formactions">
+                    <FluentButton Appearance="Appearance.Neutral" Disabled="@(!_dirty)" OnClick="() => _reload++">Batal</FluentButton>
+                    <FluentButton Appearance="Appearance.Accent" Disabled="@(!_dirty || _steps.Count == 0 || _saving)" OnClick="() => SaveAsync(false)">Simpan routing</FluentButton>
+                </div>
+            }
+        </section>
+    </ChildContent>
+</AsyncContent>
+
+<ReasonDialog Open="_confirm is not null" OpenChanged="o => { if (!o) _confirm = null; }" ShowReason="false" Danger="true" ConfirmText="Hapus langkah dan tarif"
+              Title="Hapus langkah bertarif?" Description="Tarif langkah berikut akan dihapus. Nilai lama tetap tercatat di audit log." OnConfirm="_ => SaveAsync(true)">
+    <ul>
+        @foreach (var v in _confirm?.Violations ?? [])
+        {
+            <li>@v.Message</li>
+        }
+    </ul>
+</ReasonDialog>
+
+@code {
+    private List<ProcessDto> _steps = [];
+    private IReadOnlyList<ProcessDto> _processes = [];
+    private Guid? _toAdd;
+    private bool _dirty, _saving;
+    private int _reload;
+    private GmsProblemDetails? _problem, _confirm;
+
+    [Parameter, EditorRequired] public FgDto Fg { get; set; } = default!;
+
+    [Parameter] public bool CanEdit { get; set; }
+
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    [Parameter] public EventCallback<bool> OnDirty { get; set; }
+
+    /// <summary>Proses aktif yang belum ada di routing (tidak boleh dobel).</summary>
+    private IEnumerable<ProcessDto> _available => _processes.Where(p => p.IsActive && _steps.All(s => s.Id != p.Id));
+
+    private async Task<bool> LoadAsync(CancellationToken ct)
+    {
+        _processes = (await Processes.ListAsync(new MasterListQuery { Status = ActiveFilter.All, PageSize = 200 }, ct)).Items;
+        var routing = await Fgs.GetRoutingAsync(Fg.Id, ct);
+        _steps = routing.Steps.OrderBy(s => s.Seq).Select(s => _processes.FirstOrDefault(p => p.Id == s.ProcessId)
+            ?? new ProcessDto(s.ProcessId, s.ProcessCode, s.ProcessName, s.ProcessType, true, true, 0)).ToList();
+        _dirty = false;
+        _toAdd = null;
+        await OnDirty.InvokeAsync(false);
+        return true;
+    }
+
+    private void MarkDirty()
+    {
+        _dirty = true;
+        _ = OnDirty.InvokeAsync(true);
+    }
+
+    private void Move(int index, int delta)
+    {
+        (_steps[index], _steps[index + delta]) = (_steps[index + delta], _steps[index]);
+        MarkDirty();
+    }
+
+    private void Remove(int index)
+    {
+        _steps.RemoveAt(index);
+        MarkDirty();
+    }
+
+    private void Add()
+    {
+        if (_toAdd is { } id && _processes.FirstOrDefault(p => p.Id == id) is { } process)
+        {
+            _steps.Add(process);
+            _toAdd = null;
+            MarkDirty();
+        }
+    }
+
+    private async Task SaveAsync(bool confirmed)
+    {
+        _saving = true;
+        try
+        {
+            var request = new SaveRoutingRequest(_steps.Select(s => s.Id).ToList(), confirmed, Fg.RowVersion);
+            try
+            {
+                await Fgs.SaveRoutingAsync(Fg.Id, request);
+            }
+            catch (ApiException ex) when (!confirmed && ex.Problem.Code == ProblemCodes.FgStepHasTariffs)
+            {
+                _confirm = ex.Problem;
+                return;
+            }
+
+            _confirm = null;
+            _problem = null;
+            _dirty = false;
+            await OnDirty.InvokeAsync(false);
+            Toasts.ShowSuccess("Routing disimpan.");
+            await OnSaved.InvokeAsync();
+        }
+        catch (ApiException) when (confirmed)
+        {
+            throw;
+        }
+        catch (ApiException ex)
+        {
+            if (!Errors.TryHandleSessionEnd(ex.Problem)) { _problem = ex.Problem; }
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

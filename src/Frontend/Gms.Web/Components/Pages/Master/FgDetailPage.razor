@@ -1,0 +1,153 @@
+@page "/master/fgs/new"
+@page "/master/fgs/{Id:guid}"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.MasterData.FG.View)]
+@using Gms.Web.Components.Pages.Master.FgParts
+@inject IFgApi Fgs
+@inject ApiErrorHandler Errors
+@inject AuthenticationStateProvider Auth
+@inject IJSRuntime JS
+@inject IToastService Toasts
+
+<PageTitle>@(IsNew ? "Tambah FG" : _fg?.Code ?? "FG") · GMS</PageTitle>
+
+<PageHeader Title="@(IsNew ? "Tambah FG" : _fg is null ? "FG" : $"{_fg.Code} · {_fg.Name}")"
+            Breadcrumbs="@(new[] { new PageHeader.Crumb("FG", "/master/fgs"), new PageHeader.Crumb(IsNew ? "Baru" : _fg?.Code ?? "…") })">
+    <Chips>
+        @if (_fg is not null)
+        {
+            <StatusChip Value="@(_fg.IsReady ? "ready" : "not-ready")" />
+            <StatusChip Value="@(_fg.IsActive ? "active" : "inactive")" />
+        }
+    </Chips>
+    <Actions>
+        @if (_fg is not null && _user.HasPermission(Permissions.MasterData.Routing.Edit) && _user.HasPermission(Permissions.MasterData.Tarif.Edit))
+        {
+            <FluentButton Appearance="Appearance.Neutral" OnClick="() => _copyOpen = true">Salin dari FG lain</FluentButton>
+        }
+
+        @if (_fg is not null && _user.HasPermission(Permissions.MasterData.FG.Deactivate))
+        {
+            <FluentButton Appearance="Appearance.Neutral" OnClick="() => _toggleOpen = true">@(_fg.IsActive ? "Nonaktifkan" : "Aktifkan")</FluentButton>
+        }
+    </Actions>
+</PageHeader>
+
+@if (_loadProblem is not null)
+{
+    var view = ProblemPresenter.Describe(_loadProblem);
+    <ErrorState Title="@view.Title" Detail="@view.Detail" TraceId="@view.TraceId"
+                OnRetry="@(view.Kind is ProblemKind.NotFound or ProblemKind.Forbidden ? default : EventCallback.Factory.Create(this, LoadAsync))" />
+}
+else if (_loading)
+{
+    <SkeletonRows Rows="5" Columns="3" Label="Memuat FG" />
+}
+else
+{
+    <div role="tablist" aria-label="Bagian FG" class="gms-tabs">
+        @foreach (var tab in Tabs())
+        {
+            <button type="button" role="tab" id="@($"tab-{tab.Tab}")" aria-selected="@(_tab == tab.Tab ? "true" : "false")" aria-controls="@($"panel-{tab.Tab}")"
+                    class="@(_tab == tab.Tab ? "active" : null)" tabindex="@(_tab == tab.Tab ? 0 : -1)" @onclick="() => SwitchAsync(tab.Tab)">@tab.Label</button>
+        }
+    </div>
+
+    <div role="tabpanel" id="@($"panel-{_tab}")" aria-labelledby="@($"tab-{_tab}")" class="gms-tabpanel">
+        @switch (_tab)
+        {
+            case FgTab.General:
+                <FgGeneralTab Fg="_fg" CanEdit="@(IsNew ? _user.HasPermission(Permissions.MasterData.FG.Create) : _user.HasPermission(Permissions.MasterData.FG.Edit))"
+                              OnSaved="ReloadAsync" OnReload="LoadAsync" OnDirty="d => _dirty = d" />
+                break;
+            case FgTab.Sizes:
+                <FgSizesTab Fg="_fg!" CanEdit="@_user.HasPermission(Permissions.MasterData.FG.Edit)" OnSaved="ReloadAsync" OnDirty="d => _dirty = d" />
+                break;
+            case FgTab.Routing:
+                <FgRoutingTab Fg="_fg!" CanEdit="@_user.HasPermission(Permissions.MasterData.Routing.Edit)" OnSaved="ReloadAsync" OnDirty="d => _dirty = d" />
+                break;
+            case FgTab.Tariffs:
+                <FgTariffTab Fg="_fg!" CanEdit="@_user.HasPermission(Permissions.MasterData.Tarif.Edit)" OnSaved="ReloadAsync" OnDirty="d => _dirty = d" OnGoto="SwitchAsync" />
+                break;
+            case FgTab.Readiness:
+                <FgReadinessTab Fg="_fg!" OnGoto="SwitchAsync" />
+                break;
+        }
+    </div>
+}
+
+@if (_fg is not null)
+{
+    <FgCopyDialog Fg="_fg" Open="_copyOpen" OpenChanged="o => _copyOpen = o" OnCopied="ReloadAsync" />
+
+    <ReasonDialog Open="_toggleOpen" OpenChanged="o => _toggleOpen = o" ShowReason="false" Danger="@_fg.IsActive"
+                  Title="@($"{(_fg.IsActive ? "Nonaktifkan" : "Aktifkan")} {_fg.Code}?")"
+                  Description="@(_fg.IsActive ? "FG nonaktif tidak dapat dipilih untuk PO/WO baru dan tidak lagi berstatus Siap Produksi." : "FG dapat dipilih kembali untuk PO/WO baru.")"
+                  ConfirmText="@(_fg.IsActive ? "Nonaktifkan" : "Aktifkan")" OnConfirm="ToggleAsync" />
+}
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private bool IsNew => Id is null;
+    private FgDto? _fg;
+    private FgTab _tab = FgTab.General;
+    private bool _loading = true, _dirty, _copyOpen, _toggleOpen;
+    private GmsProblemDetails? _loadProblem;
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+
+    private IEnumerable<(FgTab Tab, string Label)> Tabs()
+    {
+        yield return (FgTab.General, "Umum");
+        if (IsNew) { yield break; }
+        yield return (FgTab.Sizes, "Size Berlaku");
+        yield return (FgTab.Routing, "Routing");
+        if (_user.HasPermission(Permissions.MasterData.Tarif.View)) { yield return (FgTab.Tariffs, "Tarif"); }
+        yield return (FgTab.Readiness, "Kesiapan");
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _user = (await Auth.GetAuthenticationStateAsync()).User;
+        _tab = FgTab.General;
+        _dirty = false;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loadProblem = null;
+        if (Id is not { } id)
+        {
+            _fg = null;
+            _loading = false;
+            return;
+        }
+
+        _loading = true;
+        _loadProblem = await Errors.RunAsync(async () => _fg = await Fgs.GetAsync(id));
+        _loading = false;
+    }
+
+    /// <summary>Muat ulang FG (rowVersion baru, kesiapan) tanpa menutup tab aktif.</summary>
+    private async Task ReloadAsync()
+    {
+        if (Id is not { } id) { return; }
+        _loadProblem = await Errors.RunAsync(async () => _fg = await Fgs.GetAsync(id));
+    }
+
+    private async Task SwitchAsync(FgTab tab)
+    {
+        if (tab == _tab) { return; }
+        if (_dirty && !await JS.InvokeAsync<bool>("confirm", "Perubahan belum disimpan akan hilang. Pindah bagian?")) { return; }
+        _dirty = false;
+        _tab = tab;
+    }
+
+    private async Task ToggleAsync(string _)
+    {
+        var current = await Fgs.GetAsync(_fg!.Id);
+        await Fgs.SetActiveAsync(current.Id, !current.IsActive, current.RowVersion);
+        Toasts.ShowSuccess(current.IsActive ? "FG dinonaktifkan." : "FG diaktifkan.");
+        await ReloadAsync();
+    }
+}

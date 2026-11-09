@@ -1,0 +1,245 @@
+@inject IFgApi Fgs
+@inject ApiErrorHandler Errors
+@inject IToastService Toasts
+
+<UnsavedChangesGuard HasChanges="_dirty" />
+
+<AsyncContent T="FgTariffGridDto" Key="@($"{Fg.Id}|{_reload}")" Loader="LoadAsync" IsEmpty="g => g.Sizes.Count == 0 || (g.InternalSteps.Count == 0 && g.VendorSteps.Count == 0)">
+    <EmptyContent>
+        <EmptyState Icon="@(new Icons.Regular.Size48.Box())" Title="Tarif muncul setelah routing dan Size Berlaku diisi"
+                    Description="Susun Size Berlaku dan routing FG ini lebih dulu.">
+            <FluentButton Appearance="Appearance.Neutral" OnClick="() => OnGoto.InvokeAsync(FgTab.Sizes)">Ke Size Berlaku</FluentButton>
+            <FluentButton Appearance="Appearance.Neutral" OnClick="() => OnGoto.InvokeAsync(FgTab.Routing)">Ke Routing</FluentButton>
+        </EmptyState>
+    </EmptyContent>
+    <ChildContent Context="grid">
+        @if (_problem is not null && _problem.Errors is null)
+        {
+            <ProblemBanner Problem="_problem" OnReload="() => _reload++" />
+        }
+
+        @if (_problem?.Errors is not null && _cellErrors.Count == 0)
+        {
+            <FormSummary Errors="_problem.Errors" />
+        }
+
+        <section class="gms-card" aria-labelledby="tariff-title">
+            <h2 id="tariff-title">Tarif per unit (Rp) — Proses Internal × Size</h2>
+            @if (grid.InternalSteps.Count == 0)
+            {
+                <p class="gms-note"><FluentIcon Value="@(new Icons.Regular.Size16.Info())" Color="Color.Neutral" /> Tidak ada proses Internal pada routing; tidak ada tarif yang perlu diisi.</p>
+            }
+            else
+            {
+                <div class="gms-matrix-wrap">
+                    <table class="gms-table compact gms-tariff">
+                        <caption class="gms-sr-only">Tarif per proses Internal dan size</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Proses</th>
+                                @foreach (var size in grid.Sizes) { <th scope="col" class="num">@size.Code</th> }
+                                @if (CanEdit) { <th scope="col"><span class="gms-sr-only">Isi semua</span></th> }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var step in grid.InternalSteps)
+                            {
+                                <tr>
+                                    <th scope="row">@step.Seq @step.ProcessName</th>
+                                    @foreach (var size in grid.Sizes)
+                                    {
+                                        var key = (step.ProcessId, size.Id);
+                                        var error = ErrorOf(key);
+                                        var name = $"{step.ProcessName}, size {size.Code}, tarif";
+                                        var msgId = $"tariff-{step.Seq}-{size.Code}-msg";
+                                        <td class="num @(error is null ? null : "gms-cellbad")">
+                                            <input type="text" inputmode="decimal" autocomplete="off" aria-label="@name" disabled="@(!CanEdit)"
+                                                   aria-invalid="@(error is null ? null : "true")" aria-describedby="@(error is null ? null : msgId)"
+                                                   value="@TextOf(key)" @onchange="e => SetCell(key, e.Value?.ToString())" />
+                                            @if (error is not null)
+                                            {
+                                                <div class="gms-cellmsg error" id="@msgId"><FluentIcon Value="@(new Icons.Regular.Size12.DismissCircle())" Color="Color.Neutral" /> @error</div>
+                                            }
+                                        </td>
+                                    }
+                                    @if (CanEdit)
+                                    {
+                                        <td><FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Isi semua {step.ProcessName}")" OnClick="() => FillRow(grid, step)">Isi semua ▸</FluentButton></td>
+                                    }
+                                </tr>
+                            }
+                            @foreach (var step in grid.VendorSteps)
+                            {
+                                <tr class="gms-vendorrow">
+                                    <th scope="row">@step.Seq @step.ProcessName <span class="gms-muted">(Vendor)</span></th>
+                                    <td colspan="@(grid.Sizes.Count + (CanEdit ? 1 : 0))" class="gms-muted">Tanpa tarif (dikerjakan vendor)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                var missing = TariffLogic.Missing(grid, (p, s) => TextOf((p, s)));
+                @if (missing.Count > 0)
+                {
+                    <p class="gms-warn" role="status"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" />
+                        @missing.Count sel belum diisi (@string.Join(", ", missing.Take(3).Select(m => $"{m.Step.ProcessName} · {m.Size.Code}"))@(missing.Count > 3 ? ", …" : string.Empty))</p>
+                }
+
+                @if (CanEdit)
+                {
+                    <div class="gms-formactions">
+                        @if (_dirty) { <span class="gms-note" role="status">● Ada perubahan belum disimpan</span> }
+                        <FluentButton Appearance="Appearance.Neutral" Disabled="@(!_dirty)" OnClick="() => _reload++">Batal</FluentButton>
+                        <FluentButton Appearance="Appearance.Accent" Disabled="@(!_dirty || _saving)" OnClick="() => SaveAsync(grid)">Simpan tarif</FluentButton>
+                    </div>
+                }
+            }
+        </section>
+    </ChildContent>
+</AsyncContent>
+
+<ReasonDialog Open="_fill is not null" OpenChanged="o => { if (!o) _fill = null; }" ShowReason="false" Danger="false" ConfirmText="Timpa isian"
+              Title="Timpa isian baris ini?" Description="@($"Sel lain pada baris {_fill?.Step.ProcessName} yang sudah terisi akan diganti dengan {TariffLogic.FormatCell(_fill?.Value)}.")"
+              OnConfirm="_ => { ApplyFill(); return Task.CompletedTask; }" />
+
+@code {
+    private readonly Dictionary<(Guid, Guid), string> _texts = [];
+    private Dictionary<(Guid, Guid), decimal?> _original = [];
+    private Dictionary<(Guid, Guid), string> _cellErrors = [];
+    private (RoutingStepDto Step, decimal Value, FgTariffGridDto Grid)? _fill;
+    private bool _dirty, _saving;
+    private int _reload;
+    private GmsProblemDetails? _problem;
+
+    [Parameter, EditorRequired] public FgDto Fg { get; set; } = default!;
+
+    [Parameter] public bool CanEdit { get; set; }
+
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    [Parameter] public EventCallback<bool> OnDirty { get; set; }
+
+    [Parameter] public EventCallback<FgTab> OnGoto { get; set; }
+
+    private async Task<FgTariffGridDto> LoadAsync(CancellationToken ct)
+    {
+        var grid = await Fgs.GetTariffsAsync(Fg.Id, ct);
+        _texts.Clear();
+        _original = grid.Cells.ToDictionary(c => (c.ProcessId, c.SizeId), c => c.Rate);
+        foreach (var cell in grid.Cells) { _texts[(cell.ProcessId, cell.SizeId)] = TariffLogic.FormatCell(cell.Rate); }
+        _cellErrors = [];
+        _problem = null;
+        await SetDirtyAsync(false);
+        return grid;
+    }
+
+    private string TextOf((Guid, Guid) key) => _texts.GetValueOrDefault(key) ?? string.Empty;
+
+    private string TextOf(Guid process, Guid size) => TextOf((process, size));
+
+    private string? ErrorOf((Guid, Guid) key)
+    {
+        if (_cellErrors.TryGetValue(key, out var server)) { return server; }
+        return TariffLogic.ParseCell(TextOf(key)).Error;
+    }
+
+    private async Task SetDirtyAsync(bool dirty)
+    {
+        if (_dirty == dirty) { return; }
+        _dirty = dirty;
+        await OnDirty.InvokeAsync(dirty);
+    }
+
+    private bool ComputeDirty() => _original.Any(o => TariffLogic.ParseCell(TextOf(o.Key)).Rate != o.Value || (TariffLogic.ParseCell(TextOf(o.Key)).Error is not null));
+
+    private void SetCell((Guid, Guid) key, string? text)
+    {
+        _texts[key] = text ?? string.Empty;
+        _cellErrors.Remove(key);
+        _ = SetDirtyAsync(ComputeDirty());
+    }
+
+    private void FillRow(FgTariffGridDto grid, RoutingStepDto step)
+    {
+        var row = grid.Sizes.Select(s => TextOf((step.ProcessId, s.Id))).ToList();
+        if (TariffLogic.FirstFilled(row) is not { } value) { return; }
+        if (TariffLogic.WouldOverwrite(row, value))
+        {
+            _fill = (step, value, grid);
+            return;
+        }
+
+        Fill(grid, step, value);
+    }
+
+    private void Fill(FgTariffGridDto grid, RoutingStepDto step, decimal value)
+    {
+        foreach (var size in grid.Sizes) { _texts[(step.ProcessId, size.Id)] = TariffLogic.FormatCell(value); _cellErrors.Remove((step.ProcessId, size.Id)); }
+        _ = SetDirtyAsync(ComputeDirty());
+    }
+
+    private void ApplyFill()
+    {
+        if (_fill is { } f) { Fill(f.Grid, f.Step, f.Value); }
+    }
+
+    private async Task SaveAsync(FgTariffGridDto grid)
+    {
+        var cells = new List<TariffCell>();
+        var keys = new List<(Guid, Guid)>();
+        var invalid = false;
+        foreach (var step in grid.InternalSteps)
+        {
+            foreach (var size in grid.Sizes)
+            {
+                var (rate, error) = TariffLogic.ParseCell(TextOf((step.ProcessId, size.Id)));
+                invalid |= error is not null;
+                cells.Add(new TariffCell(step.ProcessId, size.Id, rate));
+                keys.Add((step.ProcessId, size.Id));
+            }
+        }
+
+        if (invalid)
+        {
+            _problem = null;
+            StateHasChanged();
+            return; // galat sel sudah tampil di tiap sel; tidak dikirim ke server
+        }
+
+        _saving = true;
+        _cellErrors = [];
+        _problem = await Errors.RunAsync(async () =>
+        {
+            try
+            {
+                await Fgs.SaveTariffsAsync(Fg.Id, new SaveTariffsRequest(cells, Fg.RowVersion));
+            }
+            catch (ApiException ex) when (ex.Problem.Errors is { } errors)
+            {
+                MapServerErrors(errors, keys);
+                throw;
+            }
+
+            await SetDirtyAsync(false);
+            _original = cells.ToDictionary(c => (c.ProcessId, c.SizeId), c => c.Rate);
+            Toasts.ShowSuccess("Tarif disimpan.");
+            await OnSaved.InvokeAsync();
+        });
+        _saving = false;
+    }
+
+    /// <summary>Memetakan galat server <c>cells[i].rate</c> ke sel yang bersangkutan (urutan sama dengan permintaan).</summary>
+    private void MapServerErrors(IReadOnlyDictionary<string, string[]> errors, List<(Guid, Guid)> keys)
+    {
+        foreach (var (path, messages) in errors)
+        {
+            var open = path.IndexOf('[');
+            var close = path.IndexOf(']');
+            if (open >= 0 && close > open && int.TryParse(path[(open + 1)..close], out var index) && index >= 0 && index < keys.Count)
+            {
+                _cellErrors[keys[index]] = messages.FirstOrDefault() ?? "Tidak valid.";
+            }
+        }
+    }
+}

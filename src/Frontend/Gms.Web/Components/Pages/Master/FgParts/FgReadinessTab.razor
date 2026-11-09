@@ -1,0 +1,39 @@
+@inject IFgApi Fgs
+
+<AsyncContent T="FgReadinessDto" Key="@($"{Fg.Id}|{Fg.RowVersion}|{Fg.IsActive}")" Loader="ct => Fgs.GetReadinessAsync(Fg.Id, ct)">
+    <ChildContent Context="r">
+        <section class="gms-card" aria-labelledby="ready-title">
+            <h2 id="ready-title">Kesiapan produksi</h2>
+            <p><StatusChip Value="@(r.IsReady ? "ready" : "not-ready")" /></p>
+            <ul class="gms-readiness">
+                @foreach (var item in r.Items)
+                {
+                    <li class="@(item.Ok ? "gms-ok" : "gms-bad")">
+                        <FluentIcon Value="@(item.Ok ? (Icon)new Icons.Regular.Size16.CheckmarkCircle() : new Icons.Regular.Size16.DismissCircle())" Color="Color.Neutral" />
+                        <span class="gms-sr-only">@(item.Ok ? "Terpenuhi:" : "Belum terpenuhi:")</span> @item.Message
+                        @if (!item.Ok && TabOf(item.FixTarget) is { } tab)
+                        {
+                            <FluentButton Appearance="Appearance.Lightweight" OnClick="() => OnGoto.InvokeAsync(tab)">@LabelOf(tab) ▸</FluentButton>
+                        }
+                    </li>
+                }
+            </ul>
+        </section>
+    </ChildContent>
+</AsyncContent>
+
+@code {
+    [Parameter, EditorRequired] public FgDto Fg { get; set; } = default!;
+
+    [Parameter] public EventCallback<FgTab> OnGoto { get; set; }
+
+    private static FgTab? TabOf(string? target) => target switch
+    {
+        "general" => FgTab.General, "sizes" => FgTab.Sizes, "routing" => FgTab.Routing, "tariffs" => FgTab.Tariffs, _ => null,
+    };
+
+    private static string LabelOf(FgTab tab) => tab switch
+    {
+        FgTab.General => "Buka Umum", FgTab.Sizes => "Buka Size Berlaku", FgTab.Routing => "Buka Routing", _ => "Buka Tarif",
+    };
+}

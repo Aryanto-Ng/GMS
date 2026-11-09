@@ -1,0 +1,119 @@
+@inject IFgApi Fgs
+@inject ICustomerApi Customers
+@inject ApiErrorHandler Errors
+@inject NavigationManager Nav
+@inject IToastService Toasts
+
+<UnsavedChangesGuard HasChanges="_dirty && !_saved" />
+
+<FormSummary Errors="_problem?.Errors" Labels="_labels" />
+@if (_problem is not null && _problem.Errors is null)
+{
+    <ProblemBanner Problem="_problem" OnReload="OnReload" />
+}
+
+<form class="gms-form gms-card" @onsubmit="SaveAsync" @onsubmit:preventDefault novalidate>
+    <TextField Label="Kode" Value="@_code" ValueChanged="v => Set(() => _code = v)" Required="true" MaxLength="30" Disabled="@(!CanEdit || Fg?.IsCodeLocked == true)"
+               Hint="@(Fg?.IsCodeLocked == true ? "Terkunci: FG sudah memiliki Size Berlaku atau routing, kode tidak dapat diubah." : null)" />
+    <TextField Label="Nama" Value="@_name" ValueChanged="v => Set(() => _name = v)" Required="true" MaxLength="150" Disabled="@(!CanEdit)" />
+    <TextField Label="Jenis" Value="@_kind" ValueChanged="v => Set(() => _kind = v)" MaxLength="50" Disabled="@(!CanEdit)" />
+    <LookupSelect Label="Customer (opsional)" Items="_customers" Value="_customer" ValueChanged="v => Set(() => _customer = v)" Disabled="@(!CanEdit)" Placeholder="Tanpa customer" />
+    <TextField Label="Keterangan" Value="@_notes" ValueChanged="v => Set(() => _notes = v)" MaxLength="250" Multiline="true" Disabled="@(!CanEdit)" />
+
+    @if (CanEdit)
+    {
+        <div class="gms-formactions">
+            @if (Fg is null)
+            {
+                <FluentAnchor Href="/master/fgs" Appearance="Appearance.Neutral">Batal</FluentAnchor>
+            }
+            <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="_saving">
+                @if (_saving) { <FluentProgressRing Width="16px" Style="margin-inline-end:6px" /> }
+                Simpan
+            </FluentButton>
+        </div>
+    }
+</form>
+
+@code {
+    private static readonly IReadOnlyDictionary<string, string> _labels = new Dictionary<string, string>
+    {
+        ["code"] = "Kode", ["name"] = "Nama", ["kind"] = "Jenis", ["customerId"] = "Customer",
+    };
+
+    private IReadOnlyList<LookupItem> _customers = [];
+    private string? _code = string.Empty, _name = string.Empty, _kind, _notes;
+    private Guid? _customer;
+    private bool _dirty, _saved, _saving;
+    private GmsProblemDetails? _problem;
+    private uint _loadedVersion = uint.MaxValue;
+
+    /// <summary>FG yang diubah; null = mode Tambah.</summary>
+    [Parameter] public FgDto? Fg { get; set; }
+
+    [Parameter] public bool CanEdit { get; set; }
+
+    /// <summary>Dipanggil setelah simpan agar halaman induk memuat ulang FG (rowVersion, kesiapan).</summary>
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    [Parameter] public EventCallback OnReload { get; set; }
+
+    [Parameter] public EventCallback<bool> OnDirty { get; set; }
+
+    protected override async Task OnInitializedAsync() =>
+        await Errors.RunAsync(async () => _customers = await Customers.LookupAsync(null));
+
+    protected override void OnParametersSet()
+    {
+        if (Fg is { } fg && fg.RowVersion != _loadedVersion)
+        {
+            _loadedVersion = fg.RowVersion;
+            _code = fg.Code;
+            _name = fg.Name;
+            _kind = fg.Kind;
+            _customer = fg.CustomerId;
+            _notes = fg.Notes;
+            _dirty = false;
+        }
+    }
+
+    private void Set(Action change)
+    {
+        change();
+        if (!_dirty)
+        {
+            _dirty = true;
+            _ = OnDirty.InvokeAsync(true);
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_saving) { return; }
+        _saving = true;
+        _problem = await Errors.RunAsync(async () =>
+        {
+            var request = new SaveFgRequest(_code!.Trim(), _name!.Trim(), string.IsNullOrWhiteSpace(_kind) ? null : _kind.Trim(), _customer,
+                string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim(), Fg?.RowVersion ?? 0);
+            if (Fg is null)
+            {
+                var created = await Fgs.CreateAsync(request);
+                _saved = true;
+                _dirty = false;
+                StateHasChanged();
+                await Task.Yield(); // render dahulu agar penjaga perubahan tidak menghalangi navigasi
+                Toasts.ShowSuccess($"FG {created.Code} dibuat. Lanjutkan menyusun Size Berlaku, routing, dan tarif.");
+                Nav.NavigateTo($"/master/fgs/{created.Id}");
+            }
+            else
+            {
+                await Fgs.UpdateAsync(Fg.Id, request);
+                _dirty = false;
+                await OnDirty.InvokeAsync(false);
+                Toasts.ShowSuccess("FG disimpan.");
+                await OnSaved.InvokeAsync();
+            }
+        });
+        _saving = false;
+    }
+}

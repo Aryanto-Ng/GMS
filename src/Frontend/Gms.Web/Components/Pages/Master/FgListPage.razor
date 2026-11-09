@@ -1,0 +1,37 @@
+@page "/master/fgs"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.MasterData.FG.View)]
+@inject IFgApi Fgs
+@inject NavigationManager Nav
+@inject IToastService Toasts
+
+<PageTitle>FG · GMS</PageTitle>
+
+<MasterList TItem="FgListItem" Title="FG" Noun="FG" Loader="Fgs.ListAsync" IsActive="d => d.IsActive" Label="d => d.Name" SetActive="ToggleAsync"
+            CreatePermission="@Permissions.MasterData.FG.Create" DeactivatePermission="@Permissions.MasterData.FG.Deactivate"
+            OnCreate="@(() => Nav.NavigateTo("/master/fgs/new"))" RowLink="FgLink"
+            ExtraKey="@(_readyOnly ? "ready" : null)" QueryFactory="q => new FgListQuery { Page = q.Page, PageSize = q.PageSize, Q = q.Q, Status = q.Status, ReadyOnly = _readyOnly }">
+    <ExtraFilters>
+        <div class="gms-field">
+            <label for="fg-ready"><input id="fg-ready" type="checkbox" checked="@_readyOnly" @onchange="e => _readyOnly = (bool)e.Value!" /> Hanya Siap Produksi</label>
+        </div>
+    </ExtraFilters>
+    <Header><th scope="col">Kode</th><th scope="col">Nama</th><th scope="col">Jenis</th><th scope="col">Customer</th><th scope="col">Kesiapan</th></Header>
+    <Row Context="d">
+        <th scope="row"><a href="/master/fgs/@d.Id">@d.Code</a></th>
+        <td>@d.Name</td><td>@(d.Kind ?? "—")</td><td>@(d.CustomerName ?? "—")</td>
+        <td><StatusChip Value="@(d.IsReady ? "ready" : "not-ready")" /></td>
+    </Row>
+</MasterList>
+
+@code {
+    private bool _readyOnly;
+
+    private static string FgLink(FgListItem d) => $"/master/fgs/{d.Id}";
+
+    private async Task ToggleAsync(FgListItem item, bool active)
+    {
+        var current = await Fgs.GetAsync(item.Id);
+        await Fgs.SetActiveAsync(item.Id, active, current.RowVersion);
+        Toasts.ShowSuccess(active ? "FG diaktifkan." : "FG dinonaktifkan.");
+    }
+}

@@ -45,3 +45,29 @@ public sealed class HttpVendorApi(GmsApiClient client) : HttpMasterCrud<VendorDt
 public sealed class HttpProcessApi(GmsApiClient client) : HttpMasterCrud<ProcessDto, ProcessDto, SaveProcessRequest>(client, "processes"), IProcessApi;
 
 public sealed class HttpWorkerApi(GmsApiClient client) : HttpMasterCrud<WorkerDto, WorkerDto, SaveWorkerRequest>(client, "workers"), IWorkerApi;
+
+public sealed class HttpFgApi(GmsApiClient client) : HttpMasterCrud<FgListItem, FgDto, SaveFgRequest>(client, "fgs"), IFgApi
+{
+    private readonly GmsApiClient _client = client;
+
+    private static string Base(Guid id) => $"/api/v1/master/fgs/{id}";
+
+    public Task<FgSizesDto> GetSizesAsync(Guid fgId, CancellationToken ct = default) => _client.GetAsync<FgSizesDto>($"{Base(fgId)}/sizes", ct);
+
+    public Task<FgSizesDto> SaveSizesAsync(Guid fgId, SaveFgSizesRequest request, CancellationToken ct = default) => _client.PutAsync<FgSizesDto>($"{Base(fgId)}/sizes", request, ct);
+
+    public Task<FgRoutingDto> GetRoutingAsync(Guid fgId, CancellationToken ct = default) => _client.GetAsync<FgRoutingDto>($"{Base(fgId)}/routing", ct);
+
+    public Task<FgRoutingDto> SaveRoutingAsync(Guid fgId, SaveRoutingRequest request, CancellationToken ct = default) => _client.PutAsync<FgRoutingDto>($"{Base(fgId)}/routing", request, ct);
+
+    public Task<FgTariffGridDto> GetTariffsAsync(Guid fgId, CancellationToken ct = default) => _client.GetAsync<FgTariffGridDto>($"{Base(fgId)}/tariffs", ct);
+
+    public Task<FgTariffGridDto> SaveTariffsAsync(Guid fgId, SaveTariffsRequest request, CancellationToken ct = default) => _client.PutAsync<FgTariffGridDto>($"{Base(fgId)}/tariffs", request, ct);
+
+    public Task<FgReadinessDto> GetReadinessAsync(Guid fgId, CancellationToken ct = default) => _client.GetAsync<FgReadinessDto>($"{Base(fgId)}/readiness", ct);
+
+    public Task<CopyFgPreviewDto> PreviewCopyFromAsync(Guid fgId, CopyFgRequest request, CancellationToken ct = default) =>
+        _client.PostAsync<CopyFgPreviewDto>($"{Base(fgId)}/copy-from/preview", request, ct);
+
+    public Task<FgDto> CopyFromAsync(Guid fgId, CopyFgRequest request, CancellationToken ct = default) => _client.PostAsync<FgDto>($"{Base(fgId)}/copy-from", request, ct);
+}

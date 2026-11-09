@@ -1,0 +1,126 @@
+@inject IFgApi Fgs
+@inject ISizeApi Sizes
+@inject ApiErrorHandler Errors
+@inject IToastService Toasts
+
+<UnsavedChangesGuard HasChanges="_dirty" />
+
+<AsyncContent T="bool" Key="@($"{Fg.Id}|{_reload}")" Loader="LoadAsync" IsEmpty="_ => _all.Count == 0">
+    <EmptyContent>
+        <EmptyState Title="Belum ada Size aktif" Description="Tambahkan Size pada master Size lebih dulu." ActionText="Buka master Size" ActionHref="/master/sizes" />
+    </EmptyContent>
+    <ChildContent Context="loaded">
+        @if (_problem is not null)
+        {
+            <ProblemBanner Problem="_problem" OnReload="() => _reload++" />
+        }
+
+        <fieldset class="gms-card" disabled="@(!CanEdit)">
+            <legend>Size Berlaku (urut sesuai Urutan Tampil)</legend>
+            <ul class="gms-checklist">
+                @foreach (var size in _all)
+                {
+                    <li>
+                        <label>
+                            <input type="checkbox" checked="@_selected.Contains(size.Id)" @onchange="e => Toggle(size.Id, (bool)e.Value!)" />
+                            @size.Code <span class="gms-muted">· @size.Name</span>
+                        </label>
+                    </li>
+                }
+            </ul>
+            @if (_selected.Count == 0)
+            {
+                <p class="gms-bad" role="alert"><FluentIcon Value="@(new Icons.Regular.Size16.DismissCircle())" Color="Color.Neutral" /> Minimal satu Size Berlaku.</p>
+            }
+
+            @if (CanEdit)
+            {
+                <div class="gms-formactions">
+                    <FluentButton Appearance="Appearance.Neutral" Disabled="@(!_dirty)" OnClick="() => _reload++">Batal</FluentButton>
+                    <FluentButton Appearance="Appearance.Accent" Disabled="@(!_dirty || _selected.Count == 0 || _saving)" OnClick="() => SaveAsync(false)">Simpan Size</FluentButton>
+                </div>
+            }
+        </fieldset>
+    </ChildContent>
+</AsyncContent>
+
+<ReasonDialog Open="_confirm is not null" OpenChanged="o => { if (!o) _confirm = null; }" ShowReason="false" Danger="true" ConfirmText="Hapus size dan tarif"
+              Title="Hapus size bertarif?" Description="Tarif berikut akan dihapus. Nilai lama tetap tercatat di audit log." OnConfirm="_ => SaveAsync(true)">
+    <ul>
+        @foreach (var v in _confirm?.Violations ?? [])
+        {
+            <li>@v.Message</li>
+        }
+    </ul>
+</ReasonDialog>
+
+@code {
+    private IReadOnlyList<SizeDto> _all = [];
+    private readonly HashSet<Guid> _selected = [];
+    private bool _dirty, _saving;
+    private int _reload;
+    private GmsProblemDetails? _problem, _confirm;
+
+    [Parameter, EditorRequired] public FgDto Fg { get; set; } = default!;
+
+    [Parameter] public bool CanEdit { get; set; }
+
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    [Parameter] public EventCallback<bool> OnDirty { get; set; }
+
+    private async Task<bool> LoadAsync(CancellationToken ct)
+    {
+        _all = (await Sizes.ListAsync(new MasterListQuery { PageSize = 200 }, ct)).Items.OrderBy(s => s.SortOrder).ThenBy(s => s.Code).ToList();
+        var current = await Fgs.GetSizesAsync(Fg.Id, ct);
+        _selected.Clear();
+        _selected.UnionWith(current.SizeIds);
+        _dirty = false;
+        await OnDirty.InvokeAsync(false);
+        return true;
+    }
+
+    private void Toggle(Guid id, bool on)
+    {
+        if (on) { _selected.Add(id); } else { _selected.Remove(id); }
+        _dirty = true;
+        _ = OnDirty.InvokeAsync(true);
+    }
+
+    private async Task SaveAsync(bool confirmed)
+    {
+        _saving = true;
+        try
+        {
+            var request = new SaveFgSizesRequest(_all.Where(s => _selected.Contains(s.Id)).Select(s => s.Id).ToList(), confirmed, Fg.RowVersion);
+            try
+            {
+                await Fgs.SaveSizesAsync(Fg.Id, request);
+            }
+            catch (ApiException ex) when (!confirmed && ex.Problem.Code == ProblemCodes.FgSizeHasTariffs)
+            {
+                _confirm = ex.Problem; // minta konfirmasi, lalu ulangi dengan ConfirmRemoveTariffs
+                return;
+            }
+
+            _confirm = null;
+            _problem = null;
+            _dirty = false;
+            await OnDirty.InvokeAsync(false);
+            Toasts.ShowSuccess("Size Berlaku disimpan.");
+            await OnSaved.InvokeAsync();
+        }
+        catch (ApiException) when (confirmed)
+        {
+            throw; // galat saat konfirmasi tampil di dalam dialog
+        }
+        catch (ApiException ex)
+        {
+            if (!Errors.TryHandleSessionEnd(ex.Problem)) { _problem = ex.Problem; }
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

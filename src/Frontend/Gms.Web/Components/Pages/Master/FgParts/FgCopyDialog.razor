@@ -1,0 +1,116 @@
+@inject IFgApi Fgs
+@inject ApiErrorHandler Errors
+@inject IToastService Toasts
+
+@* Salin routing dan tarif dari FG lain (MasterData-UI.md 2.6): 1 Pilih sumber → 2 Pratinjau → 3 Konfirmasi. *@
+<ReasonDialog Open="Open" OpenChanged="OnOpenChanged" ShowReason="false" Danger="false" ConfirmText="Salin dan simpan"
+              Title="Salin dari FG lain" CanConfirm="@(_step == 3 && (_preview?.WillOverwriteExisting != true || _overwrite))" OnConfirm="CopyAsync">
+    <ol class="gms-stepper" aria-label="Langkah">
+        @foreach (var (n, label) in new[] { (1, "Pilih FG sumber"), (2, "Pratinjau"), (3, "Konfirmasi") })
+        {
+            <li aria-current="@(_step == n ? "step" : null)" class="@(_step == n ? "current" : null)">@n. @label</li>
+        }
+    </ol>
+
+    @if (_problem is not null)
+    {
+        <ProblemBanner Problem="_problem" />
+    }
+
+    @if (_step == 1)
+    {
+        <LookupSelect Label="FG sumber" Items="_sources" @bind-Value="_source" Required="true" ShowCode="true" />
+        <div class="gms-formactions">
+            <FluentButton Appearance="Appearance.Accent" Disabled="@(_source is null || _busy)" OnClick="PreviewAsync">Lanjut</FluentButton>
+        </div>
+    }
+    else if (_step == 2 && _preview is not null)
+    {
+        <h3>Routing yang akan disalin</h3>
+        <ol>
+            @foreach (var s in _preview.Steps) { <li>@s.ProcessName <span class="gms-muted">(@(s.ProcessType == ProcessType.Internal ? "Internal" : "Vendor"))</span></li> }
+        </ol>
+        <p>@_preview.Cells.Count(c => c.Rate is not null) sel tarif akan disalin.</p>
+        @if (_preview.SkippedSizeCodes.Count > 0)
+        {
+            <p class="gms-warn" role="status"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" />
+                Dilewati karena Size tidak berlaku pada FG ini: @string.Join(", ", _preview.SkippedSizeCodes).</p>
+        }
+
+        <div class="gms-formactions">
+            <FluentButton Appearance="Appearance.Neutral" OnClick="() => _step = 1">Kembali</FluentButton>
+            <FluentButton Appearance="Appearance.Accent" OnClick="() => _step = 3">Lanjut</FluentButton>
+        </div>
+    }
+    else if (_step == 3 && _preview is not null)
+    {
+        @if (_preview.WillOverwriteExisting)
+        {
+            <div class="gms-banner warning" role="alert">
+                <div class="gms-banner-body"><p>Akan menimpa routing dan tarif yang ada pada FG ini.</p></div>
+            </div>
+            <label><input type="checkbox" checked="@_overwrite" @onchange="e => _overwrite = (bool)e.Value!" /> Ya, timpa routing dan tarif yang ada</label>
+        }
+        else
+        {
+            <p>FG ini belum memiliki routing/tarif. Salinan akan langsung disimpan.</p>
+        }
+
+        <div class="gms-formactions">
+            <FluentButton Appearance="Appearance.Neutral" OnClick="() => _step = 2">Kembali</FluentButton>
+        </div>
+    }
+</ReasonDialog>
+
+@code {
+    private int _step = 1;
+    private bool _busy, _overwrite, _wasOpen;
+    private Guid? _source;
+    private IReadOnlyList<LookupItem> _sources = [];
+    private CopyFgPreviewDto? _preview;
+    private GmsProblemDetails? _problem;
+
+    [Parameter, EditorRequired] public FgDto Fg { get; set; } = default!;
+
+    [Parameter] public bool Open { get; set; }
+
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    [Parameter] public EventCallback OnCopied { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Open && !_wasOpen)
+        {
+            _step = 1;
+            _source = null;
+            _preview = null;
+            _overwrite = false;
+            _problem = null;
+            await Errors.RunAsync(async () => _sources = (await Fgs.LookupAsync(null)).Where(f => f.Id != Fg.Id).ToList());
+        }
+
+        _wasOpen = Open;
+    }
+
+    private Task OnOpenChanged(bool open) => OpenChanged.InvokeAsync(open);
+
+    private async Task PreviewAsync()
+    {
+        _busy = true;
+        _problem = null;
+        _problem = await Errors.RunAsync(async () =>
+        {
+            _preview = await Fgs.PreviewCopyFromAsync(Fg.Id, new CopyFgRequest(_source!.Value));
+            _step = 2;
+        });
+        _busy = false;
+    }
+
+    private async Task CopyAsync(string _)
+    {
+        await Fgs.CopyFromAsync(Fg.Id, new CopyFgRequest(_source!.Value, _overwrite));
+        Toasts.ShowSuccess("Routing dan tarif disalin.");
+        await OnCopied.InvokeAsync();
+    }
+}

@@ -44,7 +44,7 @@ public static class NavCatalog
         new("Master Data",
         [
             new("Customer", "/master/customers", Permissions.MasterData.Customer.View, I<Icons.Regular.Size20.People>(), Enabled: true),
-            new("FG", "/master/fgs", Permissions.MasterData.FG.View, I<Icons.Regular.Size20.ShoppingBag>()),
+            new("FG", "/master/fgs", Permissions.MasterData.FG.View, I<Icons.Regular.Size20.ShoppingBag>(), Enabled: true),
             new("Material", "/master/materials", Permissions.MasterData.Material.View, I<Icons.Regular.Size20.Layer>(), Enabled: true),
             new("Kategori Material", "/master/material-categories", Permissions.MasterData.KategoriMaterial.View, I<Icons.Regular.Size20.Tag>(), Enabled: true),
             new("Satuan", "/master/uoms", Permissions.MasterData.UoM.View, I<Icons.Regular.Size20.Ruler>(), Enabled: true),

@@ -37,12 +37,31 @@ public abstract class MockCrud<TItem, TDetail, TSave> : IMasterCrudApi<TItem, TD
 
     protected virtual ApiException? CheckDeactivate(TDetail d) => null;
 
+    /// <summary>Menyaring tambahan dari query turunan (mis. FG ReadyOnly).</summary>
+    protected virtual bool Include(TDetail d, MasterListQuery query) => true;
+
+    /// <summary>Mengisi nilai turunan (mis. kesiapan FG) pada detail yang dikembalikan.</summary>
+    protected virtual TDetail Project(TDetail d) => d;
+
     protected virtual IEnumerable<TDetail> Order(IEnumerable<TDetail> rows) => rows.OrderBy(CodeOf, StringComparer.OrdinalIgnoreCase);
 
     protected virtual bool Matches(TDetail d, string q) =>
         CodeOf(d).Contains(q, StringComparison.OrdinalIgnoreCase) || NameOf(d).Contains(q, StringComparison.OrdinalIgnoreCase);
 
     protected void Seed(params TDetail[] rows) => _rows.AddRange(rows);
+
+    protected object Gate => _gate;
+
+    /// <summary>Mengganti baris (pemanggil memegang <see cref="Gate"/>); mengembalikan baris baru.</summary>
+    protected TDetail Replace(Guid id, Func<TDetail, TDetail> change)
+    {
+        var index = _rows.FindIndex(r => IdOf(r) == id);
+        if (index < 0) { throw NotFound(); }
+        _rows[index] = change(_rows[index]);
+        return _rows[index];
+    }
+
+    protected TDetail Current(Guid id) => _rows.FirstOrDefault(r => IdOf(r) == id) ?? throw NotFound();
 
     public bool Contains(Guid id)
     {
@@ -64,9 +83,9 @@ public abstract class MockCrud<TItem, TDetail, TSave> : IMasterCrudApi<TItem, TD
         MockAccessStore.Problem(ProblemTypes.ValidationFailed, 422, "Data tidak valid.", "Periksa kembali isian yang ditandai.",
             errors: new Dictionary<string, string[]> { [field] = [message] });
 
-    private static ApiException NotFound() => MockAccessStore.Problem(ProblemTypes.NotFound, 404, "Data tidak ditemukan.");
+    protected static ApiException NotFound() => MockAccessStore.Problem(ProblemTypes.NotFound, 404, "Data tidak ditemukan.");
 
-    private static ApiException Stale() =>
+    protected static ApiException Stale() =>
         MockAccessStore.Problem(ProblemTypes.ConcurrencyConflict, 409, "Data telah diubah pengguna lain.", "Muat ulang halaman lalu ulangi perubahan Anda.");
 
     private ApiException? Check(TSave request, Guid? self, string? code)
@@ -92,6 +111,7 @@ public abstract class MockCrud<TItem, TDetail, TSave> : IMasterCrudApi<TItem, TD
             var rows = _rows.AsEnumerable();
             rows = query.Status switch { ActiveFilter.Active => rows.Where(ActiveOf), ActiveFilter.Inactive => rows.Where(r => !ActiveOf(r)), _ => rows };
             if (!string.IsNullOrWhiteSpace(query.Q)) { rows = rows.Where(r => Matches(r, query.Q.Trim())); }
+            rows = rows.Where(r => Include(r, query));
             var all = Order(rows).ToList();
             var items = all.Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).Select(ToItem).ToList();
             return Task.FromResult(new PagedResult<TItem>(items, query.Page, query.PageSize, all.Count));
@@ -102,7 +122,7 @@ public abstract class MockCrud<TItem, TDetail, TSave> : IMasterCrudApi<TItem, TD
     {
         lock (_gate)
         {
-            return Task.FromResult(_rows.FirstOrDefault(r => IdOf(r) == id) ?? throw NotFound());
+            return Task.FromResult(Project(_rows.FirstOrDefault(r => IdOf(r) == id) ?? throw NotFound()));
         }
     }
 
@@ -115,7 +135,7 @@ public abstract class MockCrud<TItem, TDetail, TSave> : IMasterCrudApi<TItem, TD
             var code = requested ?? $"{AutoCodePrefix}-{_rows.Count + 1:000}";
             var row = Build(Guid.NewGuid(), code, request);
             _rows.Add(row);
-            return Task.FromResult(row);
+            return Task.FromResult(Project(row));
         }
     }
 
@@ -129,7 +149,7 @@ public abstract class MockCrud<TItem, TDetail, TSave> : IMasterCrudApi<TItem, TD
             var requested = RequestedCode(request)?.Trim();
             if (Check(request, id, requested) is { } problem) { throw problem; }
             _rows[index] = Apply(_rows[index], requested ?? CodeOf(_rows[index]), request);
-            return Task.FromResult(_rows[index]);
+            return Task.FromResult(Project(_rows[index]));
         }
     }
 
@@ -142,7 +162,7 @@ public abstract class MockCrud<TItem, TDetail, TSave> : IMasterCrudApi<TItem, TD
             if (VersionOf(_rows[index]) != rowVersion) { throw Stale(); }
             if (!isActive && CheckDeactivate(_rows[index]) is { } problem) { throw problem; }
             _rows[index] = WithActive(_rows[index], isActive);
-            return Task.FromResult(_rows[index]);
+            return Task.FromResult(Project(_rows[index]));
         }
     }
 

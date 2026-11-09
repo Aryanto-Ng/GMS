@@ -67,6 +67,8 @@ services.AddSingleton<MockCustomerApi>();
 services.AddSingleton<MockVendorApi>();
 services.AddSingleton<MockProcessApi>();
 services.AddSingleton<MockWorkerApi>();
+services.AddSingleton<MockFgApi>();
+services.AddScoped<IFgApi>(sp => api.UseMock ? sp.GetRequiredService<MockFgApi>() : ActivatorUtilities.CreateInstance<HttpFgApi>(sp));
 services.AddScoped<IUomApi>(sp => api.UseMock ? sp.GetRequiredService<MockUomApi>() : ActivatorUtilities.CreateInstance<HttpUomApi>(sp));
 services.AddScoped<IMaterialCategoryApi>(sp => api.UseMock ? sp.GetRequiredService<MockMaterialCategoryApi>() : ActivatorUtilities.CreateInstance<HttpMaterialCategoryApi>(sp));
 services.AddScoped<IMaterialApi>(sp => api.UseMock ? sp.GetRequiredService<MockMaterialApi>() : ActivatorUtilities.CreateInstance<HttpMaterialApi>(sp));
