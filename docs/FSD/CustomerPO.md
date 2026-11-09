@@ -254,5 +254,5 @@ Tidak ada halaman Static SSR pada modul ini. WebAssembly **tidak dipakai**.
 | Q3 | PO Completed terkunci, penambahan pesanan lewat PO baru | **Disetujui** |
 | Q4 | Serah terima otomatis mengalokasikan ke baris PO asal WO (bagian 2.2) | **Disetujui** |
 | Q5 | Pengiriman hanya dari qty yang sudah dialokasikan ke baris PO | **Disetujui** |
-| Q6 | Qty pengiriman tidak boleh melebihi Qty baris PO | Default (belum dijawab user), berlaku sampai ada keberatan |
-| Q7 | Ambang qty besar: batas 1.000.000, konfirmasi di atas 100.000 | Default (belum dijawab user), berlaku sampai ada keberatan |
+| Q6 | Qty pengiriman tidak boleh melebihi Qty baris PO | **Disetujui** (2026-11-10) |
+| Q7 | Ambang qty besar: batas 1.000.000, konfirmasi di atas 100.000 | **Disetujui** (2026-11-10) |
