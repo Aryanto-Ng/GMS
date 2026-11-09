@@ -1,0 +1,194 @@
+@typeparam TItem where TItem : class
+@inject AuthenticationStateProvider Auth
+
+@* Daftar Master Generik (MasterData-UI.md 7): kolom dikonfigurasi pemanggil; pencarian, filter status, paging server, state skeleton/kosong/galat,
+   aksi Ubah/Nonaktifkan/Aktifkan menurut izin. Kolom Status dan Aksi ditambahkan komponen ini. *@
+<PageHeader Title="@Title" Subtitle="@(_total is null ? null : $"{IdFormat.Qty(_total)} {Noun}")">
+    <Actions>
+        @if (CanCreate)
+        {
+            <FluentButton Appearance="Appearance.Accent" OnClick="OnCreate">Tambah @Noun</FluentButton>
+        }
+        @if (ImportHref is not null && Can(ImportPermission))
+        {
+            <FluentAnchor Href="@ImportHref" Appearance="Appearance.Neutral">Impor CSV</FluentAnchor>
+        }
+    </Actions>
+</PageHeader>
+
+<div class="gms-toolbar" role="search">
+    <div class="gms-field">
+        <label for="@($"{_id}-q")">Cari kode/nama</label>
+        <input id="@($"{_id}-q")" type="search" value="@_q" @onchange="e => Apply(() => _q = e.Value?.ToString())" />
+    </div>
+    <div class="gms-field">
+        <label for="@($"{_id}-status")">Status</label>
+        <select id="@($"{_id}-status")" @onchange="e => Apply(() => _status = Enum.TryParse<ActiveFilter>(e.Value?.ToString(), out var s) ? s : ActiveFilter.Active)">
+            <option value="Active" selected="@(_status == ActiveFilter.Active)">Aktif</option>
+            <option value="Inactive" selected="@(_status == ActiveFilter.Inactive)">Nonaktif</option>
+            <option value="All" selected="@(_status == ActiveFilter.All)">Semua</option>
+        </select>
+    </div>
+    @ExtraFilters
+</div>
+
+<AsyncContent T="PagedResult<TItem>" Key="@($"{Version}|{_refresh}|{_page}|{_q}|{_status}|{ExtraKey}")" Loader="LoadAsync" IsEmpty="r => r.TotalCount == 0">
+    <EmptyContent>
+        @if (string.IsNullOrWhiteSpace(_q) && _status == ActiveFilter.Active && ExtraKey is null)
+        {
+            <EmptyState Icon="@(new Icons.Regular.Size48.Box())" Title="@($"Belum ada {Noun}")" ActionText="@(CanCreate ? $"Tambah {Noun}" : null)" OnAction="OnCreate" />
+        }
+        else
+        {
+            <EmptyState Icon="@(new Icons.Regular.Size48.Search())" Title="Tidak ada hasil" Description="Ubah kata kunci atau filter." ActionText="Reset filter" OnAction="Reset" />
+        }
+    </EmptyContent>
+    <ChildContent Context="result">
+        <table class="gms-table">
+            <caption class="gms-sr-only">Daftar @Noun</caption>
+            <thead>
+                <tr>
+                    @Header
+                    <th scope="col">Status</th>
+                    <th scope="col">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in result.Items)
+                {
+                    var active = IsActive(item);
+                    <tr class="@(active ? null : "gms-inactive")">
+                        @Row(item)
+                        <td><StatusChip Value="@(active ? "active" : "inactive")" /></td>
+                        <td class="gms-rowactions">
+                            @if (CanEdit)
+                            {
+                                <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Ubah {Label(item)}")" OnClick="() => OnEdit.InvokeAsync(item)">Ubah</FluentButton>
+                            }
+                            @if (RowLink is not null)
+                            {
+                                <FluentAnchor Href="@RowLink(item)" Appearance="Appearance.Lightweight" aria-label="@($"Buka {Label(item)}")">Buka</FluentAnchor>
+                            }
+                            @if (CanDeactivate)
+                            {
+                                <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"{(active ? "Nonaktifkan" : "Aktifkan")} {Label(item)}")"
+                                              OnClick="() => _target = item">@(active ? "Nonaktifkan" : "Aktifkan")</FluentButton>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <PagerBar Page="result.Page" PageSize="result.PageSize" TotalCount="result.TotalCount" PageChanged="p => _page = p" />
+    </ChildContent>
+</AsyncContent>
+
+<ReasonDialog Open="_target is not null" OpenChanged="o => { if (!o) _target = null; }" ShowReason="false" Danger="@(_target is not null && IsActive(_target))"
+              Title="@(_target is null ? string.Empty : $"{(IsActive(_target) ? "Nonaktifkan" : "Aktifkan")} {Label(_target)}?")"
+              Description="@(_target is not null && IsActive(_target) ? "Data tidak dihapus dan tetap muncul di dokumen lama, tetapi tidak dapat dipilih untuk dokumen baru." : "Data dapat dipilih kembali untuk dokumen baru.")"
+              ConfirmText="@(_target is not null && IsActive(_target) ? "Nonaktifkan" : "Aktifkan")" OnConfirm="ToggleAsync" />
+
+@code {
+    private static int _counter;
+    private readonly string _id = $"gms-ml-{Interlocked.Increment(ref _counter)}";
+    private string? _q;
+    private ActiveFilter _status = ActiveFilter.Active;
+    private int _page = 1;
+    private int? _total;
+    private int _refresh;
+    private TItem? _target;
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+
+    /// <summary>Judul halaman (jamak, mis. "Satuan").</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    /// <summary>Kata benda tunggal untuk tombol/pesan (mis. "satuan").</summary>
+    [Parameter, EditorRequired] public string Noun { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired] public Func<MasterListQuery, CancellationToken, Task<PagedResult<TItem>>> Loader { get; set; } = default!;
+
+    [Parameter, EditorRequired] public RenderFragment Header { get; set; } = default!;
+
+    [Parameter, EditorRequired] public RenderFragment<TItem> Row { get; set; } = default!;
+
+    [Parameter, EditorRequired] public Func<TItem, bool> IsActive { get; set; } = default!;
+
+    [Parameter, EditorRequired] public Func<TItem, string> Label { get; set; } = default!;
+
+    /// <summary>Menonaktifkan/mengaktifkan (pemanggil mengurus rowVersion terbaru). Galat API tampil di dialog.</summary>
+    [Parameter, EditorRequired] public Func<TItem, bool, Task> SetActive { get; set; } = default!;
+
+    [Parameter] public string? CreatePermission { get; set; }
+
+    [Parameter] public string? EditPermission { get; set; }
+
+    [Parameter] public string? DeactivatePermission { get; set; }
+
+    [Parameter] public string? ImportPermission { get; set; }
+
+    [Parameter] public string? ImportHref { get; set; }
+
+    [Parameter] public EventCallback OnCreate { get; set; }
+
+    [Parameter] public EventCallback<TItem> OnEdit { get; set; }
+
+    /// <summary>Tautan "Buka" per baris (mis. halaman detail FG). Menggantikan Ubah berbasis dialog.</summary>
+    [Parameter] public Func<TItem, string>? RowLink { get; set; }
+
+    [Parameter] public RenderFragment? ExtraFilters { get; set; }
+
+    /// <summary>Nilai filter tambahan; berubah → muat ulang dan halaman kembali ke 1.</summary>
+    [Parameter] public object? ExtraKey { get; set; }
+
+    /// <summary>Naikkan setelah simpan/ubah dari luar agar daftar dimuat ulang.</summary>
+    [Parameter] public int Version { get; set; }
+
+    /// <summary>Membangun query dari filter dasar (FG menambahkan ReadyOnly).</summary>
+    [Parameter] public Func<MasterListQuery, MasterListQuery>? QueryFactory { get; set; }
+
+    /// <summary>Memuat ulang daftar (mis. setelah simpan dari dialog).</summary>
+    public void Refresh()
+    {
+        _refresh++;
+        StateHasChanged();
+    }
+
+    private bool Can(string? permission) => permission is not null && _user.HasPermission(permission);
+
+    private bool CanCreate => Can(CreatePermission) && OnCreate.HasDelegate;
+
+    private bool CanEdit => Can(EditPermission) && OnEdit.HasDelegate;
+
+    private bool CanDeactivate => Can(DeactivatePermission);
+
+    protected override async Task OnInitializedAsync() => _user = (await Auth.GetAuthenticationStateAsync()).User;
+
+    private async Task<PagedResult<TItem>> LoadAsync(CancellationToken ct)
+    {
+        var query = new MasterListQuery { Page = _page, Q = _q, Status = _status };
+        var result = await Loader(QueryFactory?.Invoke(query) ?? query, ct);
+        _total = result.TotalCount;
+        await InvokeAsync(StateHasChanged);
+        return result;
+    }
+
+    private void Apply(Action change)
+    {
+        change();
+        _page = 1;
+    }
+
+    private void Reset()
+    {
+        _q = null;
+        _status = ActiveFilter.Active;
+        _page = 1;
+    }
+
+    private async Task ToggleAsync(string _)
+    {
+        var item = _target!;
+        await SetActive(item, !IsActive(item));
+        _refresh++;
+    }
+}

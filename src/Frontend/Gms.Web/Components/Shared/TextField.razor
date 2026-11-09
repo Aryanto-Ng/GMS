@@ -1,0 +1,46 @@
+@* Isian teks berlabel (label terhubung, penanda wajib berupa teks, petunjuk terhubung lewat aria-describedby). *@
+<div class="gms-form">
+    <label for="@_id">@Label @if (Required) { <span class="gms-required">wajib</span> }</label>
+    @if (Multiline)
+    {
+        <textarea id="@_id" class="gms-reason" rows="3" maxlength="@MaxLength" disabled="@Disabled" aria-describedby="@HintId"
+                  value="@Value" @oninput="OnInput"></textarea>
+    }
+    else
+    {
+        <input id="@_id" type="@Type" maxlength="@MaxLength" disabled="@Disabled" autocomplete="off" aria-describedby="@HintId" inputmode="@InputMode"
+               value="@Value" @oninput="OnInput" />
+    }
+    @if (!string.IsNullOrEmpty(Hint))
+    {
+        <small id="@HintId">@Hint</small>
+    }
+</div>
+
+@code {
+    private static int _counter;
+    private readonly string _id = $"gms-tf-{Interlocked.Increment(ref _counter)}";
+    private string? HintId => string.IsNullOrEmpty(Hint) ? null : _id + "-hint";
+
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    [Parameter] public string? Value { get; set; }
+
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    [Parameter] public bool Required { get; set; }
+
+    [Parameter] public int MaxLength { get; set; } = 100;
+
+    [Parameter] public bool Disabled { get; set; }
+
+    [Parameter] public bool Multiline { get; set; }
+
+    [Parameter] public string Type { get; set; } = "text";
+
+    [Parameter] public string? InputMode { get; set; }
+
+    [Parameter] public string? Hint { get; set; }
+
+    private Task OnInput(ChangeEventArgs e) => ValueChanged.InvokeAsync(e.Value?.ToString());
+}

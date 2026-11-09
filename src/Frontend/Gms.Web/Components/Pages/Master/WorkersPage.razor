@@ -1,0 +1,55 @@
+@page "/master/workers"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.MasterData.Pekerja.View)]
+@inject IWorkerApi Workers
+@inject IProcessApi Processes
+@inject ApiErrorHandler Errors
+@inject IToastService Toasts
+
+<PageTitle>Pekerja · GMS</PageTitle>
+
+<MasterList @ref="_list" TItem="WorkerDto" Title="Pekerja" Noun="pekerja" Loader="Workers.ListAsync" IsActive="d => d.IsActive" Label="d => d.Name"
+            SetActive="ToggleAsync" CreatePermission="@Permissions.MasterData.Pekerja.Create" EditPermission="@Permissions.MasterData.Pekerja.Edit"
+            DeactivatePermission="@Permissions.MasterData.Pekerja.Deactivate"
+            OnCreate="OpenCreate" OnEdit="OpenEdit">
+    <Header><th scope="col">Kode</th><th scope="col">Nama</th><th scope="col">Proses utama</th><th scope="col">Tgl masuk</th></Header>
+    <Row Context="d"><th scope="row">@d.Code</th><td>@d.Name</td><td>@(d.MainProcessName ?? "—")</td><td>@IdFormat.Date(d.JoinDate)</td></Row>
+</MasterList>
+
+<ReasonDialog Open="_open" OpenChanged="o => _open = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="@(_editing is null ? "Tambah pekerja" : $"Ubah {_editing.Code}")"
+              CanConfirm="@(!string.IsNullOrWhiteSpace(_name))" OnConfirm="SaveAsync">
+    <p class="gms-note">Kode: @(_editing?.Code ?? "Otomatis saat disimpan")</p>
+    <TextField Label="Nama" @bind-Value="_name" Required="true" MaxLength="100" />
+    <TextField Label="Tanggal masuk" @bind-Value="_join" Type="date" />
+    <LookupSelect Label="Proses utama (opsional)" Items="_processes" @bind-Value="_process" Placeholder="Tidak ditentukan" />
+    <TextField Label="Keterangan" @bind-Value="_notes" MaxLength="250" Multiline="true" />
+</ReasonDialog>
+
+@code {
+    private MasterList<WorkerDto>? _list;
+    private bool _open;
+    private WorkerDto? _editing;
+    private string? _name = string.Empty, _join, _notes;
+    private Guid? _process;
+    private IReadOnlyList<LookupItem> _processes = [];
+
+    protected override async Task OnInitializedAsync() => await Errors.RunAsync(async () => _processes = await Processes.LookupAsync(null));
+
+    private void OpenCreate() { _editing = null; _name = string.Empty; _join = _notes = null; _process = null; _open = true; }
+
+    private void OpenEdit(WorkerDto d) { _editing = d; _name = d.Name; _join = d.JoinDate?.ToString("yyyy-MM-dd"); _process = d.MainProcessId; _notes = d.Notes; _open = true; }
+
+    private async Task SaveAsync(string _)
+    {
+        DateOnly? join = DateOnly.TryParseExact(_join, "yyyy-MM-dd", out var parsed) ? parsed : null;
+        var request = new SaveWorkerRequest(_name!.Trim(), join, _process, string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim(), _editing?.RowVersion ?? 0);
+        if (_editing is null) { await Workers.CreateAsync(request); } else { await Workers.UpdateAsync(_editing.Id, request); }
+        Toasts.ShowSuccess("Pekerja disimpan.");
+        _list?.Refresh();
+    }
+
+    private async Task ToggleAsync(WorkerDto d, bool active)
+    {
+        await Workers.SetActiveAsync(d.Id, active, (await Workers.GetAsync(d.Id)).RowVersion);
+        Toasts.ShowSuccess(active ? "Pekerja diaktifkan." : "Pekerja dinonaktifkan.");
+    }
+}

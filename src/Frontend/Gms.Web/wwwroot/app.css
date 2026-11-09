@@ -204,3 +204,5 @@ code { font-family: Consolas, "Courier New", monospace; }
 .gms-perm .gms-groupheader th { background: var(--gms-bg2); text-align: start; font-size: .8rem; letter-spacing: .04em; text-transform: uppercase; }
 .gms-perm input[type="checkbox"] { width: 18px; height: 18px; }
 .gms-auditdetail td { background: var(--gms-bg2); }
+.gms-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--gms-stroke); vertical-align: -2px; margin-inline-end: 6px; }
+tr.gms-inactive { opacity: .7; }

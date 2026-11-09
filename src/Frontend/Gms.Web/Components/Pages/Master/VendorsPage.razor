@@ -1,0 +1,51 @@
+@page "/master/vendors"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.MasterData.Vendor.View)]
+@inject IVendorApi Vendors
+@inject IToastService Toasts
+
+<PageTitle>Vendor · GMS</PageTitle>
+
+<MasterList @ref="_list" TItem="VendorDto" Title="Vendor" Noun="vendor" Loader="Vendors.ListAsync" IsActive="d => d.IsActive" Label="d => d.Name"
+            SetActive="ToggleAsync" CreatePermission="@Permissions.MasterData.Vendor.Create" EditPermission="@Permissions.MasterData.Vendor.Edit"
+            DeactivatePermission="@Permissions.MasterData.Vendor.Deactivate" OnCreate="OpenCreate" OnEdit="OpenEdit">
+    <Header><th scope="col">Kode</th><th scope="col">Nama</th><th scope="col">Layanan</th><th scope="col">Telepon</th></Header>
+    <Row Context="d"><th scope="row">@d.Code</th><td>@d.Name</td><td>@(d.ServiceType ?? "—")</td><td>@(d.Phone ?? "—")</td></Row>
+</MasterList>
+
+<ReasonDialog Open="_open" OpenChanged="o => _open = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="@(_editing is null ? "Tambah vendor" : $"Ubah {_editing.Code}")"
+              CanConfirm="@(!string.IsNullOrWhiteSpace(_name))" OnConfirm="SaveAsync">
+    <p class="gms-note">Kode: @(_editing?.Code ?? "Otomatis saat disimpan")</p>
+    <TextField Label="Nama" @bind-Value="_name" Required="true" MaxLength="100" />
+    <TextField Label="Jenis layanan" @bind-Value="_service" MaxLength="100" />
+    <TextField Label="Kontak (PIC)" @bind-Value="_contact" MaxLength="100" />
+    <TextField Label="Telepon" @bind-Value="_phone" MaxLength="30" Type="tel" />
+    <TextField Label="Alamat" @bind-Value="_address" MaxLength="250" Multiline="true" />
+    <TextField Label="Keterangan" @bind-Value="_notes" MaxLength="250" Multiline="true" />
+</ReasonDialog>
+
+@code {
+    private MasterList<VendorDto>? _list;
+    private bool _open;
+    private VendorDto? _editing;
+    private string? _name = string.Empty, _service, _contact, _phone, _address, _notes;
+
+    private void OpenCreate() { _editing = null; _name = string.Empty; _service = _contact = _phone = _address = _notes = null; _open = true; }
+
+    private void OpenEdit(VendorDto d) { _editing = d; _name = d.Name; _service = d.ServiceType; _contact = d.ContactPerson; _phone = d.Phone; _address = d.Address; _notes = d.Notes; _open = true; }
+
+    private static string? N(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+
+    private async Task SaveAsync(string _)
+    {
+        var request = new SaveVendorRequest(_name!.Trim(), N(_service), N(_contact), N(_phone), N(_address), N(_notes), _editing?.RowVersion ?? 0);
+        if (_editing is null) { await Vendors.CreateAsync(request); } else { await Vendors.UpdateAsync(_editing.Id, request); }
+        Toasts.ShowSuccess("Vendor disimpan.");
+        _list?.Refresh();
+    }
+
+    private async Task ToggleAsync(VendorDto d, bool active)
+    {
+        await Vendors.SetActiveAsync(d.Id, active, (await Vendors.GetAsync(d.Id)).RowVersion);
+        Toasts.ShowSuccess(active ? "Vendor diaktifkan." : "Vendor dinonaktifkan.");
+    }
+}

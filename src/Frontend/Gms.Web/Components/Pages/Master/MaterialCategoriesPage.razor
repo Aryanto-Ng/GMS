@@ -1,0 +1,6 @@
+@page "/master/material-categories"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.MasterData.KategoriMaterial.View)]
+@inject IMaterialCategoryApi Categories
+
+<SimpleMasterPage Title="Kategori Material" Noun="kategori" Api="Categories"
+                  CreatePermission="@(Permissions.MasterData.KategoriMaterial.Create)" EditPermission="@(Permissions.MasterData.KategoriMaterial.Edit)" DeactivatePermission="@(Permissions.MasterData.KategoriMaterial.Deactivate)" />

@@ -1,0 +1,53 @@
+@page "/master/processes"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.MasterData.Process.View)]
+@inject IProcessApi Processes
+@inject IToastService Toasts
+
+<PageTitle>Process · GMS</PageTitle>
+
+<MasterList @ref="_list" TItem="ProcessDto" Title="Process" Noun="process" Loader="Processes.ListAsync" IsActive="d => d.IsActive" Label="d => d.Name"
+            SetActive="ToggleAsync" CreatePermission="@Permissions.MasterData.Process.Create" EditPermission="@Permissions.MasterData.Process.Edit"
+            DeactivatePermission="@Permissions.MasterData.Process.Deactivate" OnCreate="OpenCreate" OnEdit="OpenEdit">
+    <Header><th scope="col">Kode</th><th scope="col">Nama</th><th scope="col">Tipe</th></Header>
+    <Row Context="d"><th scope="row">@d.Code</th><td>@d.Name</td><td>@(d.Type == ProcessType.Internal ? "Internal" : "Vendor")</td></Row>
+</MasterList>
+
+<ReasonDialog Open="_open" OpenChanged="o => _open = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="@(_editing is null ? "Tambah process" : "Ubah process")"
+              CanConfirm="@(!string.IsNullOrWhiteSpace(_code) && !string.IsNullOrWhiteSpace(_name))" OnConfirm="SaveAsync">
+    <TextField Label="Kode" @bind-Value="_code" Required="true" MaxLength="20" />
+    <TextField Label="Nama" @bind-Value="_name" Required="true" MaxLength="50" />
+    <div class="gms-form">
+        <label for="proc-type">Tipe <span class="gms-required">wajib</span></label>
+        <select id="proc-type" disabled="@(_editing?.IsUsedInRouting == true)" aria-describedby="proc-type-hint" @onchange="e => _type = Enum.Parse<ProcessType>(e.Value!.ToString()!)">
+            <option value="Internal" selected="@(_type == ProcessType.Internal)">Internal</option>
+            <option value="Vendor" selected="@(_type == ProcessType.Vendor)">Vendor</option>
+        </select>
+        <small id="proc-type-hint">@(_editing?.IsUsedInRouting == true ? "Tipe terkunci karena process dipakai di routing." : "Internal = dikerjakan Konveksi (bertarif); Vendor = dikirim ke vendor.")</small>
+    </div>
+</ReasonDialog>
+
+@code {
+    private MasterList<ProcessDto>? _list;
+    private bool _open;
+    private ProcessDto? _editing;
+    private string? _code = string.Empty, _name = string.Empty;
+    private ProcessType _type = ProcessType.Internal;
+
+    private void OpenCreate() { _editing = null; _code = _name = string.Empty; _type = ProcessType.Internal; _open = true; }
+
+    private void OpenEdit(ProcessDto d) { _editing = d; _code = d.Code; _name = d.Name; _type = d.Type; _open = true; }
+
+    private async Task SaveAsync(string _)
+    {
+        var request = new SaveProcessRequest(_code!.Trim(), _name!.Trim(), _type, _editing?.RowVersion ?? 0);
+        if (_editing is null) { await Processes.CreateAsync(request); } else { await Processes.UpdateAsync(_editing.Id, request); }
+        Toasts.ShowSuccess("Process disimpan.");
+        _list?.Refresh();
+    }
+
+    private async Task ToggleAsync(ProcessDto d, bool active)
+    {
+        await Processes.SetActiveAsync(d.Id, active, (await Processes.GetAsync(d.Id)).RowVersion);
+        Toasts.ShowSuccess(active ? "Process diaktifkan." : "Process dinonaktifkan.");
+    }
+}

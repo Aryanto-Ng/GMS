@@ -1,0 +1,56 @@
+@page "/master/materials"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.MasterData.Material.View)]
+@inject IMaterialApi Materials
+@inject IMaterialCategoryApi Categories
+@inject IUomApi Uoms
+@inject ApiErrorHandler Errors
+@inject IToastService Toasts
+
+<PageTitle>Material · GMS</PageTitle>
+
+<MasterList @ref="_list" TItem="MaterialDto" Title="Material" Noun="material" Loader="Materials.ListAsync" IsActive="d => d.IsActive" Label="d => d.Name"
+            SetActive="ToggleAsync" CreatePermission="@Permissions.MasterData.Material.Create" EditPermission="@Permissions.MasterData.Material.Edit"
+            DeactivatePermission="@Permissions.MasterData.Material.Deactivate"
+            OnCreate="OpenCreate" OnEdit="OpenEdit">
+    <Header><th scope="col">Kode</th><th scope="col">Nama</th><th scope="col">Kategori</th><th scope="col">Satuan</th></Header>
+    <Row Context="d"><th scope="row">@d.Code</th><td>@d.Name</td><td>@d.CategoryName</td><td>@d.UomCode</td></Row>
+</MasterList>
+
+<ReasonDialog Open="_open" OpenChanged="o => _open = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="@(_editing is null ? "Tambah material" : "Ubah material")"
+              CanConfirm="@(!string.IsNullOrWhiteSpace(_code) && !string.IsNullOrWhiteSpace(_name) && _category is not null && _uom is not null)" OnConfirm="SaveAsync">
+    <TextField Label="Kode" @bind-Value="_code" Required="true" MaxLength="30" />
+    <TextField Label="Nama" @bind-Value="_name" Required="true" MaxLength="100" />
+    <LookupSelect Label="Kategori" Items="_categories" @bind-Value="_category" Required="true" />
+    <LookupSelect Label="Satuan" Items="_uoms" @bind-Value="_uom" Required="true" ShowCode="true" />
+    <TextField Label="Spesifikasi" @bind-Value="_description" MaxLength="250" Multiline="true" />
+</ReasonDialog>
+
+@code {
+    private MasterList<MaterialDto>? _list;
+    private bool _open;
+    private MaterialDto? _editing;
+    private string? _code = string.Empty, _name = string.Empty, _description;
+    private Guid? _category, _uom;
+    private IReadOnlyList<LookupItem> _categories = [], _uoms = [];
+
+    protected override async Task OnInitializedAsync() =>
+        await Errors.RunAsync(async () => { _categories = await Categories.LookupAsync(null); _uoms = await Uoms.LookupAsync(null); });
+
+    private void OpenCreate() { _editing = null; _code = _name = string.Empty; _description = null; _category = _uom = null; _open = true; }
+
+    private void OpenEdit(MaterialDto d) { _editing = d; _code = d.Code; _name = d.Name; _description = d.Description; _category = d.CategoryId; _uom = d.UomId; _open = true; }
+
+    private async Task SaveAsync(string _)
+    {
+        var request = new SaveMaterialRequest(_code!.Trim(), _name!.Trim(), _category!.Value, _uom!.Value, string.IsNullOrWhiteSpace(_description) ? null : _description.Trim(), _editing?.RowVersion ?? 0);
+        if (_editing is null) { await Materials.CreateAsync(request); } else { await Materials.UpdateAsync(_editing.Id, request); }
+        Toasts.ShowSuccess("Material disimpan.");
+        _list?.Refresh();
+    }
+
+    private async Task ToggleAsync(MaterialDto d, bool active)
+    {
+        await Materials.SetActiveAsync(d.Id, active, (await Materials.GetAsync(d.Id)).RowVersion);
+        Toasts.ShowSuccess(active ? "Material diaktifkan." : "Material dinonaktifkan.");
+    }
+}

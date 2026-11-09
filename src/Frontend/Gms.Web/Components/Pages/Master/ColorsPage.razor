@@ -1,0 +1,52 @@
+@page "/master/colors"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.MasterData.Color.View)]
+@inject IColorApi Colors
+@inject IToastService Toasts
+
+<PageTitle>Color · GMS</PageTitle>
+
+<MasterList @ref="_list" TItem="ColorDto" Title="Color" Noun="color" Loader="Colors.ListAsync" IsActive="d => d.IsActive" Label="d => d.Name"
+            SetActive="ToggleAsync" CreatePermission="@Permissions.MasterData.Color.Create" EditPermission="@Permissions.MasterData.Color.Edit"
+            DeactivatePermission="@Permissions.MasterData.Color.Deactivate" OnCreate="OpenCreate" OnEdit="OpenEdit">
+    <Header><th scope="col">Warna</th><th scope="col">Kode</th><th scope="col">Nama</th></Header>
+    <Row Context="d">
+        <td>@if (d.Hex is not null) { <span class="gms-swatch" style="background:@d.Hex" aria-hidden="true"></span> } @(d.Hex ?? "—")</td>
+        <th scope="row">@d.Code</th><td>@d.Name</td>
+    </Row>
+</MasterList>
+
+<ReasonDialog Open="_open" OpenChanged="o => _open = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="@(_editing is null ? "Tambah color" : "Ubah color")"
+              CanConfirm="@(!string.IsNullOrWhiteSpace(_code) && !string.IsNullOrWhiteSpace(_name))" OnConfirm="SaveAsync">
+    <TextField Label="Kode" @bind-Value="_code" Required="true" MaxLength="20" />
+    <TextField Label="Nama" @bind-Value="_name" Required="true" MaxLength="50" />
+    <TextField Label="Warna hex (opsional)" @bind-Value="_hex" MaxLength="7" Hint="Format #RRGGBB, mis. #1F2A5A." />
+    @if (System.Text.RegularExpressions.Regex.IsMatch(_hex ?? string.Empty, "^#[0-9a-fA-F]{6}$"))
+    {
+        <p><span class="gms-swatch" style="background:@_hex" aria-hidden="true"></span> Pratinjau @_name (@_hex?.ToUpperInvariant())</p>
+    }
+</ReasonDialog>
+
+@code {
+    private MasterList<ColorDto>? _list;
+    private bool _open;
+    private ColorDto? _editing;
+    private string? _code = string.Empty, _name = string.Empty, _hex = string.Empty;
+
+    private void OpenCreate() { _editing = null; _code = _name = _hex = string.Empty; _open = true; }
+
+    private void OpenEdit(ColorDto d) { _editing = d; _code = d.Code; _name = d.Name; _hex = d.Hex ?? string.Empty; _open = true; }
+
+    private async Task SaveAsync(string _)
+    {
+        var request = new SaveColorRequest(_code!.Trim(), _name!.Trim(), string.IsNullOrWhiteSpace(_hex) ? null : _hex.Trim(), _editing?.RowVersion ?? 0);
+        if (_editing is null) { await Colors.CreateAsync(request); } else { await Colors.UpdateAsync(_editing.Id, request); }
+        Toasts.ShowSuccess("Color disimpan.");
+        _list?.Refresh();
+    }
+
+    private async Task ToggleAsync(ColorDto d, bool active)
+    {
+        await Colors.SetActiveAsync(d.Id, active, (await Colors.GetAsync(d.Id)).RowVersion);
+        Toasts.ShowSuccess(active ? "Color diaktifkan." : "Color dinonaktifkan.");
+    }
+}

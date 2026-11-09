@@ -1,0 +1,6 @@
+@page "/master/uoms"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.MasterData.UoM.View)]
+@inject IUomApi Uoms
+
+<SimpleMasterPage Title="Satuan" Noun="satuan" Api="Uoms"
+                  CreatePermission="@(Permissions.MasterData.UoM.Create)" EditPermission="@(Permissions.MasterData.UoM.Edit)" DeactivatePermission="@(Permissions.MasterData.UoM.Deactivate)" />

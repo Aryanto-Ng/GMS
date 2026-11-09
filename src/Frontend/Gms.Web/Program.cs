@@ -1,4 +1,5 @@
 using Gms.Shared.Access;
+using Gms.Shared.Master;
 using Gms.Web.Components;
 using Gms.Web.Infrastructure.Auth;
 using Gms.Web.Infrastructure.Http;
@@ -56,6 +57,25 @@ services.AddScoped<IAuthApi>(sp => api.UseMock
     ? ActivatorUtilities.CreateInstance<MockAuthApi>(sp)
     : ActivatorUtilities.CreateInstance<HttpAuthApi>(sp));
 
+// Master Data: Mock = singleton (state bertahan selama proses), Http = scoped.
+services.AddSingleton<MockUomApi>();
+services.AddSingleton<MockMaterialCategoryApi>();
+services.AddSingleton<MockMaterialApi>();
+services.AddSingleton<MockSizeApi>();
+services.AddSingleton<MockColorApi>();
+services.AddSingleton<MockCustomerApi>();
+services.AddSingleton<MockVendorApi>();
+services.AddSingleton<MockProcessApi>();
+services.AddSingleton<MockWorkerApi>();
+services.AddScoped<IUomApi>(sp => api.UseMock ? sp.GetRequiredService<MockUomApi>() : ActivatorUtilities.CreateInstance<HttpUomApi>(sp));
+services.AddScoped<IMaterialCategoryApi>(sp => api.UseMock ? sp.GetRequiredService<MockMaterialCategoryApi>() : ActivatorUtilities.CreateInstance<HttpMaterialCategoryApi>(sp));
+services.AddScoped<IMaterialApi>(sp => api.UseMock ? sp.GetRequiredService<MockMaterialApi>() : ActivatorUtilities.CreateInstance<HttpMaterialApi>(sp));
+services.AddScoped<ISizeApi>(sp => api.UseMock ? sp.GetRequiredService<MockSizeApi>() : ActivatorUtilities.CreateInstance<HttpSizeApi>(sp));
+services.AddScoped<IColorApi>(sp => api.UseMock ? sp.GetRequiredService<MockColorApi>() : ActivatorUtilities.CreateInstance<HttpColorApi>(sp));
+services.AddScoped<ICustomerApi>(sp => api.UseMock ? sp.GetRequiredService<MockCustomerApi>() : ActivatorUtilities.CreateInstance<HttpCustomerApi>(sp));
+services.AddScoped<IVendorApi>(sp => api.UseMock ? sp.GetRequiredService<MockVendorApi>() : ActivatorUtilities.CreateInstance<HttpVendorApi>(sp));
+services.AddScoped<IProcessApi>(sp => api.UseMock ? sp.GetRequiredService<MockProcessApi>() : ActivatorUtilities.CreateInstance<HttpProcessApi>(sp));
+services.AddScoped<IWorkerApi>(sp => api.UseMock ? sp.GetRequiredService<MockWorkerApi>() : ActivatorUtilities.CreateInstance<HttpWorkerApi>(sp));
 services.AddSingleton<MockAccessStore>();
 services.AddScoped<IUsersApi>(sp => api.UseMock ? ActivatorUtilities.CreateInstance<MockUsersApi>(sp) : ActivatorUtilities.CreateInstance<HttpUsersApi>(sp));
 services.AddScoped<IRolesApi>(sp => api.UseMock ? ActivatorUtilities.CreateInstance<MockRolesApi>(sp) : ActivatorUtilities.CreateInstance<HttpRolesApi>(sp));
