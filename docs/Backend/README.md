@@ -116,6 +116,15 @@ Semua perubahan ledger output/vendor melewati `StepLedger` (jangan menulis `wo_s
 - **PDF:** semua dokumen memakai `PdfFonts.EnsureInitialized` (font sistem di Windows, `Regular.ttf`/`Bold.ttf` dari `App:Pdf:FontDirectory` di Linux) dan keluarga logis "Arial". Pembuat dokumen murni (`DeliveryPdfBuilder.Build(model)`) tanpa akses basis data sehingga mudah diuji; handler yang mengumpulkan data. Tes membaca hasil dengan `PdfReader` (jumlah halaman, ukuran A4, metadata); teks tidak diekstrak, jadi penanda status juga ditulis ke `Info.Subject`.
 - Pembuatan PDF di dalam transaksi pencatatan (cetak gagal ⇒ `print_count` dan audit ikut batal).
 
+## Pola Payroll (`Features/Payroll`)
+
+- **Satu sumber baris upah:** `PayrollCalculator.LoadAsync` → Open: live dari `output_entries` aktif + `wo_tariff_snapshot`; Closed: dari `payroll_snapshot_lines`. Semua tampilan (rekap, rincian, harian, matriks, ekspor, slip) memakai daftar `PayrollLine` yang sama, jadi angka antar tampilan tidak mungkin berbeda. Desimal di seluruh perhitungan.
+- **Penguncian (urutan kunci ke-1):** input output memegang `FOR SHARE` pada periode yang memuat tanggal kerjanya; tutup/ubah periode memegang `FOR UPDATE` (`RowLocks.LockPayrollPeriodAsync`). Pembuatan periode diserialkan dengan kunci penasihat; periode PERTAMA juga `LOCK TABLE output_entries IN SHARE ROW EXCLUSIVE MODE` agar pemeriksaan "tidak lebih akhir dari output tertua" tidak dapat disusul output yang disisipkan bersamaan.
+- **Periode Open ganda:** dicegah handler dan, sebagai pertahanan berlapis, indeks unik parsial `ux_payroll_periods_single_open` (pelanggaran dipetakan ke kode galat yang sama). Mutasi yang hanya mematikan cek handler tidak terdeteksi tes karena perilakunya setara.
+- **Tarif hilang (E14):** tidak ada upah tebakan. Pratinjau dan tutup menolak dengan daftar baris; periode tetap Open.
+- **Ekspor/slip** memakai `PdfFonts` (lihat Pola Pengiriman) dan ClosedXML. Slip memformat angka gaya Indonesia dengan `NumberFormatInfo` sendiri agar tidak bergantung ICU/budaya sistem (Docker globalization-invariant).
+- **Tes payroll WAJIB memakai host terisolasi** (`fixture.CreateIsolatedAsync()`): periode bersifat global (aturan satu Open, tanggal sebelum periode pertama ditolak, tanggal di periode tertutup terkunci) dan akan memengaruhi tes modul lain bila memakai database bersama.
+
 ## Jebakan yang Sudah Ditemukan (jangan diulang)
 
 1. **Urutkan sebelum proyeksi DTO.** `OrderBy(x => x.Seq)` pada hasil `new SomeDto(...)` tidak dapat diterjemahkan EF (500). Pola yang benar: `Join → proyeksi anonim → OrderBy → Select(new Dto(...))`.

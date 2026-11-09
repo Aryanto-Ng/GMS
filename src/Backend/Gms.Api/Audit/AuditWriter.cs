@@ -73,6 +73,13 @@ public static class AuditEvents
     public const string DeliveryCorrected = "DeliveryCorrected";
     public const string DeliveryPrinted = "DeliveryPrinted";
 
+    // Payroll
+    public const string PayrollPeriodCreated = "PayrollPeriodCreated";
+    public const string PayrollPeriodUpdated = "PayrollPeriodUpdated";
+    public const string PayrollPeriodClosed = "PayrollPeriodClosed";
+    public const string PayrollExported = "PayrollExported";
+    public const string PayrollSlipPrinted = "PayrollSlipPrinted";
+
     // Master Data
     public const string MasterCreated = "MasterCreated";
     public const string MasterUpdated = "MasterUpdated";

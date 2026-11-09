@@ -58,6 +58,34 @@ public static class RowLocks
         await RunAsync(command, ct);
     }
 
+    /// <summary>
+    /// Mengunci EKSKLUSIF (<c>FOR UPDATE</c>) satu periode gaji (urutan kunci ke-1). Penutupan/ubah periode menunggu semua input output
+    /// yang memegang kunci bersama pada periode itu, dan input baru menunggu sampai penutupan selesai (AC-PY-22).
+    /// </summary>
+    public static async Task LockPayrollPeriodAsync(GmsDbContext db, Guid periodId, CancellationToken ct)
+    {
+        var command = Command(db, "SELECT id FROM payroll_periods WHERE id = @id FOR UPDATE");
+        command.Parameters.Add(new NpgsqlParameter("id", periodId));
+        await RunAsync(command, ct);
+    }
+
+    /// <summary>Serialisasi pembuatan periode (tidak ada periode untuk dikunci pada pembuatan pertama): kunci penasihat transaksi.</summary>
+    public static async Task LockPeriodCreationAsync(GmsDbContext db, CancellationToken ct)
+    {
+        var command = Command(db, "SELECT pg_advisory_xact_lock(727001)");
+        await RunAsync(command, ct);
+    }
+
+    /// <summary>
+    /// Mencegah penyisipan output selama pemeriksaan "periode pertama tidak boleh lebih akhir dari output tertua" (AC-PY-04, AC-PR-10a).
+    /// Hanya dipakai pada pembuatan/ubah periode PERTAMA (operasi sekali pakai).
+    /// </summary>
+    public static async Task LockOutputsAgainstInsertAsync(GmsDbContext db, CancellationToken ct)
+    {
+        var command = Command(db, "LOCK TABLE output_entries IN SHARE ROW EXCLUSIVE MODE");
+        await RunAsync(command, ct);
+    }
+
     /// <summary>Mengunci satu baris work_orders <c>FOR UPDATE</c> (urutan kunci ke-2, sebelum po_lines).</summary>
     public static async Task LockWorkOrderAsync(GmsDbContext db, Guid woId, CancellationToken ct)
     {

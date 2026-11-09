@@ -10,6 +10,7 @@ using Gms.Api.Features.Access.Users;
 using Gms.Api.Features.Master;
 using Gms.Api.Features.Deliveries;
 using Gms.Api.Features.Inventory;
+using Gms.Api.Features.Payroll;
 using Gms.Api.Features.Production;
 using Gms.Api.Features.Sales;
 using Gms.Api.Features.WorkOrders;
@@ -99,6 +100,9 @@ public static class ApiHost
         services.AddScoped<StockQueries>();
         services.AddScoped<DeliveryEngine>();
         services.AddScoped<DeliveryQueries>();
+        services.AddScoped<PayrollCalculator>();
+        services.AddScoped<PayrollQueries>();
+        services.AddScoped<PayrollPeriodQueries>();
         services.AddScoped<MasterContext>();
         services.AddScoped<NumberSequences>();
 
@@ -150,5 +154,6 @@ public static class ApiHost
         ProductionEndpoints.Map(app);
         InventoryEndpoints.Map(app);
         DeliveryEndpoints.Map(app);
+        PayrollEndpoints.Map(app);
     }
 }

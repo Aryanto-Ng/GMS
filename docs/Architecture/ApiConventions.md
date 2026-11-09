@@ -279,6 +279,14 @@ Impor (Material, FG, Pekerja):
 | GET | `/payroll/periods/{id}/export?format=xlsx|csv-summary|csv-daily` | `Payroll.Export` |
 | GET | `/payroll/periods/{id}/slips?workerId=&daily=` | `Payroll.PrintSlip` |
 
+**Catatan implementasi (backend, 2026-11-09):**
+- Konfirmasi tutup: `ClosePeriodRequest { confirmationCode, rowVersion }`; kode = `ClosePreviewDto.confirmationCode` (kode periode, mis. `GJ-20261101-20261107`). Membalas `PayrollPeriodDto`.
+- Galat: 409 `payroll.open-period-exists`, `payroll.not-contiguous` (tanggal mulai harus sehari setelah periode sebelumnya / hanya periode pertama yang dapat mengubah awal), `payroll.start-after-oldest-output`, `payroll.tariff-missing` (pratinjau DAN tutup ditolak bila ada baris tanpa tarif snapshot; `violations[]` per WO · proses · size), 409 `state-conflict` (periode Closed), `concurrency-conflict`.
+- Rekap Open dihitung langsung (`isProvisional: true`); Closed dibaca dari snapshot. Baris upah = satu entri output × satu Size (Color dijumlahkan). Total pekerja dibulatkan SEKALI (setengah ke atas menjauhi nol); total periode = Σ total pekerja terbulat. Total negatif ditampilkan apa adanya (`isNegative`).
+- `/workers/{id}/detail` mengembalikan `byWo`, `byDay`, dan `adjustments` sekaligus (parameter `view` tidak diperlukan). `/matrix` hanya berisi sel untuk hari yang ada outputnya; `dates` memuat seluruh tanggal periode.
+- Ekspor: `format=xlsx|csv-summary|csv-daily`. Nama berkas berakhiran `-BELUM-FINAL` untuk periode Open; CSV memiliki kolom `status` (`FINAL`/`BELUM FINAL`), UTF-8 BOM, titik desimal; sel teks berawalan `= + - @` diberi apostrof (cegah injeksi rumus). XLSX: angka disimpan sebagai angka (tarif `#,##0.#####`, dibayarkan `#,##0`).
+- Slip PDF: satu pekerja per halaman, watermark `BELUM FINAL` untuk Open, `Info.Subject` = `FINAL`/`BELUM FINAL`. Pekerja tanpa output pada periode → 404. Kop dari `App:Konveksi:Name/Address`.
+
 ### 4.9 Beranda
 Satu endpoint ringan per widget (dimuat independen, izin dicek per widget): `GET /dashboard/{widgetId}` dengan `widgetId` ∈ `po-late`, `due-soon`, `po-no-customer-number`, `unplanned-demand`, `wo-running`, `wo-late`, `output-today`, `vendor-balance`, `unhanded-over`, `stock-summary`, `payroll-period`, `security`.
 

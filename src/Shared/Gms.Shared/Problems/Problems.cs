@@ -51,6 +51,7 @@ public static class ProblemCodes
     public const string PayrollDateBeforeFirstPeriod = "payroll.date-before-first-period";
     public const string PayrollOpenPeriodExists = "payroll.open-period-exists";
     public const string PayrollNotContiguous = "payroll.not-contiguous";
+    public const string PayrollTariffMissing = "payroll.tariff-missing";
     public const string PayrollStartAfterOldestOutput = "payroll.start-after-oldest-output";
     public const string LastAdministrator = "access.last-administrator";
     public const string CannotDeactivateSelf = "access.cannot-deactivate-self";
