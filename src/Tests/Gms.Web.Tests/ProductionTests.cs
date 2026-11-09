@@ -26,6 +26,10 @@ public sealed class ProductionRig
     public MockPoApi Pos { get; }
     public MockWoApi Wos { get; }
     public MockProductionApi Production { get; }
+    public MockUomApi Uoms { get; } = new();
+    public MockMaterialCategoryApi Categories { get; } = new();
+    public MockMaterialApi Materials { get; }
+    public MockInventoryApi Inventory { get; }
 
     public ProductionRig()
     {
@@ -34,6 +38,9 @@ public sealed class ProductionRig
         Pos = new MockPoApi(Customers, Fgs, Colors, Sizes);
         Wos = new MockWoApi(Pos, Fgs, Customers);
         Production = new MockProductionApi(Wos, Workers, Vendors);
+        Materials = new MockMaterialApi(Uoms, Categories);
+        Inventory = new MockInventoryApi(Pos, Wos, Production, Fgs, Colors, Sizes, Materials);
+        Production.Today = Inventory.Today = () => new DateOnly(2026, 11, 9);
     }
 
     public static Guid WoId => MockWoApi.SeedWoId;

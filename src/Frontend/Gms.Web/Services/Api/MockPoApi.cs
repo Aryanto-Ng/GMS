@@ -371,6 +371,16 @@ public sealed class MockPoApi : IPurchaseOrdersApi
         }
     }
 
+    /// <summary>Stok per kombinasi FG-Color-Size: fisik dan teralokasi (semua PO).</summary>
+    public IReadOnlyList<(Guid Fg, Guid Color, Guid Size, int OnHand, int Allocated)> StockSnapshot()
+    {
+        lock (_gate)
+        {
+            var keys = _onHand.Keys.Select(k => (Fg: k.Fg, Color: k.Color, Size: k.Size)).Concat(_pos.SelectMany(p => p.Lines).Select(l => (Fg: l.FgId, Color: l.ColorId, Size: l.SizeId))).Distinct().ToList();
+            return keys.Select(k => (k.Fg, k.Color, k.Size, _onHand.GetValueOrDefault((k.Fg, k.Color, k.Size)), _pos.SelectMany(p => p.Lines).Where(l => l.FgId == k.Fg && l.ColorId == k.Color && l.SizeId == k.Size).Sum(l => l.Allocated))).ToList();
+        }
+    }
+
     /// <summary>Menambah/mengurangi stok fisik FG (dipakai Serah Terima).</summary>
     public void AdjustStock(Guid fgId, Guid colorId, Guid sizeId, int delta)
     {

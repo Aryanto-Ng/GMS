@@ -27,9 +27,9 @@ public static class NavCatalog
         ]),
         new("Gudang FG",
         [
-            new("Stok FG", "/stock", Permissions.StokFG.View, I<Icons.Regular.Size20.Box>()),
-            new("Serah Terima FG", "/handovers/fg", Permissions.SerahTerimaFG.View, I<Icons.Regular.Size20.ArrowSwap>()),
-            new("Serah Terima Material", "/handovers/material", Permissions.SerahTerimaMaterial.View, I<Icons.Regular.Size20.Cube>()),
+            new("Stok FG", "/stock", Permissions.StokFG.View, I<Icons.Regular.Size20.Box>(), Enabled: true),
+            new("Serah Terima FG", "/handovers/fg", Permissions.SerahTerimaFG.View, I<Icons.Regular.Size20.ArrowSwap>(), Enabled: true),
+            new("Serah Terima Material", "/handovers/material", Permissions.SerahTerimaMaterial.View, I<Icons.Regular.Size20.Cube>(), Enabled: true),
         ]),
         new("Produksi",
         [

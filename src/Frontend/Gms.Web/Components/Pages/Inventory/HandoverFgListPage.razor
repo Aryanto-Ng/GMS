@@ -1,0 +1,79 @@
+@page "/handovers/fg"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.SerahTerimaFG.View)]
+@inject IInventoryApi Inventory
+@inject IWorkOrdersApi Wos
+@inject AuthenticationStateProvider Auth
+
+<PageTitle>Serah Terima FG · GMS</PageTitle>
+
+<PageHeader Title="Serah Terima FG" Subtitle="@(_total is null ? null : $"{IdFormat.Qty(_total)} dokumen")">
+    <Actions>
+        @if (_user.HasPermission(Permissions.SerahTerimaFG.Create)) { <FluentAnchor Href="/handovers/fg/new" Appearance="Appearance.Accent">Buat Serah Terima</FluentAnchor> }
+    </Actions>
+</PageHeader>
+
+<div class="gms-toolbar" role="search">
+    <div class="gms-field">
+        <label for="hf-wo">WO</label>
+        <select id="hf-wo" @onchange="e => { _wo = Guid.TryParse(e.Value?.ToString(), out var g) ? g : null; _page = 1; }">
+            <option value="">Semua WO</option>
+            @foreach (var w in _woItems) { <option value="@w.Id" selected="@(_wo == w.Id)">@w.Code</option> }
+        </select>
+    </div>
+    <div class="gms-field">
+        <label for="hf-status">Status</label>
+        <select id="hf-status" @onchange="e => { _status = Enum.TryParse<DocStatus>(e.Value?.ToString(), out var s) ? s : null; _page = 1; }">
+            <option value="">Semua status</option>
+            <option value="Active" selected="@(_status == DocStatus.Active)">Aktif</option>
+            <option value="Voided" selected="@(_status == DocStatus.Voided)">Void</option>
+        </select>
+    </div>
+</div>
+
+<AsyncContent T="PagedResult<HandoverFgListItem>" Key="@($"{_page}|{_wo}|{_status}")" Loader="LoadAsync" IsEmpty="r => r.TotalCount == 0">
+    <EmptyContent>
+        <EmptyState Icon="@(new Icons.Regular.Size48.Box())" Title="Belum ada serah terima FG" ActionText="@(_user.HasPermission(Permissions.SerahTerimaFG.Create) ? "Buat Serah Terima" : null)" ActionHref="/handovers/fg/new" />
+    </EmptyContent>
+    <ChildContent Context="result">
+        <table class="gms-table">
+            <caption class="gms-sr-only">Daftar serah terima FG</caption>
+            <thead><tr><th scope="col">Tanggal</th><th scope="col">No. Dokumen</th><th scope="col">WO</th><th scope="col">PO</th><th scope="col">FG</th><th scope="col" class="num">Total pcs</th><th scope="col">Status</th><th scope="col">Pembuat</th></tr></thead>
+            <tbody>
+                @foreach (var h in result.Items)
+                {
+                    <tr class="@(h.Status == DocStatus.Voided ? "gms-inactive" : null)">
+                        <td>@IdFormat.Date(h.Date)</td>
+                        <th scope="row"><a href="/handovers/fg/@h.Id">@(h.DocNo ?? "—")</a></th>
+                        <td>@h.WoCode</td><td>@h.PoCode</td><td>@h.FgCode</td><td class="num">@IdFormat.Qty(h.TotalQty)</td>
+                        <td><StatusChip Value="@h.Status" /></td><td>@(h.CreatedByName ?? "—")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <PagerBar Page="result.Page" PageSize="result.PageSize" TotalCount="result.TotalCount" PageChanged="p => _page = p" />
+    </ChildContent>
+</AsyncContent>
+
+@code {
+    private IReadOnlyList<LookupItem> _woItems = [];
+    private Guid? _wo;
+    private DocStatus? _status;
+    private int _page = 1;
+    private int? _total;
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _user = (await Auth.GetAuthenticationStateAsync()).User;
+        try { _woItems = (await Wos.ListAsync(new WoListQuery { PageSize = 200 })).Items.Select(w => new LookupItem(w.Id, w.Code, w.FgCode)).ToList(); }
+        catch (ApiException) { _woItems = []; } // filter WO opsional
+    }
+
+    private async Task<PagedResult<HandoverFgListItem>> LoadAsync(CancellationToken ct)
+    {
+        var result = await Inventory.ListHandoverFgAsync(new HandoverFgListQuery { Page = _page, WoId = _wo, Status = _status }, ct);
+        _total = result.TotalCount;
+        await InvokeAsync(StateHasChanged);
+        return result;
+    }
+}

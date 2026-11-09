@@ -80,12 +80,16 @@ public sealed class HttpImportApi(GmsApiClient client) : IImportApi
         ImportEntity.Material => "materials",
         ImportEntity.Fg => "fgs",
         ImportEntity.Worker => "workers",
-        _ => throw new NotSupportedException($"Impor {entity} tidak tersedia di modul Master Data."),
+        ImportEntity.StockOpening => "stock",
+        _ => throw new NotSupportedException($"Impor {entity} tidak tersedia."),
     };
 
+    /// <summary>Saldo awal stok memakai rute <c>/stock/opening-balance</c>; master memakai <c>/master/{route}</c>.</summary>
+    private static string Base(ImportEntity entity) => entity == ImportEntity.StockOpening ? "/api/v1/stock/opening-balance" : $"/api/v1/master/{Route(entity)}";
+
     public Task<FileContent> GetTemplateAsync(ImportEntity entity, CancellationToken ct = default) =>
-        client.DownloadAsync($"/api/v1/master/{Route(entity)}/import-template", ct);
+        client.DownloadAsync($"{Base(entity)}/import-template", ct);
 
     public Task<ImportResultDto> ImportAsync(ImportEntity entity, Stream csv, string fileName, bool dryRun, CancellationToken ct = default) =>
-        client.PostFileAsync<ImportResultDto>($"/api/v1/master/{Route(entity)}/import?dryRun={(dryRun ? "true" : "false")}", "file", csv, fileName, ct);
+        client.PostFileAsync<ImportResultDto>($"{Base(entity)}/import?dryRun={(dryRun ? "true" : "false")}", "file", csv, fileName, ct);
 }

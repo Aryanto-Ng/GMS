@@ -1,0 +1,73 @@
+@page "/handovers/material"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.SerahTerimaMaterial.View)]
+@inject IInventoryApi Inventory
+@inject AuthenticationStateProvider Auth
+@inject IToastService Toasts
+
+<PageTitle>Serah Terima Material · GMS</PageTitle>
+
+<PageHeader Title="Serah Terima Material" Subtitle="Catatan penyerahan bahan ke Konveksi (tanpa stok).">
+    <Actions>
+        @if (_user.HasPermission(Permissions.SerahTerimaMaterial.Create)) { <FluentAnchor Href="/handovers/material/new" Appearance="Appearance.Accent">Buat Serah Terima Material</FluentAnchor> }
+    </Actions>
+</PageHeader>
+
+<AsyncContent T="PagedResult<MaterialHandoverListItem>" Key="@($"{_version}|{_page}")" Loader="ct => Inventory.ListMaterialHandoversAsync(new MaterialHandoverListQuery { Page = _page }, ct)" IsEmpty="r => r.TotalCount == 0">
+    <EmptyContent><EmptyState Icon="@(new Icons.Regular.Size48.Box())" Title="Belum ada serah terima material" ActionText="@(_user.HasPermission(Permissions.SerahTerimaMaterial.Create) ? "Buat Serah Terima Material" : null)" ActionHref="/handovers/material/new" /></EmptyContent>
+    <ChildContent Context="result">
+        <table class="gms-table compact">
+            <caption class="gms-sr-only">Daftar serah terima material</caption>
+            <thead><tr><th scope="col">Tanggal</th><th scope="col">No. Dokumen</th><th scope="col">WO</th><th scope="col" class="num">Item</th><th scope="col">Status</th><th scope="col">Aksi</th></tr></thead>
+            <tbody>
+                @foreach (var d in result.Items)
+                {
+                    <tr class="@(d.Status == DocStatus.Voided ? "gms-inactive" : null)">
+                        <td>@IdFormat.Date(d.Date)</td><th scope="row">@(d.DocNo ?? "—")</th><td>@d.WoCode</td><td class="num">@d.ItemCount</td>
+                        <td><StatusChip Value="@d.Status" /></td>
+                        <td class="gms-rowactions">
+                            <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Detail {d.DocNo ?? d.WoCode}")" OnClick="() => ShowAsync(d)">Detail</FluentButton>
+                            @if (d.Status == DocStatus.Active && _user.HasPermission(Permissions.SerahTerimaMaterial.Void))
+                            {
+                                <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Void {d.DocNo ?? d.WoCode}")" OnClick="() => _voiding = d">Void</FluentButton>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <PagerBar Page="result.Page" PageSize="result.PageSize" TotalCount="result.TotalCount" PageChanged="p => _page = p" />
+    </ChildContent>
+</AsyncContent>
+
+@if (_detail is not null)
+{
+    <section class="gms-card" aria-labelledby="mh-detail">
+        <h2 id="mh-detail">Detail @(_detail.Item.DocNo ?? _detail.Item.WoCode)</h2>
+        <table class="gms-table compact">
+            <thead><tr><th scope="col">Material</th><th scope="col" class="num">Qty</th><th scope="col">Satuan</th><th scope="col">Keterangan</th></tr></thead>
+            <tbody>@foreach (var l in _detail.Lines) { <tr><th scope="row">@l.MaterialCode · @l.MaterialName</th><td class="num">@IdFormat.Number(l.Qty, 3)</td><td>@l.UomCode</td><td>@(l.Notes ?? "—")</td></tr> }</tbody>
+        </table>
+        @if (!string.IsNullOrEmpty(_detail.VoidReason)) { <p class="gms-note">Void: @_detail.VoidReason</p> }
+        <FluentButton Appearance="Appearance.Neutral" OnClick="() => _detail = null">Tutup</FluentButton>
+    </section>
+}
+
+<ReasonDialog Open="_voiding is not null" OpenChanged="o => { if (!o) _voiding = null; }" Danger="true" ConfirmText="Void" Title="@($"Void serah terima {_voiding?.DocNo ?? _voiding?.WoCode}?")" OnConfirm="VoidAsync" />
+
+@code {
+    private int _page = 1, _version;
+    private MaterialHandoverDto? _detail;
+    private MaterialHandoverListItem? _voiding;
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+
+    protected override async Task OnInitializedAsync() => _user = (await Auth.GetAuthenticationStateAsync()).User;
+
+    private async Task ShowAsync(MaterialHandoverListItem d) => _detail = await Inventory.GetMaterialHandoverAsync(d.Id);
+
+    private async Task VoidAsync(string reason)
+    {
+        await Inventory.VoidMaterialHandoverAsync(_voiding!.Id, new ReasonRequest(reason));
+        Toasts.ShowSuccess("Serah terima material di-void.");
+        _version++;
+    }
+}

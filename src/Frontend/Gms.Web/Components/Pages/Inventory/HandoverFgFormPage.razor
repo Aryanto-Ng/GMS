@@ -1,0 +1,141 @@
+@page "/handovers/fg/new"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.SerahTerimaFG.Create)]
+@inject IInventoryApi Inventory
+@inject IWorkOrdersApi Wos
+@inject ApiErrorHandler Errors
+@inject NavigationManager Nav
+@inject IToastService Toasts
+
+<PageTitle>Buat Serah Terima FG · GMS</PageTitle>
+<UnsavedChangesGuard HasChanges="_dirty && !_saved" />
+
+<PageHeader Title="Buat Serah Terima FG" Breadcrumbs="@(new[] { new PageHeader.Crumb("Serah Terima FG", "/handovers/fg"), new PageHeader.Crumb("Baru") })" />
+
+<FormSummary Errors="_problem?.Errors" />
+@if (_problem is not null && _problem.Errors is null) { <ProblemBanner Problem="_problem" OnReload="LoadContextAsync" /> }
+
+<form @onsubmit="SaveAsync" @onsubmit:preventDefault novalidate>
+    <section class="gms-card gms-form">
+        <LookupSelect Label="WO (In Progress/Completed)" Items="_woItems" Value="_woId" ValueChanged="OnWoChangedAsync" Required="true" ShowCode="true" />
+        <TextField Label="Tanggal" Type="date" Value="@_date" ValueChanged="v => { _date = v; _dirty = true; }" Required="true" />
+        <TextField Label="No. Dokumen" Value="@_docNo" ValueChanged="v => { _docNo = v; _dirty = true; }" MaxLength="50" />
+        <TextField Label="Diterima oleh" Value="@_receivedBy" ValueChanged="v => { _receivedBy = v; _dirty = true; }" MaxLength="100" />
+        <TextField Label="Catatan" Value="@_notes" ValueChanged="v => { _notes = v; _dirty = true; }" MaxLength="250" Multiline="true" />
+    </section>
+
+    @if (_ctx is not null)
+    {
+        @if (_ctx.BlockedReason is not null) { <div class="gms-banner warning" role="alert"><div class="gms-banner-body"><p>@_ctx.BlockedReason</p></div></div> }
+        <section class="gms-card" aria-labelledby="hf-qty">
+            <h2 id="hf-qty">Qty diserahterimakan (@_ctx.FgCode · @_ctx.PoCode)</h2>
+            <SizeMatrixGrid Caption="Qty serah terima" RowHeader="" Rows="_row" Columns="_columns" Values="_values" CellInfo="CellInfo" ShowMax="true" OnChanged="() => { _dirty = true; _preview = null; }" />
+            <FluentButton Appearance="Appearance.Neutral" OnClick="PreviewAsync">Perkiraan alokasi</FluentButton>
+            @if (_preview is not null)
+            {
+                <p role="status">Perkiraan alokasi otomatis ke @_preview.PoCode: <strong>@IdFormat.Qty(_preview.AutoAllocatedQty) pcs</strong> · Stok bebas (kelebihan produksi): <strong>@IdFormat.Qty(_preview.FreeStockQty) pcs</strong></p>
+            }
+        </section>
+
+        <div class="gms-formactions">
+            <FluentAnchor Href="/handovers/fg" Appearance="Appearance.Neutral">Batal</FluentAnchor>
+            <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="@(_saving || _ctx.BlockedReason is not null)">Simpan</FluentButton>
+        </div>
+    }
+    else
+    {
+        <EmptyState Title="Pilih WO untuk mulai" />
+    }
+</form>
+
+@code {
+    private static readonly IReadOnlyList<MatrixRow> _row = [new("qty", "Qty")];
+
+    [SupplyParameterFromQuery(Name = "woId")] public Guid? QueryWoId { get; set; }
+
+    private IReadOnlyList<LookupItem> _woItems = [];
+    private HandoverFgContextDto? _ctx;
+    private HandoverFgPreviewDto? _preview;
+    private IReadOnlyList<MatrixColumn> _columns = [];
+    private MatrixValues _values = new();
+    private Guid? _woId;
+    private string? _date, _docNo, _receivedBy, _notes;
+    private GmsProblemDetails? _problem;
+    private bool _dirty, _saved, _saving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _date = DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(IdFormat.Offset).DateTime).ToString("yyyy-MM-dd");
+        await Errors.RunAsync(async () =>
+        {
+            var list = new List<LookupItem>();
+            foreach (var status in new[] { WoStatus.InProgress, WoStatus.Completed })
+            {
+                list.AddRange((await Wos.ListAsync(new WoListQuery { Status = status, PageSize = 200 })).Items.Select(w => new LookupItem(w.Id, w.Code, w.FgCode)));
+            }
+
+            _woItems = list;
+            if (QueryWoId is { } id && list.Any(w => w.Id == id)) { await OnWoChangedAsync(id); }
+        });
+    }
+
+    private async Task OnWoChangedAsync(Guid? id)
+    {
+        _woId = id;
+        _values = new MatrixValues();
+        _preview = null;
+        await LoadContextAsync();
+    }
+
+    private async Task LoadContextAsync()
+    {
+        _ctx = null;
+        if (_woId is null) { return; }
+        _problem = await Errors.RunAsync(async () =>
+        {
+            _ctx = await Inventory.GetHandoverFgContextAsync(_woId.Value);
+            _columns = _ctx.Columns.Select(c => new MatrixColumn(c.WoLineId.ToString(), $"{c.ColorSize.ColorName} {c.ColorSize.SizeCode}")).ToList();
+        });
+    }
+
+    private MatrixCellInfo CellInfo(string row, string col) =>
+        _ctx?.Columns.FirstOrDefault(c => c.WoLineId.ToString() == col) is { } c ? new MatrixCellInfo(Max: c.MaxHandover) : new MatrixCellInfo();
+
+    private SaveHandoverFgRequest Build() => new(_woId!.Value, DateOnly.ParseExact(_date!, "yyyy-MM-dd"), string.IsNullOrWhiteSpace(_docNo) ? null : _docNo.Trim(),
+        string.IsNullOrWhiteSpace(_receivedBy) ? null : _receivedBy.Trim(), string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim(),
+        _values.All.Where(v => v.Qty > 0).Select(v => new WoLineQty(Guid.Parse(v.Column), v.Qty)).ToList());
+
+    private bool Valid()
+    {
+        _problem = null;
+        if (_woId is null || !DateOnly.TryParseExact(_date, "yyyy-MM-dd", out _) || !_values.All.Any(v => v.Qty > 0))
+        {
+            _problem = new GmsProblemDetails { Type = ProblemTypes.ValidationFailed, Status = 422, Title = "Data belum valid.", Errors = new Dictionary<string, string[]> { ["cells"] = ["WO, tanggal, dan minimal satu Qty wajib diisi."] } };
+            return false;
+        }
+
+        return true;
+    }
+
+    private async Task PreviewAsync()
+    {
+        if (!Valid()) { return; }
+        _problem = await Errors.RunAsync(async () => _preview = await Inventory.PreviewHandoverFgAsync(Build()));
+    }
+
+    private async Task SaveAsync()
+    {
+        if (!Valid()) { return; }
+        _saving = true;
+        _problem = await Errors.RunAsync(async () =>
+        {
+            var result = await Inventory.CreateHandoverFgAsync(Build());
+            _saved = true;
+            _dirty = false;
+            StateHasChanged();
+            await Task.Yield();
+            Toasts.ShowSuccess($"{IdFormat.Qty(result.AutoAllocatedQty)} pcs dialokasikan ke {result.PoCode}; {IdFormat.Qty(result.FreeStockQty)} pcs menjadi stok bebas.");
+            Nav.NavigateTo($"/handovers/fg/{result.Id}");
+        });
+        _saving = false;
+    }
+}

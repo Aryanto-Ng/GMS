@@ -1,0 +1,56 @@
+@page "/stock/ledger"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.StokFG.View)]
+@inject IInventoryApi Inventory
+
+<PageTitle>Kartu Stok · GMS</PageTitle>
+
+<PageHeader Title="Kartu Stok" Breadcrumbs="@(new[] { new PageHeader.Crumb("Stok FG", "/stock"), new PageHeader.Crumb("Kartu Stok") })" />
+
+@if (FgId is null || ColorId is null || SizeId is null)
+{
+    <EmptyState Title="Pilih baris stok" Description="Buka Kartu Stok dari daftar Stok FG." ActionText="Ke Stok FG" ActionHref="/stock" />
+}
+else
+{
+    <AsyncContent T="StockLedgerResult" Key="@($"{FgId}|{ColorId}|{SizeId}|{_page}")" Loader="LoadAsync" IsEmpty="r => r.Rows.TotalCount == 0">
+        <EmptyContent><EmptyState Title="Belum ada mutasi stok" /></EmptyContent>
+        <ChildContent Context="result">
+            <p class="gms-note" role="status"><strong>@result.Header.FgCode · @result.Header.ColorSize.ColorName · @result.Header.ColorSize.SizeCode</strong> — Fisik @IdFormat.Qty(result.Header.OnHand) · Teralokasi @IdFormat.Qty(result.Header.Allocated) · Tersedia @IdFormat.Qty(result.Header.Available)</p>
+            <table class="gms-table compact">
+                <caption class="gms-sr-only">Mutasi stok</caption>
+                <thead><tr><th scope="col">Tanggal</th><th scope="col">Jenis</th><th scope="col">Dokumen</th><th scope="col" class="num">Qty</th><th scope="col" class="num">Saldo</th><th scope="col">Alasan</th></tr></thead>
+                <tbody>
+                    @foreach (var r in result.Rows.Items)
+                    {
+                        <tr>
+                            <td>@IdFormat.Date(r.EntryDate)</td><td>@KindLabel(r.Kind)</td>
+                            <td>@if (r.SourceType == "Handover" && r.SourceId is not null) { <a href="/handovers/fg/@r.SourceId">@r.SourceLabel</a> } else { @(r.SourceLabel ?? "—") }</td>
+                            <td class="num @(r.Qty < 0 ? "gms-negative" : null)">@(r.Qty > 0 ? "+" : string.Empty)@IdFormat.Qty(r.Qty)</td>
+                            <td class="num">@IdFormat.Qty(r.RunningBalance)</td><td>@(r.Reason ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <PagerBar Page="result.Rows.Page" PageSize="result.Rows.PageSize" TotalCount="result.Rows.TotalCount" PageChanged="p => _page = p" />
+        </ChildContent>
+    </AsyncContent>
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "fgId")] public Guid? FgId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "colorId")] public Guid? ColorId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "sizeId")] public Guid? SizeId { get; set; }
+
+    private int _page = 1;
+
+    private Task<StockLedgerResult> LoadAsync(CancellationToken ct) =>
+        Inventory.GetStockLedgerAsync(new StockLedgerQuery { FgId = FgId!.Value, ColorId = ColorId!.Value, SizeId = SizeId!.Value, Page = _page }, ct);
+
+    private static string KindLabel(StockLedgerKind k) => k switch
+    {
+        StockLedgerKind.HandoverReceipt => "Penerimaan", StockLedgerKind.HandoverReversal => "Pembalikan Serah Terima", StockLedgerKind.Delivery => "Pengiriman",
+        StockLedgerKind.DeliveryReversal => "Pembalikan Pengiriman", StockLedgerKind.Adjustment => "Penyesuaian", _ => "Saldo Awal",
+    };
+}

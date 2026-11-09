@@ -194,7 +194,7 @@ public sealed class HttpImportApiTests
     {
         var api = new HttpImportApi(new GmsApiClient(new Recorder(), new Token()));
 
-        await Assert.ThrowsAsync<NotSupportedException>(() => api.GetTemplateAsync(ImportEntity.StockOpening));
+        await Assert.ThrowsAsync<NotSupportedException>(() => api.GetTemplateAsync((ImportEntity)99));
     }
 }
 

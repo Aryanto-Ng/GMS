@@ -1,0 +1,107 @@
+@page "/stock"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.StokFG.View)]
+@inject IInventoryApi Inventory
+@inject IFgApi Fgs
+@inject IColorApi Colors
+@inject ISizeApi Sizes
+@inject ApiErrorHandler Errors
+@inject AuthenticationStateProvider Auth
+@inject IToastService Toasts
+
+<PageTitle>Stok FG · GMS</PageTitle>
+
+<PageHeader Title="Stok FG">
+    <Actions>
+        @if (_user.HasPermission(Permissions.StokFG.Adjust)) { <FluentButton Appearance="Appearance.Neutral" OnClick="OpenAdjust">Penyesuaian</FluentButton> }
+        @if (_user.HasPermission(Permissions.StokFG.Import)) { <FluentAnchor Href="/stock/import" Appearance="Appearance.Neutral">Import Saldo Awal</FluentAnchor> }
+    </Actions>
+</PageHeader>
+
+<div class="gms-toolbar" role="search">
+    <div class="gms-field">
+        <label for="st-q">Cari FG</label>
+        <input id="st-q" type="search" value="@_q" @onchange="e => { _q = e.Value?.ToString(); _page = 1; }" />
+    </div>
+    <div class="gms-field">
+        <label><input type="checkbox" checked="@_onlyStock" @onchange="e => { _onlyStock = (bool)e.Value!; _page = 1; }" /> Hanya yang ada stok</label>
+    </div>
+</div>
+
+<AsyncContent T="StockListResult" Key="@($"{_version}|{_page}|{_q}|{_onlyStock}")" Loader="LoadAsync" IsEmpty="r => r.Rows.TotalCount == 0">
+    <EmptyContent><EmptyState Icon="@(new Icons.Regular.Size48.Box())" Title="Tidak ada stok" Description="Ubah kata kunci atau matikan filter 'Hanya yang ada stok'." /></EmptyContent>
+    <ChildContent Context="result">
+        <p role="status" class="gms-note">Ringkasan: Fisik <strong>@IdFormat.Qty(result.OnHandTotal)</strong> · Teralokasi <strong>@IdFormat.Qty(result.AllocatedTotal)</strong> · Tersedia <strong>@IdFormat.Qty(result.AvailableTotal)</strong> (stok bebas)</p>
+        <table class="gms-table compact">
+            <caption class="gms-sr-only">Stok FG per Color dan Size</caption>
+            <thead><tr><th scope="col">FG</th><th scope="col">Color</th><th scope="col">Size</th><th scope="col" class="num">Fisik</th><th scope="col" class="num">Teralokasi</th><th scope="col" class="num">Tersedia</th><th scope="col">Aksi</th></tr></thead>
+            <tbody>
+                @foreach (var r in result.Rows.Items)
+                {
+                    <tr>
+                        <th scope="row">@r.FgCode</th><td>@r.ColorSize.ColorName</td><td>@r.ColorSize.SizeCode</td>
+                        <td class="num">@IdFormat.Qty(r.OnHand)</td><td class="num">@IdFormat.Qty(r.Allocated)</td>
+                        <td class="num">@IdFormat.Qty(r.Available) @if (r.Available == 0 && r.OnHand > 0) { <span class="gms-muted" title="Seluruhnya dialokasikan"><FluentIcon Value="@(new Icons.Regular.Size16.Info())" Color="Color.Neutral" /> seluruhnya dialokasikan</span> }</td>
+                        <td class="gms-rowactions"><FluentAnchor Href="@LedgerHref(r)" Appearance="Appearance.Lightweight" aria-label="@($"Kartu stok {r.FgCode} {r.ColorSize.ColorName} {r.ColorSize.SizeCode}")">Kartu Stok</FluentAnchor></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <PagerBar Page="result.Rows.Page" PageSize="result.Rows.PageSize" TotalCount="result.Rows.TotalCount" PageChanged="p => _page = p" />
+    </ChildContent>
+</AsyncContent>
+
+<ReasonDialog Open="_adjusting" OpenChanged="o => _adjusting = o" Danger="false" ConfirmText="Simpan" Title="Penyesuaian stok"
+              CanConfirm="@(_adjPreview?.CanProceed == true)" OnConfirm="AdjustAsync">
+    <div class="gms-form">
+        <LookupSelect Label="FG" Items="_fgItems" Value="_aFg" ValueChanged="v => { _aFg = v; _adjPreview = null; }" Required="true" ShowCode="true" />
+        <LookupSelect Label="Color" Items="_colorItems" Value="_aColor" ValueChanged="v => { _aColor = v; _adjPreview = null; }" Required="true" />
+        <LookupSelect Label="Size" Items="_sizeItems" Value="_aSize" ValueChanged="v => { _aSize = v; _adjPreview = null; }" Required="true" />
+        <TextField Label="Qty (±)" InputMode="numeric" MaxLength="8" Value="@_aQty" ValueChanged="v => { _aQty = v; _adjPreview = null; }" Required="true" />
+        <TextField Label="Tanggal" Type="date" Value="@_aDate" ValueChanged="v => { _aDate = v; _adjPreview = null; }" Required="true" />
+    </div>
+    <FluentButton Appearance="Appearance.Neutral" Disabled="@(!CanCheck)" OnClick="CheckAdjustAsync">Periksa hasil</FluentButton>
+    @if (_adjPreview is not null) { <ImpactPreviewTable Preview="_adjPreview" /> }
+</ReasonDialog>
+
+@code {
+    private IReadOnlyList<LookupItem> _fgItems = [], _colorItems = [], _sizeItems = [];
+    private string? _q, _aQty, _aDate;
+    private bool _onlyStock = true, _adjusting;
+    private int _page = 1, _version;
+    private Guid? _aFg, _aColor, _aSize;
+    private ImpactPreview? _adjPreview;
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+
+    private bool CanCheck => _aFg is not null && _aColor is not null && _aSize is not null && IdNumber.TryParseInt(_aQty, out var n, out _) && n != 0 && DateOnly.TryParseExact(_aDate, "yyyy-MM-dd", out _);
+
+    protected override async Task OnInitializedAsync() => _user = (await Auth.GetAuthenticationStateAsync()).User;
+
+    private static string LedgerHref(StockRow r) => $"/stock/ledger?fgId={r.FgId}&colorId={r.ColorSize.ColorId}&sizeId={r.ColorSize.SizeId}";
+
+    private Task<StockListResult> LoadAsync(CancellationToken ct) => Inventory.ListStockAsync(new StockQuery { Page = _page, Q = _q, HanyaAdaStok = _onlyStock }, ct);
+
+    private async Task OpenAdjust()
+    {
+        _adjPreview = null;
+        _aQty = null;
+        _aDate = DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(IdFormat.Offset).DateTime).ToString("yyyy-MM-dd");
+        var problem = await Errors.RunAsync(async () =>
+        {
+            _fgItems = await Fgs.LookupAsync(null);
+            _colorItems = await Colors.LookupAsync(null);
+            _sizeItems = await Sizes.LookupAsync(null);
+        });
+        if (problem is null) { _adjusting = true; }
+    }
+
+    private AdjustStockRequest Build(string reason) => new(_aFg!.Value, _aColor!.Value, _aSize!.Value, int.Parse(_aQty!.Replace(".", string.Empty).Replace("−", "-")), DateOnly.ParseExact(_aDate!, "yyyy-MM-dd"), reason);
+
+    private async Task CheckAdjustAsync() => await Errors.RunAsync(async () => _adjPreview = await Inventory.PreviewAdjustStockAsync(Build("pratinjau")));
+
+    private async Task AdjustAsync(string reason)
+    {
+        await Inventory.AdjustStockAsync(Build(reason));
+        Toasts.ShowSuccess("Penyesuaian stok disimpan.");
+        _version++;
+    }
+}

@@ -1,0 +1,99 @@
+@page "/handovers/material/new"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.SerahTerimaMaterial.Create)]
+@inject IInventoryApi Inventory
+@inject IWorkOrdersApi Wos
+@inject IMaterialApi Materials
+@inject ApiErrorHandler Errors
+@inject NavigationManager Nav
+@inject IToastService Toasts
+
+<PageTitle>Buat Serah Terima Material · GMS</PageTitle>
+<UnsavedChangesGuard HasChanges="_dirty && !_saved" />
+
+<PageHeader Title="Buat Serah Terima Material" Breadcrumbs="@(new[] { new PageHeader.Crumb("Serah Terima Material", "/handovers/material"), new PageHeader.Crumb("Baru") })" />
+
+<FormSummary Errors="_problem?.Errors" />
+@if (_problem is not null && _problem.Errors is null) { <ProblemBanner Problem="_problem" /> }
+
+<form class="gms-form" @onsubmit="SaveAsync" @onsubmit:preventDefault novalidate>
+    <section class="gms-card">
+        <LookupSelect Label="WO" Items="_woItems" @bind-Value="_wo" Required="true" ShowCode="true" />
+        <TextField Label="Tanggal" Type="date" Value="@_date" ValueChanged="v => { _date = v; _dirty = true; }" Required="true" />
+        <TextField Label="No. Dokumen" Value="@_docNo" ValueChanged="v => { _docNo = v; _dirty = true; }" MaxLength="50" />
+        <TextField Label="Catatan" Value="@_notes" ValueChanged="v => { _notes = v; _dirty = true; }" MaxLength="250" Multiline="true" />
+    </section>
+
+    <section class="gms-card" aria-labelledby="mh-lines">
+        <h2 id="mh-lines">Baris</h2>
+        @for (var i = 0; i < _lines.Count; i++)
+        {
+            var line = _lines[i];
+            <div class="gms-inline" role="group" aria-label="@($"Baris {i + 1}")">
+                <LookupSelect Label="@($"Material {i + 1}")" Items="_materials" Value="line.Material" ValueChanged="v => { line.Material = v; _dirty = true; }" Required="true" ShowCode="true" />
+                <TextField Label="Qty (maks 3 desimal)" InputMode="decimal" MaxLength="12" Value="@line.Qty" ValueChanged="v => { line.Qty = v ?? string.Empty; _dirty = true; }" Required="true" />
+                <TextField Label="Keterangan" MaxLength="100" Value="@line.Notes" ValueChanged="v => { line.Notes = v; _dirty = true; }" />
+                <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Hapus baris {i + 1}")" Disabled="@(_lines.Count == 1)" OnClick="() => _lines.Remove(line)">✕</FluentButton>
+            </div>
+        }
+
+        <FluentButton Appearance="Appearance.Neutral" OnClick="() => _lines.Add(new Line())">Tambah material</FluentButton>
+    </section>
+
+    <div class="gms-formactions">
+        <FluentAnchor Href="/handovers/material" Appearance="Appearance.Neutral">Batal</FluentAnchor>
+        <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="_saving">Simpan</FluentButton>
+    </div>
+</form>
+
+@code {
+    private sealed class Line { public Guid? Material; public string Qty = string.Empty; public string? Notes; }
+
+    private IReadOnlyList<LookupItem> _woItems = [], _materials = [];
+    private readonly List<Line> _lines = [new()];
+    private Guid? _wo;
+    private string? _date, _docNo, _notes;
+    private GmsProblemDetails? _problem;
+    private bool _dirty, _saved, _saving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _date = DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(IdFormat.Offset).DateTime).ToString("yyyy-MM-dd");
+        await Errors.RunAsync(async () =>
+        {
+            _woItems = (await Wos.ListAsync(new WoListQuery { PageSize = 200 })).Items.Where(w => w.Status != WoStatus.Cancelled).Select(w => new LookupItem(w.Id, w.Code, w.FgCode)).ToList();
+            _materials = await Materials.LookupAsync(null);
+        });
+    }
+
+    private async Task SaveAsync()
+    {
+        _problem = null;
+        var parsed = new List<MaterialHandoverLine>();
+        foreach (var line in _lines)
+        {
+            if (line.Material is null) { _problem = Local("lines", "Material wajib dipilih pada setiap baris."); return; }
+            if (!IdNumber.TryParseDecimal(line.Qty, out var qty, out var error)) { _problem = Local("lines", error ?? "Qty tidak valid."); return; }
+
+            parsed.Add(new MaterialHandoverLine(line.Material.Value, qty, string.IsNullOrWhiteSpace(line.Notes) ? null : line.Notes.Trim()));
+        }
+
+        if (_wo is null || !DateOnly.TryParseExact(_date, "yyyy-MM-dd", out var date)) { _problem = Local("woId", "WO dan tanggal wajib diisi."); return; }
+        _saving = true;
+        _problem = await Errors.RunAsync(async () =>
+        {
+            await Inventory.CreateMaterialHandoverAsync(new SaveMaterialHandoverRequest(_wo.Value, date, string.IsNullOrWhiteSpace(_docNo) ? null : _docNo.Trim(), string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim(), parsed));
+            _saved = true;
+            _dirty = false;
+            StateHasChanged();
+            await Task.Yield();
+            Toasts.ShowSuccess("Serah terima material disimpan.");
+            Nav.NavigateTo("/handovers/material");
+        });
+        _saving = false;
+    }
+
+    private static GmsProblemDetails Local(string field, string message) => new()
+    {
+        Type = ProblemTypes.ValidationFailed, Status = 422, Title = "Data belum valid.", Errors = new Dictionary<string, string[]> { [field] = [message] },
+    };
+}

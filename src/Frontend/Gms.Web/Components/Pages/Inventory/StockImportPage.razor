@@ -1,0 +1,6 @@
+@page "/stock/import"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.StokFG.Import)]
+
+<PageTitle>Impor Saldo Awal · GMS</PageTitle>
+
+<ImportWizard Entity="ImportEntity.StockOpening" Title="Saldo Awal Stok" ListHref="/stock" />

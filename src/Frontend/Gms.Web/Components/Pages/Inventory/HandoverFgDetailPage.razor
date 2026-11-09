@@ -1,0 +1,79 @@
+@page "/handovers/fg/{Id:guid}"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.SerahTerimaFG.View)]
+@inject IInventoryApi Inventory
+@inject ApiErrorHandler Errors
+@inject AuthenticationStateProvider Auth
+@inject IToastService Toasts
+
+<PageTitle>Serah Terima FG · GMS</PageTitle>
+
+@if (_problem is not null)
+{
+    var view = ProblemPresenter.Describe(_problem);
+    <PageHeader Title="Serah Terima FG" Breadcrumbs="@(new[] { new PageHeader.Crumb("Serah Terima FG", "/handovers/fg"), new PageHeader.Crumb("…") })" />
+    <ErrorState Title="@view.Title" Detail="@view.Detail" TraceId="@view.TraceId" OnRetry="@(view.Kind is ProblemKind.NotFound or ProblemKind.Forbidden ? default : EventCallback.Factory.Create(this, LoadAsync))" />
+}
+else if (_doc is null)
+{
+    <SkeletonRows Rows="5" Columns="3" Label="Memuat serah terima" />
+}
+else
+{
+    <PageHeader Title="@(_doc.Item.DocNo ?? "Serah Terima FG")" Subtitle="@($"{_doc.Item.WoCode} · {_doc.Item.PoCode} · {_doc.Item.FgCode} · {IdFormat.Date(_doc.Item.Date)}")"
+                Breadcrumbs="@(new[] { new PageHeader.Crumb("Serah Terima FG", "/handovers/fg"), new PageHeader.Crumb(_doc.Item.DocNo ?? "Detail") })">
+        <Chips><StatusChip Value="@_doc.Item.Status" /></Chips>
+        <Actions>
+            @if (_doc.Item.Status == DocStatus.Active && _user.HasPermission(Permissions.SerahTerimaFG.Void))
+            {
+                <FluentButton Appearance="Appearance.Neutral" Disabled="@(!_doc.CanVoid)" Title="@_doc.DisabledReason" OnClick="() => _voiding = true">Void</FluentButton>
+            }
+        </Actions>
+    </PageHeader>
+
+    @if (_doc.Item.Status == DocStatus.Voided)
+    {
+        <div class="gms-banner warning" role="status"><div class="gms-banner-body"><p>Di-void: @_doc.VoidReason</p></div></div>
+    }
+
+    <table class="gms-table compact">
+        <caption class="gms-sr-only">Qty per Color dan Size</caption>
+        <thead><tr><th scope="col">Color</th><th scope="col">Size</th><th scope="col" class="num">Qty</th><th scope="col" class="num">Alokasi otomatis ke PO</th></tr></thead>
+        <tbody>
+            @foreach (var l in _doc.Lines)
+            {
+                <tr><th scope="row">@l.ColorSize.ColorName</th><td>@l.ColorSize.SizeCode</td><td class="num">@IdFormat.Qty(l.Qty)</td><td class="num">@IdFormat.Qty(l.AutoAllocatedQty)</td></tr>
+            }
+        </tbody>
+    </table>
+    <p class="gms-note">Diterima oleh @(_doc.ReceivedBy ?? "—")@(string.IsNullOrEmpty(_doc.Notes) ? string.Empty : $" · {_doc.Notes}") · Dibuat oleh @(_doc.Item.CreatedByName ?? "—")</p>
+    @if (_doc.ReplacesId is not null) { <p class="gms-note">Menggantikan <a href="/handovers/fg/@_doc.ReplacesId">dokumen sebelumnya</a>.</p> }
+    @if (_doc.ReplacedById is not null) { <p class="gms-note">Digantikan oleh <a href="/handovers/fg/@_doc.ReplacedById">dokumen koreksi</a>.</p> }
+}
+
+<ReasonDialog Open="_voiding" OpenChanged="o => _voiding = o" Danger="true" ConfirmText="Void" Title="@($"Void serah terima {_doc?.Item.DocNo}?")"
+              Description="@($"{IdFormat.Qty(_doc?.Item.TotalQty ?? 0)} pcs. Alokasi otomatis ke PO akan dilepas dan stok dikurangi.")"
+              LoadPreview="ct => Inventory.PreviewVoidHandoverFgAsync(Id, ct)" OnConfirm="VoidAsync" />
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private HandoverFgDto? _doc;
+    private GmsProblemDetails? _problem;
+    private bool _voiding;
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _user = (await Auth.GetAuthenticationStateAsync()).User;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync() => _problem = await Errors.RunAsync(async () => _doc = await Inventory.GetHandoverFgAsync(Id));
+
+    private async Task VoidAsync(string reason)
+    {
+        await Inventory.VoidHandoverFgAsync(Id, new ReasonRequest(reason));
+        Toasts.ShowSuccess("Serah terima di-void.");
+        await LoadAsync();
+    }
+}
