@@ -1,0 +1,263 @@
+@page "/purchase-orders/new"
+@page "/purchase-orders/{Id:guid}/edit"
+@attribute [Authorize]
+@inject IPurchaseOrdersApi Pos
+@inject ICustomerApi Customers
+@inject IFgApi Fgs
+@inject IColorApi Colors
+@inject ISizeApi Sizes
+@inject ApiErrorHandler Errors
+@inject NavigationManager Nav
+@inject IToastService Toasts
+@inject AuthenticationStateProvider Auth
+
+<PageTitle>@(IsNew ? "Buat PO" : "Ubah PO") · GMS</PageTitle>
+<UnsavedChangesGuard HasChanges="_dirty && !_saved" />
+
+<PageHeader Title="@(IsNew ? "Buat PO" : $"Ubah {_po?.Code}")" Subtitle="@(IsNew ? "Kode: otomatis (PO-YYYYMM-NNNN)" : null)"
+            Breadcrumbs="@(new[] { new PageHeader.Crumb("Customer PO", "/purchase-orders"), new PageHeader.Crumb(IsNew ? "Baru" : _po?.Code ?? "…") })" />
+
+@if (_denied)
+{
+    <ErrorState Title="Anda tidak memiliki akses" Detail="Izin untuk membuat atau mengubah PO diperlukan." />
+}
+else if (_loadProblem is not null)
+{
+    var view = ProblemPresenter.Describe(_loadProblem);
+    <ErrorState Title="@view.Title" Detail="@view.Detail" TraceId="@view.TraceId" OnRetry="@(view.Kind is ProblemKind.NotFound or ProblemKind.Forbidden ? default : EventCallback.Factory.Create(this, LoadAsync))" />
+}
+else if (_loading)
+{
+    <SkeletonRows Rows="6" Columns="3" Label="Memuat form PO" />
+}
+else if (_po is { AllowedActions: var allowed } && !allowed.Contains(PoActions.Edit))
+{
+    <div class="gms-banner info" role="status"><div class="gms-banner-body"><p>PO selesai atau dibatalkan. Tambahan pesanan dibuat pada PO baru.</p></div></div>
+}
+else
+{
+    <FormSummary Errors="_problem?.Errors" Labels="_labels" />
+    @if (_problem is not null && _problem.Errors is null)
+    {
+        <ProblemBanner Problem="_problem" OnReload="LoadAsync" />
+    }
+
+    <form @onsubmit="() => SaveAsync(false)" @onsubmit:preventDefault novalidate>
+        <section class="gms-card gms-form" aria-labelledby="po-header">
+            <h2 id="po-header">Header</h2>
+            <LookupSelect Label="Customer" Items="_customers" Value="_customer" ValueChanged="v => Set(() => _customer = v)" Required="true" />
+            <TextField Label="Tanggal PO" Type="date" Value="@_date" ValueChanged="v => Set(() => _date = v)" Required="true" />
+            <TextField Label="No. PO Customer" Value="@_customerPo" ValueChanged="v => Set(() => _customerPo = v)" MaxLength="50"
+                       Hint="Boleh dikosongkan, isi saat PO customer terbit." />
+            <TextField Label="Keterangan" Value="@_notes" ValueChanged="v => Set(() => _notes = v)" MaxLength="250" Multiline="true" />
+        </section>
+
+        <section class="gms-card" aria-labelledby="po-need">
+            <h2 id="po-need">Kebutuhan</h2>
+            <div class="gms-toolbar">
+                <LookupSelect Label="FG" Items="_fgItems" @bind-Value="_addFg" ShowCode="true" />
+                <LookupSelect Label="Color" Items="_colorItems" @bind-Value="_addColor" />
+                <TextField Label="Tanggal Kirim" Type="date" @bind-Value="_addDate" />
+                <FluentButton Appearance="Appearance.Neutral" Disabled="@(_addFg is null || _addColor is null || string.IsNullOrEmpty(_addDate))" OnClick="AddBlockAsync">Tambah blok FG</FluentButton>
+            </div>
+
+            @if (_blocks.Count == 0)
+            {
+                <EmptyState Title="Belum ada kebutuhan" Description="Pilih FG, Color, dan Tanggal Kirim lalu tambah blok." />
+            }
+
+            @foreach (var block in _blocks)
+            {
+                var dup = _duplicates.Contains(block.Key);
+                var early = block.Delivery is { } d && DateOnly.TryParseExact(_date, "yyyy-MM-dd", out var po) && d < po;
+                <div class="gms-block @(dup ? "dup" : null)" role="group" aria-label="@($"{block.FgLabel} {block.ColorLabel}")">
+                    <div class="gms-block-head">
+                        <strong>@block.FgLabel</strong> · @block.ColorLabel · Kirim
+                        <input type="date" aria-label="@($"Tanggal kirim {block.FgLabel} {block.ColorLabel}")" value="@block.DeliveryText"
+                               @onchange="e => { block.DeliveryText = e.Value?.ToString() ?? string.Empty; Changed(); }" />
+                        <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Hapus blok {block.FgLabel} {block.ColorLabel}")" OnClick="() => Remove(block)">✕</FluentButton>
+                    </div>
+                    @if (dup) { <p class="gms-bad" role="alert"><FluentIcon Value="@(new Icons.Regular.Size16.DismissCircle())" Color="Color.Neutral" /> Kombinasi FG, Color, Size, dan Tanggal Kirim ganda.</p> }
+                    @if (early) { <p class="gms-warn" role="status"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" /> Tanggal Kirim lebih awal dari Tanggal PO.</p> }
+                    <SizeMatrixGrid Caption="@($"{block.FgLabel} {block.ColorLabel}")" RowHeader="" Rows="_qtyRow" Columns="@Columns(block)" Values="block.Values"
+                                    CellInfo="PoFormLogic.CellInfo" OnChanged="Changed" Compact="true" />
+                    @foreach (var size in block.Sizes.Where(s => block.Existing.TryGetValue(s.Id, out var e) && e.Min > 0))
+                    {
+                        var e = block.Existing[size.Id];
+                        <p class="gms-note"><FluentIcon Value="@(new Icons.Regular.Size16.LockClosed())" Color="Color.Neutral" /> Size @size.Code: minimal @IdFormat.Qty(e.Min)@(e.Locked ? " (baris terpakai, FG/Color/Size terkunci)" : string.Empty).</p>
+                    }
+                </div>
+            }
+
+            <p><strong>Total keseluruhan: @IdFormat.Qty(PoFormLogic.GrandTotal(_blocks)) pcs</strong></p>
+        </section>
+
+        <div class="gms-formactions">
+            <FluentAnchor Href="@(IsNew ? "/purchase-orders" : $"/purchase-orders/{Id}")" Appearance="Appearance.Neutral">Batal</FluentAnchor>
+            @if (IsNew)
+            {
+                <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Neutral" Disabled="_saving">Simpan sebagai Draft</FluentButton>
+                @if (_user.HasPermission(Permissions.CustomerPO.Confirm))
+                {
+                    <FluentButton Appearance="Appearance.Accent" Disabled="_saving" OnClick="() => SaveAsync(true)">Simpan dan Konfirmasi</FluentButton>
+                }
+            }
+            else
+            {
+                <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="_saving">Simpan perubahan</FluentButton>
+            }
+        </div>
+    </form>
+}
+
+<ReasonDialog Open="_bigConfirm" OpenChanged="o => _bigConfirm = o" ShowReason="false" Danger="false" ConfirmText="Ya, lanjutkan"
+              Title="Qty sangat besar" Description="Ada Qty di atas 100.000 pcs. Pastikan angkanya benar sebelum menyimpan." OnConfirm="_ => SaveCoreAsync(_pendingConfirm)" />
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private static readonly IReadOnlyList<MatrixRow> _qtyRow = [new("qty", "Qty")];
+
+    private static readonly IReadOnlyDictionary<string, string> _labels = new Dictionary<string, string>
+    {
+        ["customerId"] = "Customer", ["lines"] = "Kebutuhan", ["customerPoNumber"] = "No. PO Customer",
+    };
+
+    private bool IsNew => Id is null;
+    private PoDto? _po;
+    private IReadOnlyList<LookupItem> _customers = [], _fgItems = [], _colorItems = [];
+    private readonly List<PoBlock> _blocks = [];
+    private IReadOnlySet<Guid> _duplicates = new HashSet<Guid>();
+    private Guid? _customer, _addFg, _addColor;
+    private string? _date, _customerPo, _notes, _addDate;
+    private bool _loading = true, _dirty, _saved, _saving, _denied, _bigConfirm, _pendingConfirm;
+    private GmsProblemDetails? _problem, _loadProblem;
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+    private IReadOnlyList<SizeDto> _allSizes = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _user = (await Auth.GetAuthenticationStateAsync()).User;
+        _denied = !_user.HasPermission(IsNew ? Permissions.CustomerPO.Create : Permissions.CustomerPO.Edit);
+        if (_denied) { _loading = false; return; }
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _loadProblem = await Errors.RunAsync(async () =>
+        {
+            _customers = await Customers.LookupAsync(null);
+            _fgItems = await Fgs.LookupAsync(null);
+            _colorItems = await Colors.LookupAsync(null);
+            _allSizes = (await Sizes.ListAsync(new MasterListQuery { PageSize = 200 })).Items;
+            _blocks.Clear();
+            if (Id is { } id)
+            {
+                _po = await Pos.GetAsync(id);
+                _customer = _po.CustomerId;
+                _date = _po.PoDate.ToString("yyyy-MM-dd");
+                _customerPo = _po.CustomerPoNumber;
+                _notes = _po.Notes;
+                var sizesByFg = new Dictionary<Guid, IReadOnlyList<SizeRef>>();
+                foreach (var fgId in _po.Lines.Select(l => l.FgId).Distinct()) { sizesByFg[fgId] = await SizesOfAsync(fgId); }
+                _blocks.AddRange(PoFormLogic.FromDto(_po, f => sizesByFg[f]));
+            }
+            else
+            {
+                _date = DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(IdFormat.Offset).DateTime).ToString("yyyy-MM-dd");
+            }
+
+            _duplicates = PoFormLogic.DuplicateBlocks(_blocks);
+            _dirty = false;
+        });
+        _loading = false;
+    }
+
+    private async Task<IReadOnlyList<SizeRef>> SizesOfAsync(Guid fgId)
+    {
+        var ids = (await Fgs.GetSizesAsync(fgId)).SizeIds.ToHashSet();
+        return _allSizes.Where(s => ids.Contains(s.Id)).OrderBy(s => s.SortOrder).Select(s => new SizeRef(s.Id, s.Code, s.Name, s.SortOrder)).ToList();
+    }
+
+    private IReadOnlyList<MatrixColumn> Columns(PoBlock block) => block.Sizes.Select(s => new MatrixColumn(s.Id.ToString(), s.Code)).ToList();
+
+    private void Set(Action change) { change(); _dirty = true; }
+
+    private void Changed()
+    {
+        _dirty = true;
+        _duplicates = PoFormLogic.DuplicateBlocks(_blocks);
+    }
+
+    private async Task AddBlockAsync()
+    {
+        var fg = _fgItems.First(f => f.Id == _addFg);
+        var color = _colorItems.First(c => c.Id == _addColor);
+        IReadOnlyList<SizeRef> sizes = [];
+        _problem = await Errors.RunAsync(async () => sizes = await SizesOfAsync(fg.Id));
+        if (_problem is not null) { return; }
+        if (sizes.Count == 0)
+        {
+            _problem = new GmsProblemDetails { Type = Gms.Shared.Problems.ProblemTypes.ValidationFailed, Status = 422, Title = "FG belum memiliki Size Berlaku.", Detail = "Atur Size Berlaku pada master FG lebih dulu." };
+            return;
+        }
+
+        _blocks.Add(new PoBlock { FgId = fg.Id, FgLabel = $"{fg.Code} {fg.Name}", ColorId = color.Id, ColorLabel = color.Name, DeliveryText = _addDate!, Sizes = sizes });
+        Changed();
+    }
+
+    private void Remove(PoBlock block)
+    {
+        _blocks.Remove(block);
+        Changed();
+    }
+
+    private async Task SaveAsync(bool confirmAfter)
+    {
+        _problem = null;
+        if (_customer is null || string.IsNullOrWhiteSpace(_date))
+        {
+            _problem = Local("customerId", "Customer dan Tanggal PO wajib diisi.");
+            return;
+        }
+
+        var lines = PoFormLogic.ToLines(_blocks);
+        if (lines.Count == 0) { _problem = Local("lines", "Minimal satu Qty terisi pada blok kebutuhan."); return; }
+        if (_blocks.Any(b => b.Delivery is null)) { _problem = Local("lines", "Tanggal Kirim wajib diisi pada setiap blok."); return; }
+        if (_duplicates.Count > 0) { _problem = Local("lines", "Ada kombinasi FG, Color, Size, dan Tanggal Kirim ganda."); return; }
+        if (PoFormLogic.HasQtyAbove(_blocks, PoFormLogic.MaxQty)) { _problem = Local("lines", "Qty maksimal 1.000.000."); return; }
+        if (PoFormLogic.HasQtyAbove(_blocks, PoFormLogic.WarnQty))
+        {
+            _pendingConfirm = confirmAfter;
+            _bigConfirm = true;
+            return;
+        }
+
+        await SaveCoreAsync(confirmAfter);
+    }
+
+    private static GmsProblemDetails Local(string field, string message) => new()
+    {
+        Type = Gms.Shared.Problems.ProblemTypes.ValidationFailed, Status = 422, Title = "Data belum valid.", Errors = new Dictionary<string, string[]> { [field] = [message] },
+    };
+
+    private async Task SaveCoreAsync(bool confirmAfter)
+    {
+        _saving = true;
+        _problem = await Errors.RunAsync(async () =>
+        {
+            var request = new SavePoRequest(_customer!.Value, DateOnly.ParseExact(_date!, "yyyy-MM-dd"), string.IsNullOrWhiteSpace(_customerPo) ? null : _customerPo.Trim(),
+                string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim(), PoFormLogic.ToLines(_blocks), confirmAfter, _po?.RowVersion ?? 0);
+            var saved = IsNew ? await Pos.CreateAsync(request) : await Pos.UpdateAsync(Id!.Value, request);
+            _saved = true;
+            _dirty = false;
+            StateHasChanged();
+            await Task.Yield(); // render dahulu agar penjaga perubahan tidak menghalangi navigasi
+            Toasts.ShowSuccess(IsNew ? $"PO {saved.Code} dibuat." : "PO disimpan.");
+            Nav.NavigateTo($"/purchase-orders/{saved.Id}");
+        });
+        _saving = false;
+    }
+}

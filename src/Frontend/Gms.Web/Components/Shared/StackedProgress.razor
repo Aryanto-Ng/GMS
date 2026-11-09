@@ -1,0 +1,25 @@
+@* Bar progres bertumpuk (Terkirim / Dialokasikan / Dalam Produksi dari server). Selalu disertai angka teks dan aria-label; tidak bergantung warna. *@
+<div class="gms-stack-progress" role="img" aria-label="@AriaLabel">
+    <div class="gms-stack-bar" aria-hidden="true">
+        @foreach (var s in Segments)
+        {
+            @if (Total > 0 && s.Value > 0)
+            {
+                <span class="gms-seg @s.Tone" style="width:@Pct(s.Value)%" title="@s.Label @IdFormat.Qty(s.Value)"></span>
+            }
+        }
+    </div>
+    <span class="gms-stack-text">@string.Join(" · ", Segments.Select(s => $"{s.Label} {IdFormat.Qty(s.Value)}")) / @IdFormat.Qty(Total)</span>
+</div>
+
+@code {
+    public sealed record Segment(string Label, int Value, string Tone);
+
+    [Parameter, EditorRequired] public IReadOnlyList<Segment> Segments { get; set; } = [];
+
+    [Parameter, EditorRequired] public int Total { get; set; }
+
+    private string AriaLabel => string.Join(", ", Segments.Select(s => $"{s.Label} {IdFormat.Qty(s.Value)}")) + $" dari {IdFormat.Qty(Total)}";
+
+    private string Pct(int value) => Math.Min(100d, value * 100d / Total).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+}

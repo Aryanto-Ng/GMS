@@ -1,0 +1,102 @@
+@inject IPurchaseOrdersApi Pos
+@inject ApiErrorHandler Errors
+@inject IToastService Toasts
+
+@* Dialog Alokasi Stok / Lepas Alokasi (CustomerPO-UI.md 2.4). Batas alokasi = min(Tersedia, Sisa Rencana) = hasil server; dimuat saat dibuka. *@
+<ReasonDialog Open="Line is not null" OpenChanged="o => { if (!o) OnClose.InvokeAsync(); }" ShowReason="false" Danger="@(!Allocate)"
+              Title="@Title" ConfirmText="@(Allocate ? "Alokasikan" : "Lepas alokasi")"
+              CanConfirm="@(Parsed is > 0 && Parsed <= Max && (!Allocate || _availability is not null))" OnConfirm="SubmitAsync">
+    @if (Line is not null)
+    {
+        <p>Kebutuhan @IdFormat.Qty(Line.Qty) · Terkirim @IdFormat.Qty(Line.DeliveredQty) · Dialokasikan @IdFormat.Qty(Line.AllocatedQty) · Dalam Produksi @IdFormat.Qty(Line.InProductionQty) · Sisa Rencana @IdFormat.Qty(Line.RemainingPlanQty)</p>
+        @if (Allocate)
+        {
+            @if (_loading)
+            {
+                <SkeletonRows Rows="1" Columns="3" Label="Memuat stok" />
+            }
+            else if (_problem is not null)
+            {
+                <ProblemBanner Problem="_problem" OnReload="LoadAsync" />
+            }
+            else if (_availability is { } a)
+            {
+                <p>Stok: Fisik @IdFormat.Qty(a.OnHand) · Teralokasi (semua PO) @IdFormat.Qty(a.AllocatedAllPo) · Tersedia @IdFormat.Qty(a.Available)</p>
+            }
+        }
+
+        <TextField Label="@(Allocate ? "Qty alokasi" : "Qty dilepas")" Value="@_qty" ValueChanged="v => _qty = v" InputMode="numeric" MaxLength="7" Required="true"
+                   Hint="@(MaxHint)" />
+        @if (Parsed > Max)
+        {
+            <p class="gms-bad" role="alert">Qty melebihi batas (maks @IdFormat.Qty(Max)).</p>
+        }
+    }
+</ReasonDialog>
+
+@code {
+    private StockAvailabilityDto? _availability;
+    private GmsProblemDetails? _problem;
+    private bool _loading;
+    private string? _qty = string.Empty;
+    private Guid? _loadedFor;
+
+    /// <summary>Baris yang dialokasikan; null = dialog tertutup.</summary>
+    [Parameter] public PoLineDto? Line { get; set; }
+
+    /// <summary>true = Alokasikan; false = Lepas alokasi.</summary>
+    [Parameter] public bool Allocate { get; set; } = true;
+
+    [Parameter] public string PoCode { get; set; } = string.Empty;
+
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    [Parameter] public EventCallback OnDone { get; set; }
+
+    private string Title => Line is null ? string.Empty
+        : $"{(Allocate ? "Alokasikan stok" : "Lepas alokasi")} — {Line.FgCode} · {Line.ColorSize.ColorName} · {Line.ColorSize.SizeCode} ({PoCode})";
+
+    private int Max => Allocate ? _availability?.MaxAllocatable ?? 0 : Line?.AllocatedQty ?? 0;
+
+    private int? Parsed => IdNumber.TryParseInt(_qty, out var v, out _) ? v : null;
+
+    private string MaxHint => Allocate && _availability is { MaxAllocatable: 0 } a ? $"Maks 0 — {a.LimitReason}" : $"Maks {IdFormat.Qty(Max)}";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Line is null) { _loadedFor = null; return; }
+        if (_loadedFor != Line.Id)
+        {
+            _loadedFor = Line.Id;
+            _qty = string.Empty;
+            _availability = null;
+            _problem = null;
+            if (Allocate) { await LoadAsync(); }
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _problem = await Errors.RunAsync(async () => _availability = await Pos.GetStockAvailabilityAsync(Line!.Id));
+        _loading = false;
+    }
+
+    private async Task SubmitAsync(string _)
+    {
+        var qty = Parsed!.Value;
+        try
+        {
+            if (Allocate) { await Pos.AllocateAsync(Line!.Id, new AllocateRequest(qty, null)); }
+            else { await Pos.ReleaseAllocationAsync(Line!.Id, new ReleaseAllocationRequest(qty, null)); }
+        }
+        catch (ApiException ex) when (ex.Problem.Code == ProblemCodes.AllocationExceeded)
+        {
+            if (Allocate) { await LoadAsync(); } // angka di layar diperbarui ke nilai terbaru
+            throw;
+        }
+
+        Toasts.ShowSuccess(Allocate ? $"{IdFormat.Qty(qty)} pcs dialokasikan." : $"{IdFormat.Qty(qty)} pcs dilepas.");
+        await OnDone.InvokeAsync();
+    }
+}

@@ -256,8 +256,6 @@ public sealed class FgPageTests : WebTestBase
         SignIn(AllMaster);
     }
 
-    private static T Sync<T>(Task<T> task) => task.GetAwaiter().GetResult();
-
     private IRenderedComponent<FgDetailPage> Detail(Guid? id) => Render<FgDetailPage>(p => p.Add(x => x.Id, id));
 
     private static IElement Tab(IRenderedComponent<FgDetailPage> cut, string label) => cut.FindAll("[role=tab]").Single(t => t.TextContent == label);

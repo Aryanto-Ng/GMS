@@ -21,7 +21,7 @@ public static class NavCatalog
     [
         new("Penjualan",
         [
-            new("Customer PO", "/purchase-orders", Permissions.CustomerPO.View, I<Icons.Regular.Size20.DocumentText>()),
+            new("Customer PO", "/purchase-orders", Permissions.CustomerPO.View, I<Icons.Regular.Size20.DocumentText>(), Enabled: true),
             new("Work Order", "/work-orders", Permissions.WorkOrder.View, I<Icons.Regular.Size20.ClipboardTaskListLtr>()),
             new("Pengiriman", "/deliveries", Permissions.Pengiriman.View, I<Icons.Regular.Size20.VehicleTruckProfile>()),
         ]),

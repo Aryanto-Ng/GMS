@@ -1,0 +1,216 @@
+@page "/purchase-orders/{Id:guid}"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.CustomerPO.View)]
+@inject IPurchaseOrdersApi Pos
+@inject ApiErrorHandler Errors
+@inject AuthenticationStateProvider Auth
+@inject IToastService Toasts
+
+<PageTitle>@(_po?.Code ?? "PO") · GMS</PageTitle>
+
+@if (_loadProblem is not null)
+{
+    var view = ProblemPresenter.Describe(_loadProblem);
+    <PageHeader Title="PO" Breadcrumbs="@(new[] { new PageHeader.Crumb("Customer PO", "/purchase-orders"), new PageHeader.Crumb("…") })" />
+    <ErrorState Title="@view.Title" Detail="@view.Detail" TraceId="@view.TraceId" OnRetry="@(view.Kind is ProblemKind.NotFound or ProblemKind.Forbidden ? default : EventCallback.Factory.Create(this, LoadAsync))" />
+}
+else if (_po is null)
+{
+    <SkeletonRows Rows="6" Columns="4" Label="Memuat PO" />
+}
+else
+{
+    <PageHeader Title="@_po.Code" Subtitle="@($"{_po.CustomerName} · Tgl PO {IdFormat.Date(_po.PoDate)}")"
+                Breadcrumbs="@(new[] { new PageHeader.Crumb("Customer PO", "/purchase-orders"), new PageHeader.Crumb(_po.Code) })">
+        <Chips><StatusChip Value="@_po.Status" /></Chips>
+        <Actions>
+            @if (Can(PoActions.Edit, Permissions.CustomerPO.Edit)) { <FluentAnchor Href="@($"/purchase-orders/{_po.Id}/edit")" Appearance="Appearance.Neutral">Ubah</FluentAnchor> }
+            @if (Can(PoActions.Confirm, Permissions.CustomerPO.Confirm)) { <FluentButton Appearance="Appearance.Accent" OnClick="() => _dialog = Dialog.Confirm">Konfirmasi</FluentButton> }
+            @if (Can(PoActions.CreateWorkOrder, Permissions.WorkOrder.Create)) { <FluentAnchor Href="@($"/work-orders/new?poId={_po.Id}")" Appearance="Appearance.Neutral">Buat WO</FluentAnchor> }
+            @if (Can(PoActions.Cancel, Permissions.CustomerPO.Cancel)) { <FluentButton Appearance="Appearance.Neutral" OnClick="() => _dialog = Dialog.Cancel">Batalkan</FluentButton> }
+        </Actions>
+    </PageHeader>
+
+    @if (_po.Status == PoStatus.Completed)
+    {
+        <div class="gms-banner info" role="status"><div class="gms-banner-body"><p>PO selesai. Tambahan pesanan dibuat pada PO baru.</p></div></div>
+    }
+
+    @if (_po.Status == PoStatus.Cancelled && !string.IsNullOrEmpty(_po.CancelReason))
+    {
+        <div class="gms-banner warning" role="status"><div class="gms-banner-body"><p>Dibatalkan: @_po.CancelReason</p></div></div>
+    }
+
+    <div class="gms-customerpo">
+        <strong>No. PO Customer:</strong>
+        @if (_editingNumber)
+        {
+            <input id="po-number" aria-label="No. PO Customer" value="@_number" maxlength="50" @oninput="e => _number = e.Value?.ToString()" />
+            <FluentButton Appearance="Appearance.Accent" OnClick="SaveNumberAsync">Simpan</FluentButton>
+            <FluentButton Appearance="Appearance.Neutral" OnClick="() => _editingNumber = false">Batal</FluentButton>
+            @if (_numberProblem is not null) { <ProblemBanner Problem="_numberProblem" /> }
+        }
+        else
+        {
+            @if (string.IsNullOrEmpty(_po.CustomerPoNumber)) { <span class="gms-warn"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" /> Belum ada</span> }
+            else { <span>@_po.CustomerPoNumber</span> }
+            @if (Can(PoActions.SetCustomerPoNumber, Permissions.CustomerPO.Edit))
+            {
+                <FluentButton Appearance="Appearance.Lightweight" aria-label="Ubah No. PO Customer" OnClick="StartEditNumber">✎</FluentButton>
+            }
+        }
+    </div>
+
+    <div class="gms-welcome" aria-label="Ringkasan">
+        <MetricCard Label="Total" Value="@IdFormat.Qty(_po.TotalQty)" />
+        <MetricCard Label="Terkirim" Value="@IdFormat.Qty(_po.DeliveredQty)" />
+        <MetricCard Label="Dialokasikan" Value="@IdFormat.Qty(_po.AllocatedQty)" />
+        <MetricCard Label="Dalam Produksi" Value="@IdFormat.Qty(_po.InProductionQty)" />
+        <MetricCard Label="Sisa Rencana" Value="@IdFormat.Qty(_po.RemainingPlanQty)" />
+    </div>
+
+    <div role="tablist" aria-label="Bagian PO" class="gms-tabs">
+        <button type="button" role="tab" aria-selected="@(_tab == Tab.Lines ? "true" : "false")" class="@(_tab == Tab.Lines ? "active" : null)" @onclick="() => _tab = Tab.Lines">Baris</button>
+        @if (_user.HasPermission(Permissions.CustomerPO.Alokasi.View))
+        {
+            <button type="button" role="tab" aria-selected="@(_tab == Tab.Allocations ? "true" : "false")" class="@(_tab == Tab.Allocations ? "active" : null)" @onclick="() => _tab = Tab.Allocations">Alokasi</button>
+        }
+    </div>
+
+    @if (_tab == Tab.Lines)
+    {
+        <table class="gms-table compact" role="tabpanel">
+            <caption class="gms-sr-only">Baris PO</caption>
+            <thead>
+                <tr><th scope="col">FG</th><th scope="col">Color</th><th scope="col">Size</th><th scope="col">Kirim</th><th scope="col" class="num">Qty</th><th scope="col" class="num">Terkirim</th>
+                    <th scope="col" class="num">Dialok.</th><th scope="col" class="num">Produksi</th><th scope="col" class="num">Sisa Rencana</th><th scope="col">Aksi</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var line in _po.Lines)
+                {
+                    <tr>
+                        <th scope="row">@line.FgCode</th><td>@line.ColorSize.ColorName</td><td>@line.ColorSize.SizeCode</td>
+                        <td>@IdFormat.Date(line.DeliveryDate) @if (line.IsLate) { <span class="gms-bad"><FluentIcon Value="@(new Icons.Regular.Size16.Clock())" Color="Color.Neutral" /> Terlambat</span> }</td>
+                        <td class="num">@IdFormat.Qty(line.Qty)</td><td class="num">@IdFormat.Qty(line.DeliveredQty)</td><td class="num">@IdFormat.Qty(line.AllocatedQty)</td>
+                        <td class="num">@IdFormat.Qty(line.InProductionQty)</td><td class="num">@IdFormat.Qty(line.RemainingPlanQty)</td>
+                        <td class="gms-rowactions">
+                            @if (Can(PoActions.Allocate, Permissions.CustomerPO.Alokasi.Allocate))
+                            {
+                                <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Alokasi {line.FgCode} {line.ColorSize.ColorName} {line.ColorSize.SizeCode}")" OnClick="() => Open(line, true)">Alokasi</FluentButton>
+                            }
+                            @if (Can(PoActions.Allocate, Permissions.CustomerPO.Alokasi.Release) && line.AllocatedQty > 0)
+                            {
+                                <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Lepas alokasi {line.FgCode} {line.ColorSize.ColorName} {line.ColorSize.SizeCode}")" OnClick="() => Open(line, false)">Lepas</FluentButton>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <AsyncContent T="IReadOnlyList<AllocationEntryDto>" Key="_allocVersion" Loader="ct => Pos.GetAllocationsAsync(_po.Id, ct)" IsEmpty="r => r.Count == 0">
+            <EmptyContent><EmptyState Title="Belum ada alokasi stok" /></EmptyContent>
+            <ChildContent Context="entries">
+                <table class="gms-table compact" role="tabpanel">
+                    <caption class="gms-sr-only">Riwayat alokasi</caption>
+                    <thead><tr><th scope="col">Waktu</th><th scope="col">Baris</th><th scope="col" class="num">Qty</th><th scope="col">Sumber</th><th scope="col">Alasan</th><th scope="col">Pelaku</th></tr></thead>
+                    <tbody>
+                        @foreach (var e in entries)
+                        {
+                            <tr>
+                                <td>@IdFormat.DateTime(e.CreatedAt)</td>
+                                <td>@e.FgCode · @e.ColorSize.ColorName · @e.ColorSize.SizeCode</td>
+                                <td class="num @(e.Qty < 0 ? "gms-negative" : null)">@(e.Qty > 0 ? "+" : string.Empty)@IdFormat.Qty(e.Qty)</td>
+                                <td>@SourceLabel(e.Source)</td><td>@(e.Reason ?? "—")</td><td>@(e.CreatedByName ?? "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </ChildContent>
+        </AsyncContent>
+    }
+
+    <ReasonDialog Open="_dialog == Dialog.Confirm" OpenChanged="o => { if (!o) _dialog = Dialog.None; }" ShowReason="false" Danger="false" ConfirmText="Konfirmasi PO"
+                  Title="Konfirmasi PO?" Description="@($"{_po.Lines.Count} baris, total {IdFormat.Qty(_po.TotalQty)} pcs. Nomor PO customer boleh menyusul.")" OnConfirm="ConfirmAsync" />
+
+    <ReasonDialog Open="_dialog == Dialog.Cancel" OpenChanged="o => { if (!o) _dialog = Dialog.None; }" Danger="true" ConfirmText="Batalkan PO"
+                  Title="Batalkan PO?" Description="@(_po.AllocatedQty > 0 ? $"Alokasi {IdFormat.Qty(_po.AllocatedQty)} pcs akan dilepas." : "PO dibatalkan dan tidak dapat diubah lagi.")" OnConfirm="CancelAsync" />
+
+    <AllocationDialog Line="_line" Allocate="_allocate" PoCode="@_po.Code" OnClose="() => _line = null" OnDone="AfterAllocationAsync" />
+}
+
+@code {
+    private enum Tab { Lines, Allocations }
+
+    private enum Dialog { None, Confirm, Cancel }
+
+    [Parameter] public Guid Id { get; set; }
+
+    private PoDto? _po;
+    private GmsProblemDetails? _loadProblem, _numberProblem;
+    private Tab _tab = Tab.Lines;
+    private Dialog _dialog;
+    private PoLineDto? _line;
+    private bool _allocate = true, _editingNumber;
+    private string? _number;
+    private int _allocVersion;
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+
+    private bool Can(string action, string permission) => _po is not null && _po.AllowedActions.Contains(action) && _user.HasPermission(permission);
+
+    private static string SourceLabel(AllocationSource s) => s switch
+    {
+        AllocationSource.Manual => "Manual", AllocationSource.Handover => "Serah Terima", AllocationSource.HandoverVoid => "Void Serah Terima",
+        AllocationSource.PoCancel => "Pembatalan PO", AllocationSource.Delivery => "Pengiriman", _ => "Void Pengiriman",
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _user = (await Auth.GetAuthenticationStateAsync()).User;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loadProblem = await Errors.RunAsync(async () => _po = await Pos.GetAsync(Id));
+    }
+
+    private void Open(PoLineDto line, bool allocate) { _allocate = allocate; _line = line; }
+
+    private async Task AfterAllocationAsync()
+    {
+        _line = null;
+        _allocVersion++;
+        await LoadAsync();
+    }
+
+    private async Task ConfirmAsync(string _)
+    {
+        _po = await Pos.ConfirmAsync(Id, _po!.RowVersion);
+        Toasts.ShowSuccess("PO dikonfirmasi.");
+    }
+
+    private async Task CancelAsync(string reason)
+    {
+        _po = await Pos.CancelAsync(Id, new ReasonRequest(reason, _po!.RowVersion));
+        Toasts.ShowSuccess("PO dibatalkan.");
+    }
+
+    private void StartEditNumber()
+    {
+        _number = _po!.CustomerPoNumber;
+        _numberProblem = null;
+        _editingNumber = true;
+    }
+
+    private async Task SaveNumberAsync()
+    {
+        _numberProblem = await Errors.RunAsync(async () =>
+        {
+            _po = await Pos.SetCustomerPoNumberAsync(Id, new SetCustomerPoNumberRequest(string.IsNullOrWhiteSpace(_number) ? null : _number.Trim(), _po!.RowVersion));
+            _editingNumber = false;
+            Toasts.ShowSuccess("No. PO Customer disimpan.");
+        });
+    }
+}

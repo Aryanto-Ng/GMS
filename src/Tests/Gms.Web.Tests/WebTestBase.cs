@@ -37,6 +37,9 @@ public abstract class WebTestBase : BunitContext
         Services.AddSingleton<AuthenticationStateProvider>(new FakeAuth(User(permissions)));
     }
 
+    /// <summary>Menunggu tugas selesai di metode bantu (analyzer xUnit melarang pemblokiran langsung di metode tes).</summary>
+    protected static T Sync<T>(Task<T> task) => task.GetAwaiter().GetResult();
+
     protected NavigationManager Nav => Services.GetRequiredService<NavigationManager>();
 
     private sealed class FakeAntiforgery : Microsoft.AspNetCore.Components.Forms.AntiforgeryStateProvider

@@ -1,4 +1,5 @@
 using Gms.Shared.Access;
+using Gms.Shared.CustomerPo;
 using Gms.Shared.Master;
 using Gms.Web.Components;
 using Gms.Web.Infrastructure.Auth;
@@ -69,6 +70,8 @@ services.AddSingleton<MockProcessApi>();
 services.AddSingleton<MockWorkerApi>();
 services.AddSingleton<MockFgApi>();
 services.AddSingleton<MockImportApi>();
+services.AddSingleton<MockPoApi>();
+services.AddScoped<IPurchaseOrdersApi>(sp => api.UseMock ? sp.GetRequiredService<MockPoApi>() : ActivatorUtilities.CreateInstance<HttpPoApi>(sp));
 services.AddScoped<IImportApi>(sp => api.UseMock ? sp.GetRequiredService<MockImportApi>() : ActivatorUtilities.CreateInstance<HttpImportApi>(sp));
 services.AddScoped<FileDownloader>();
 services.AddScoped<IFgApi>(sp => api.UseMock ? sp.GetRequiredService<MockFgApi>() : ActivatorUtilities.CreateInstance<HttpFgApi>(sp));

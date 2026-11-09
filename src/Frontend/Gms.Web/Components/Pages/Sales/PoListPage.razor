@@ -1,0 +1,168 @@
+@page "/purchase-orders"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.CustomerPO.View)]
+@inject IPurchaseOrdersApi Pos
+@inject ICustomerApi Customers
+@inject ApiErrorHandler Errors
+@inject AuthenticationStateProvider Auth
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>Customer PO · GMS</PageTitle>
+
+<PageHeader Title="Customer PO" Subtitle="@(_total is null ? null : $"{IdFormat.Qty(_total)} PO")">
+    <Actions>
+        @if (_user.HasPermission(Permissions.CustomerPO.Create))
+        {
+            <FluentAnchor Href="/purchase-orders/new" Appearance="Appearance.Accent">Buat PO</FluentAnchor>
+        }
+    </Actions>
+</PageHeader>
+
+<div class="gms-toolbar" role="search">
+    <div class="gms-field">
+        <label for="po-q">Cari kode / No. PO customer / customer</label>
+        <input id="po-q" type="search" value="@_q" @onchange="e => Apply(() => _q = e.Value?.ToString())" />
+    </div>
+    <div class="gms-field">
+        <label for="po-status">Status</label>
+        <select id="po-status" @onchange="e => Apply(() => _status = Enum.TryParse<PoStatus>(e.Value?.ToString(), out var s) ? s : null)">
+            <option value="">Semua status</option>
+            @foreach (var s in Enum.GetValues<PoStatus>()) { <option value="@s" selected="@(_status == s)">@StatusPresentation.For(s).Label</option> }
+        </select>
+    </div>
+    <div class="gms-field">
+        <label for="po-customer">Customer</label>
+        <select id="po-customer" @onchange="e => Apply(() => _customer = Guid.TryParse(e.Value?.ToString(), out var g) ? g : null)">
+            <option value="">Semua customer</option>
+            @foreach (var c in _customers) { <option value="@c.Id" selected="@(_customer == c.Id)">@c.Name</option> }
+        </select>
+    </div>
+</div>
+
+<div class="gms-chips" role="group" aria-label="Filter cepat">
+    @foreach (var (key, label) in Quick)
+    {
+        var on = _quick.Contains(key);
+        <button type="button" class="gms-chipbtn @(on ? "on" : null)" aria-pressed="@(on ? "true" : "false")" @onclick="() => ToggleQuick(key)">
+            @label @if (_counts.TryGetValue(key, out var n)) { <span class="gms-chipcount">@n</span> }
+        </button>
+    }
+</div>
+
+<AsyncContent T="PagedResult<PoListItem>" Key="@($"{_page}|{_q}|{_status}|{_customer}|{string.Join(',', _quick.Order())}")" Loader="LoadAsync" IsEmpty="r => r.TotalCount == 0">
+    <EmptyContent>
+        @if (_q is null && _status is null && _customer is null && _quick.Count == 0)
+        {
+            <EmptyState Icon="@(new Icons.Regular.Size48.DocumentText())" Title="Belum ada PO" ActionText="@(_user.HasPermission(Permissions.CustomerPO.Create) ? "Buat PO" : null)" ActionHref="/purchase-orders/new" />
+        }
+        else
+        {
+            <EmptyState Icon="@(new Icons.Regular.Size48.Search())" Title="Tidak ada PO untuk filter ini" ActionText="Reset filter" OnAction="Reset" />
+        }
+    </EmptyContent>
+    <ChildContent Context="result">
+        <table class="gms-table">
+            <caption class="gms-sr-only">Daftar Customer PO</caption>
+            <thead><tr><th scope="col">Kode PO</th><th scope="col">No. PO Customer</th><th scope="col">Customer</th><th scope="col">Tgl PO</th><th scope="col">Status</th><th scope="col">Progres (pcs)</th></tr></thead>
+            <tbody>
+                @foreach (var po in result.Items)
+                {
+                    <tr class="@(po.Status == PoStatus.Cancelled ? "gms-inactive" : null)">
+                        <th scope="row"><a href="/purchase-orders/@po.Id">@po.Code</a></th>
+                        <td>
+                            @if (string.IsNullOrEmpty(po.CustomerPoNumber))
+                            {
+                                <span class="gms-warn"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" /> Belum ada</span>
+                            }
+                            else { @po.CustomerPoNumber }
+                        </td>
+                        <td>@po.CustomerName</td>
+                        <td>@IdFormat.Date(po.PoDate)</td>
+                        <td><StatusChip Value="@po.Status" /> @if (po.HasLateLines) { <span class="gms-bad"><FluentIcon Value="@(new Icons.Regular.Size16.Clock())" Color="Color.Neutral" /> Terlambat</span> }</td>
+                        <td>
+                            <StackedProgress Total="po.TotalQty" Segments="@(new StackedProgress.Segment[] { new("Kirim", po.DeliveredQty, "success"), new("Alok", po.AllocatedQty, "info"), new("Prod", po.InProductionQty, "warning") })" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <PagerBar Page="result.Page" PageSize="result.PageSize" TotalCount="result.TotalCount" PageChanged="p => _page = p" />
+    </ChildContent>
+</AsyncContent>
+
+@code {
+    private static readonly (string Key, string Label)[] Quick =
+    [
+        ("terlambat", "Terlambat"), ("jatuhTempo7", "Jatuh tempo 7 hari"), ("poCustomerKosong", "PO Customer belum ada"), ("sisaRencana", "Sisa rencana > 0"),
+    ];
+
+    private IReadOnlyList<LookupItem> _customers = [];
+    private IReadOnlyDictionary<string, int> _counts = new Dictionary<string, int>();
+    private readonly HashSet<string> _quick = [];
+    private string? _q;
+    private PoStatus? _status;
+    private Guid? _customer;
+    private int _page = 1;
+    private int? _total;
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+
+    [SupplyParameterFromQuery(Name = "terlambat")] public bool? QTerlambat { get; set; }
+
+    [SupplyParameterFromQuery(Name = "jatuhTempo7")] public bool? QJatuhTempo7 { get; set; }
+
+    [SupplyParameterFromQuery(Name = "poCustomerKosong")] public bool? QPoCustomerKosong { get; set; }
+
+    [SupplyParameterFromQuery(Name = "sisaRencana")] public bool? QSisaRencana { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _user = (await Auth.GetAuthenticationStateAsync()).User;
+        await Errors.RunAsync(async () => _customers = await Customers.LookupAsync(null));
+    }
+
+    protected override void OnParametersSet()
+    {
+        // Parameter query bersama dengan Beranda: ?terlambat=true dst.
+        foreach (var (key, on) in new[] { ("terlambat", QTerlambat), ("jatuhTempo7", QJatuhTempo7), ("poCustomerKosong", QPoCustomerKosong), ("sisaRencana", QSisaRencana) })
+        {
+            if (on == true) { _quick.Add(key); }
+        }
+    }
+
+    private async Task<PagedResult<PoListItem>> LoadAsync(CancellationToken ct)
+    {
+        var query = new PoListQuery
+        {
+            Page = _page, Q = _q, Status = _status, CustomerId = _customer,
+            Terlambat = _quick.Contains("terlambat"), JatuhTempo7 = _quick.Contains("jatuhTempo7"),
+            PoCustomerKosong = _quick.Contains("poCustomerKosong"), SisaRencana = _quick.Contains("sisaRencana"),
+        };
+        var result = await Pos.ListAsync(query, ct);
+        _total = result.TotalCount;
+        _counts = await CountsAsync(ct);
+        await InvokeAsync(StateHasChanged);
+        return result;
+    }
+
+    /// <summary>Angka chip cepat dihitung server (satu panggilan per filter, hanya jumlah).</summary>
+    private async Task<IReadOnlyDictionary<string, int>> CountsAsync(CancellationToken ct) => new Dictionary<string, int>
+    {
+        ["terlambat"] = (await Pos.ListAsync(new PoListQuery { Terlambat = true, PageSize = 1 }, ct)).TotalCount,
+        ["jatuhTempo7"] = (await Pos.ListAsync(new PoListQuery { JatuhTempo7 = true, PageSize = 1 }, ct)).TotalCount,
+        ["poCustomerKosong"] = (await Pos.ListAsync(new PoListQuery { PoCustomerKosong = true, PageSize = 1 }, ct)).TotalCount,
+        ["sisaRencana"] = (await Pos.ListAsync(new PoListQuery { SisaRencana = true, PageSize = 1 }, ct)).TotalCount,
+    };
+
+    private void Apply(Action change) { change(); _page = 1; }
+
+    private void ToggleQuick(string key)
+    {
+        if (!_quick.Remove(key)) { _quick.Add(key); }
+        _page = 1;
+    }
+
+    private void Reset()
+    {
+        _q = null; _status = null; _customer = null; _quick.Clear(); _page = 1;
+    }
+}
