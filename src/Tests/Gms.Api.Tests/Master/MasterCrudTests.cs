@@ -124,10 +124,10 @@ public sealed class MasterCrudTests(ApiFixture fixture)
         var active = (await H.Api.GetAsync($"{Path(route)}?q={Uri.EscapeDataString(item.Name)}", H.AdminToken)).Ok().As<PagedResult<JsonElement>>();
         Assert.DoesNotContain(active.Items, i => i.GetProperty("id").GetGuid() == item.Id);
 
-        var all = (await H.Api.GetAsync($"{Path(route)}?q={Uri.EscapeDataString(item.Name)}&status=All", H.AdminToken)).Ok().As<PagedResult<JsonElement>>();
+        var all = (await H.Api.GetAsync($"{Path(route)}?q={Uri.EscapeDataString(item.Name)}&status=all", H.AdminToken)).Ok().As<PagedResult<JsonElement>>();
         Assert.Contains(all.Items, i => i.GetProperty("id").GetGuid() == item.Id);
 
-        var inactive = (await H.Api.GetAsync($"{Path(route)}?q={Uri.EscapeDataString(item.Name)}&status=Inactive", H.AdminToken)).Ok().As<PagedResult<JsonElement>>();
+        var inactive = (await H.Api.GetAsync($"{Path(route)}?q={Uri.EscapeDataString(item.Name)}&status=inactive", H.AdminToken)).Ok().As<PagedResult<JsonElement>>();
         Assert.Single(inactive.Items);
 
         var lookup = (await H.Api.GetAsync($"{Path(route)}/lookup?q={Uri.EscapeDataString(item.Code)}", H.AdminToken)).Ok().As<List<LookupItem>>();

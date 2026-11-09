@@ -52,14 +52,22 @@ public static class MasterEndpoints
         // Handler diambil dari RequestServices (bukan parameter lambda generik) karena RouteHandlerAnalyzer
         // ASP.NET Core mogok pada parameter bertipe generik.
         group.MapGet("", async (
-            int? page, int? pageSize, string? q, string? sort, ActiveFilter? status, bool? readyOnly,
+            int? page, int? pageSize, string? q, string? sort, string? status, bool? readyOnly,
             HttpContext http, CancellationToken ct) =>
         {
+            // Konvensi API (§4.2): status huruf kecil (active|inactive|all). Binding enum bawaan peka huruf besar/kecil (BUG-001),
+            // maka di-parse manual tanpa membedakan huruf.
+            ActiveFilter filter = ActiveFilter.Active;
+            if (!string.IsNullOrWhiteSpace(status) && !Enum.TryParse(status, ignoreCase: true, out filter) | !Enum.IsDefined(filter))
+            {
+                return Results.Problem(statusCode: StatusCodes.Status400BadRequest, title: "Nilai status tidak valid.", detail: "Gunakan active, inactive, atau all.");
+            }
+
             var handler = http.RequestServices.GetRequiredService<THandler>();
             var query = new FgListQuery
             {
                 Page = page ?? 1, PageSize = pageSize ?? 25, Q = q, Sort = sort,
-                Status = status ?? ActiveFilter.Active, ReadyOnly = readyOnly ?? false,
+                Status = filter, ReadyOnly = readyOnly ?? false,
             };
             return Results.Ok(await handler.ListAsync(query, ct));
         }).RequirePermission(view);

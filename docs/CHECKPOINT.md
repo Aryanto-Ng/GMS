@@ -26,12 +26,12 @@ AccessManagement → MasterData → CustomerPO → WorkOrder → ProductionOutpu
 - [x] **1. System Analyst:** FSD disetujui (Render Mode ditetapkan) untuk 8 modul.
 - [x] **2. UI/UX Designer:** Spesifikasi Vibe, Layout, & State UI (Loading/Error) selesai ditulis (9 modul + fondasi: `docs/Design/`).
 - [x] **3. Architect:** `src/Shared/` (DTOs), Skema DB, dan Mock API Contract selesai (9 modul). Implementasi mock = tugas Frontend (ADR-014).
-- [ ] **4. Backend Developer:** Minimal APIs, Handlers, Seeder, & xUnit selesai (per modul). **9 dari 9 modul selesai (2026-11-09), 504 tes integrasi lulus, 0 warning.** **DIBUKA KEMBALI oleh QA: BUG-001 (`docs/Bugs/BUG-001-MasterData-FilterStatus.md`).**
+- [x] **4. Backend Developer:** Minimal APIs, Handlers, Seeder, & xUnit selesai (per modul). **9 dari 9 modul selesai (2026-11-09), 504 tes integrasi lulus, 0 warning.** BUG-001 diperbaiki 2026-11-10 (filter `status` master tak peka huruf besar/kecil).
 - [x] **5. Frontend Developer:** Blazor WebApp (Fluent UI) & bUnit selesai (9 modul, mode Mock + klien Http; 429 tes bUnit/unit). **Fondasi + komponen bersama selesai (2026-11-09, 164 tes bUnit/unit lulus); halaman per modul belum.** Rincian: `docs/Frontend/README.md`.
   - [x] 5.0 Fondasi: BFF auth (cookie + token sesi), klien API + Problem Details, layout/navigasi per izin, halaman akun, komponen bersama.
   - [x] 5.1 AccessManagement (Pengguna, Role+matriks izin, Audit; 208 tes) · [x] 5.2 MasterData (10 entitas, FG bertab, impor CSV; 294 tes) · [x] 5.3 CustomerPO · [x] 5.4 WorkOrder · [x] 5.5 ProductionOutput · [x] 5.6 SerahTerimaStokFG · [x] 5.7 Pengiriman · [x] 5.8 PayrollBorongan · [x] 5.9 Beranda (429 tes)
 - [x] **6. Mobile Developer:** N/A — fase 1 input output hanya via PC (admin produksi), tidak butuh MAUI.
-- [ ] **7. QA Engineer:** E2E (Playwright) & Integration Test pass (per modul). **Sedang berjalan (2026-11-10):** proyek `src/Tests/Gms.E2E.Tests` (20 tes + 16 uji kontrak query terhadap tumpukan nyata); 17 lulus, 3 gagal = BUG-001. Menunggu perbaikan Backend lalu uji ulang.
+- [x] **7. QA Engineer:** E2E (Playwright) & Integration Test pass (per modul). **Sedang berjalan (2026-11-10):** proyek `src/Tests/Gms.E2E.Tests` (20 tes + 16 uji kontrak query terhadap tumpukan nyata); setelah BUG-001 diperbaiki: 36/36 E2E lulus, 504/504 tes API lulus, smoke seluruh halaman (termasuk Master & form PO) sehat.
 - [ ] **8. DevOps:** Dockerfile/Compose, CI/CD, Backup Script & Deployment selesai.
 
 &
@@ -84,3 +84,4 @@ AccessManagement → MasterData → CustomerPO → WorkOrder → ProductionOutpu
 > - [Architect] **Izin library:** user menetapkan PostgreSQL + EF Core standar (2026-11-08); provider `Npgsql.EntityFrameworkCore.PostgreSQL` diperlakukan termasuk dalam izin tersebut. Versi terpasang di CPM: EF Core 10.0.14, Npgsql EF 10.0.3, Identity EF 10.0.14, Fluent UI 4.14.5, PDFsharp-MigraDoc 6.2.4, ClosedXML 0.105.1 (+ tooling pengujian di atas).
 > - [Architect → DevOps] Repository tidak punya `.gitignore` sebelumnya; sudah dibuat. PostgreSQL membutuhkan ekstensi `citext` dan `btree_gist` (keduanya trusted extension; dibuat oleh migrasi awal, user DB perlu hak CREATE pada database). Font berlisensi terbuka harus disertakan untuk PDF di Linux/Docker. Backup: `pg_dump` terjadwal.
 > - [SA] Item belum final: Pengiriman Q6-Q8 (tata letak surat jalan), Customer PO Q6-Q7 (default berlaku).
+> - [Backend → QA] BUG-001 diperbaiki di `MasterEndpoints.cs` (parse `status` manual, ignoreCase, 400 jika tidak valid); tes API memakai `status=all/inactive` huruf kecil. [QA → DevOps] Uji ulang lulus; lanjut ke langkah 8.

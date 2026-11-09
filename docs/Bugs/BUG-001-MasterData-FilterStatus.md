@@ -32,3 +32,6 @@ Ikat `status` tanpa membedakan huruf besar/kecil (mis. parameter `string? status
 
 ## Catatan QA
 Halaman terdampak dikecualikan dari `SmokeE2ETests` (diberi komentar `BUG-001`) agar halaman lain tetap terverifikasi; kembalikan setelah perbaikan.
+
+## Resolusi (2026-11-10)
+Diperbaiki oleh Backend: parameter `string? status` di-parse `ignoreCase`; nilai tak valid → 400. Terverifikasi QA: API 504/504, E2E 36/36. **CLOSED.**

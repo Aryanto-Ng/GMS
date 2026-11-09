@@ -60,7 +60,8 @@ public sealed class SmokeE2ETests(StackFixture stack)
         string[] paths =
         [
             "/", "/admin/users", "/admin/roles", "/admin/audit",
-            // BUG-001: daftar master (/master/{entitas}) dan form yang memuat daftar master gagal 400 (status huruf kecil) — dikecualikan sampai diperbaiki.
+            "/master/uoms", "/master/material-categories", "/master/materials", "/master/sizes", "/master/colors", "/master/customers",
+            "/master/processes", "/master/vendors", "/master/workers", "/master/fgs", "/purchase-orders/new", $"/purchase-orders/{po.Id}/edit",
             "/master/fgs/new", $"/master/fgs/{data.FgId}", "/master/materials/import", "/master/workers/import", "/master/fgs/import",
             "/purchase-orders", $"/purchase-orders/{po.Id}",
             "/work-orders", $"/work-orders/new?poId={po.Id}", $"/work-orders/{wo.Id}",
