@@ -1,0 +1,108 @@
+@page "/payroll"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.Payroll.View)]
+@inject IPayrollApi Payroll
+@inject ApiErrorHandler Errors
+@inject AuthenticationStateProvider Auth
+@inject NavigationManager Nav
+@inject IToastService Toasts
+
+<PageTitle>Periode Gaji · GMS</PageTitle>
+
+<PageHeader Title="Periode Gaji">
+    <Actions>
+        @if (_user.HasPermission(Permissions.Payroll.CreatePeriod)) { <FluentButton Appearance="Appearance.Accent" Disabled="@(_defaults?.HasOpenPeriod == true)" Title="@(_defaults?.HasOpenPeriod == true ? "Sudah ada periode Open. Tutup lebih dulu." : null)" OnClick="OpenCreate">Buat Periode</FluentButton> }
+    </Actions>
+</PageHeader>
+
+<AsyncContent T="IReadOnlyList<PayrollPeriodListItem>" Key="_defaults?.HasOpenPeriod" Loader="LoadAsync" IsEmpty="r => r.Count == 0">
+    <EmptyContent>
+        <EmptyState Icon="@(new Icons.Regular.Size48.Box())" Title="Belum ada periode gaji" ActionText="@(_user.HasPermission(Permissions.Payroll.CreatePeriod) ? "Buat Periode" : null)" OnAction="OpenCreate" />
+    </EmptyContent>
+    <ChildContent Context="periods">
+        @if (_defaults is { HasOpenPeriod: false, StartDate: { } next } && _user.HasPermission(Permissions.Payroll.CreatePeriod))
+        {
+            <div class="gms-banner info" role="status"><div class="gms-banner-body"><p>Belum ada periode terbuka. Mulai periode berikutnya mulai @IdFormat.Date(next).</p></div></div>
+        }
+
+        <table class="gms-table">
+            <caption class="gms-sr-only">Daftar periode gaji</caption>
+            <thead><tr><th scope="col">Kode</th><th scope="col">Rentang</th><th scope="col">Status</th><th scope="col" class="num">Pekerja</th><th scope="col" class="num">Total (Rp)</th><th scope="col">Ditutup</th></tr></thead>
+            <tbody>
+                @foreach (var p in periods)
+                {
+                    <tr>
+                        <th scope="row"><a href="/payroll/@p.Id">@p.Code</a></th>
+                        <td>@IdFormat.Date(p.StartDate) – @IdFormat.Date(p.EndDate)</td>
+                        <td><StatusChip Value="@p.Status" /> @if (p.IsProvisional) { <span class="gms-warn">Belum final</span> }</td>
+                        <td class="num">@p.WorkerCount</td>
+                        <td class="num">@IdFormat.Number(p.TotalPaid)@(p.IsProvisional ? " *" : string.Empty)</td>
+                        <td>@(p.ClosedAt is null ? "–" : $"{IdFormat.DateTime(p.ClosedAt)} oleh {p.ClosedByName}")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p class="gms-note">* sementara — BELUM FINAL</p>
+    </ChildContent>
+</AsyncContent>
+
+<ReasonDialog Open="_creating" OpenChanged="o => _creating = o" ShowReason="false" Danger="false" ConfirmText="Buat Periode" Title="Buat Periode Gaji"
+              CanConfirm="@(DateOnly.TryParseExact(_end, "yyyy-MM-dd", out _) && (_defaults?.StartLocked == true || DateOnly.TryParseExact(_start, "yyyy-MM-dd", out _)))" OnConfirm="CreateAsync">
+    <div class="gms-form">
+        <TextField Label="Tanggal Mulai" Type="date" Value="@_start" ValueChanged="v => _start = v" Disabled="@(_defaults?.StartLocked == true)"
+                   Hint="@(_defaults?.StartLocked == true ? "Terkunci — hari setelah periode sebelumnya." : _defaults?.OldestOutputDate is { } oldest ? $"Output tertua: {IdFormat.Date(oldest)}" : null)" />
+        <TextField Label="Tanggal Selesai" Type="date" Value="@_end" ValueChanged="v => _end = v" Required="true" />
+        <div class="gms-inline">
+            <FluentButton Appearance="Appearance.Lightweight" OnClick="() => Shortcut(7)">7 hari</FluentButton>
+            <FluentButton Appearance="Appearance.Lightweight" OnClick="() => Shortcut(14)">14 hari</FluentButton>
+            <FluentButton Appearance="Appearance.Lightweight" OnClick="MonthEnd">Akhir bulan</FluentButton>
+        </div>
+        <TextField Label="Catatan" Value="@_notes" ValueChanged="v => _notes = v" MaxLength="250" />
+    </div>
+</ReasonDialog>
+
+@code {
+    private NextPeriodDefaultsDto? _defaults;
+    private bool _creating;
+    private string? _start, _end, _notes;
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _user = (await Auth.GetAuthenticationStateAsync()).User;
+        await LoadDefaultsAsync();
+    }
+
+    private async Task LoadDefaultsAsync()
+    {
+        if (_user.HasPermission(Permissions.Payroll.CreatePeriod)) { await Errors.RunAsync(async () => _defaults = await Payroll.GetNextPeriodDefaultsAsync()); }
+    }
+
+    private async Task<IReadOnlyList<PayrollPeriodListItem>> LoadAsync(CancellationToken ct) => await Payroll.ListPeriodsAsync(ct);
+
+    private async Task OpenCreate()
+    {
+        await LoadDefaultsAsync();
+        _start = _defaults?.StartDate?.ToString("yyyy-MM-dd");
+        _end = null;
+        _notes = null;
+        _creating = true;
+    }
+
+    private void Shortcut(int days)
+    {
+        if (DateOnly.TryParseExact(_start, "yyyy-MM-dd", out var s)) { _end = s.AddDays(days - 1).ToString("yyyy-MM-dd"); }
+    }
+
+    private void MonthEnd()
+    {
+        if (DateOnly.TryParseExact(_start, "yyyy-MM-dd", out var s)) { _end = new DateOnly(s.Year, s.Month, DateTime.DaysInMonth(s.Year, s.Month)).ToString("yyyy-MM-dd"); }
+    }
+
+    private async Task CreateAsync(string _)
+    {
+        DateOnly? start = DateOnly.TryParseExact(_start, "yyyy-MM-dd", out var s) ? s : null;
+        var created = await Payroll.CreatePeriodAsync(new SavePeriodRequest(start, DateOnly.ParseExact(_end!, "yyyy-MM-dd"), string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim()));
+        Toasts.ShowSuccess($"Periode {created.Code} dibuat.");
+        Nav.NavigateTo($"/payroll/{created.Id}");
+    }
+}

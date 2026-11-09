@@ -1,0 +1,292 @@
+@page "/payroll/{Id:guid}"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.Payroll.View)]
+@inject IPayrollApi Payroll
+@inject FileDownloader Downloader
+@inject ApiErrorHandler Errors
+@inject AuthenticationStateProvider Auth
+@inject IToastService Toasts
+
+<PageTitle>@(_period?.Code ?? "Periode Gaji") · GMS</PageTitle>
+
+@if (_loadProblem is not null)
+{
+    var view = ProblemPresenter.Describe(_loadProblem);
+    <PageHeader Title="Periode Gaji" Breadcrumbs="@(new[] { new PageHeader.Crumb("Periode Gaji", "/payroll"), new PageHeader.Crumb("…") })" />
+    <ErrorState Title="@view.Title" Detail="@view.Detail" TraceId="@view.TraceId" OnRetry="@(view.Kind is ProblemKind.NotFound or ProblemKind.Forbidden ? default : EventCallback.Factory.Create(this, LoadAsync))" />
+}
+else if (_period is null)
+{
+    <SkeletonRows Rows="6" Columns="4" Label="Memuat periode" />
+}
+else
+{
+    <PageHeader Title="@_period.Code" Subtitle="@($"{IdFormat.Date(_period.StartDate)} – {IdFormat.Date(_period.EndDate)} · {_period.WorkerCount} pekerja · Total Rp {IdFormat.Number(_period.TotalPaid)}{(_period.IsProvisional ? "*" : string.Empty)}")"
+                Breadcrumbs="@(new[] { new PageHeader.Crumb("Periode Gaji", "/payroll"), new PageHeader.Crumb(_period.Code) })">
+        <Chips><StatusChip Value="@_period.Status" /> @if (_period.IsProvisional) { <span class="gms-warn"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" /> BELUM FINAL</span> }</Chips>
+        <Actions>
+            <FluentButton Appearance="Appearance.Neutral" OnClick="RefreshAsync">Segarkan</FluentButton>
+            @if (_user.HasPermission(Permissions.Payroll.Export))
+            {
+                <FluentButton Appearance="Appearance.Neutral" OnClick="() => ExportAsync(PayrollExportFormat.Xlsx)">Excel (.xlsx)</FluentButton>
+                <FluentButton Appearance="Appearance.Neutral" OnClick="() => ExportAsync(PayrollExportFormat.CsvSummary)">CSV Ringkasan</FluentButton>
+                <FluentButton Appearance="Appearance.Neutral" OnClick="() => ExportAsync(PayrollExportFormat.CsvDaily)">CSV Harian</FluentButton>
+            }
+
+            @if (_user.HasPermission(Permissions.Payroll.PrintSlip)) { <FluentButton Appearance="Appearance.Neutral" OnClick="() => _slipOpen = true">Slip Gaji</FluentButton> }
+            @if (_period.CanEdit && _user.HasPermission(Permissions.Payroll.CreatePeriod)) { <FluentButton Appearance="Appearance.Neutral" OnClick="StartEdit">Ubah</FluentButton> }
+            @if (_period.CanClose && _user.HasPermission(Permissions.Payroll.ClosePeriod)) { <FluentButton Appearance="Appearance.Accent" OnClick="StartClose">Tutup Periode</FluentButton> }
+        </Actions>
+    </PageHeader>
+
+    @if (_actionProblem is not null) { <ProblemBanner Problem="_actionProblem" /> }
+    @if (_period.IsProvisional) { <div class="gms-banner warning" role="status"><div class="gms-banner-body"><p>Angka bersifat sementara dan berubah mengikuti input produksi.</p></div></div> }
+    else { <div class="gms-banner info" role="status"><div class="gms-banner-body"><p>Periode ditutup pada @IdFormat.DateTime(_period.ClosedAt) oleh @_period.ClosedByName. Angka final.</p></div></div> }
+
+    <div role="tablist" aria-label="Bagian periode" class="gms-tabs">
+        @foreach (var (tab, label) in Tabs)
+        {
+            <button type="button" role="tab" aria-selected="@(_tab == tab ? "true" : "false")" class="@(_tab == tab ? "active" : null)" @onclick="() => _tab = tab">@label</button>
+        }
+    </div>
+
+    @switch (_tab)
+    {
+        case Tab.Summary:
+            <div class="gms-toolbar"><div class="gms-field"><label for="pay-q">Cari pekerja</label><input id="pay-q" type="search" value="@_q" @onchange="e => _q = e.Value?.ToString()" /></div></div>
+            <AsyncContent T="PayrollSummaryDto" Key="@($"{_refresh}|{_q}")" Loader="ct => Payroll.GetSummaryAsync(Id, _q, ct)" IsEmpty="s => s.WorkerCount == 0">
+                <EmptyContent><EmptyState Title="Belum ada output pada periode ini" /></EmptyContent>
+                <ChildContent Context="s">
+                    <table class="gms-table">
+                        <caption class="gms-sr-only">Ringkasan upah per pekerja</caption>
+                        <thead><tr><th scope="col">Pekerja</th><th scope="col" class="num">Total Qty</th><th scope="col" class="num">Jumlah (sebelum bulat)</th><th scope="col" class="num">Dibayarkan (Rp)</th></tr></thead>
+                        <tbody>
+                            @foreach (var r in s.Rows)
+                            {
+                                <tr>
+                                    <th scope="row"><a href="#" @onclick="() => ShowWorker(r.WorkerId)" @onclick:preventDefault>@r.WorkerCode @r.WorkerName</a>
+                                        @if (r.IsNegative) { <span class="gms-bad"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" /> total negatif</span> }</th>
+                                    <td class="num">@IdFormat.Qty(r.TotalQty)</td><td class="num">@IdFormat.Number(r.SumBeforeRounding, 5)</td>
+                                    <td class="num @(r.IsNegative ? "gms-negative" : null)">@IdFormat.Number(r.Paid)</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot><tr><th scope="row" colspan="3">Total periode</th><td class="num"><strong>@IdFormat.Number(s.TotalPaid)</strong></td></tr></tfoot>
+                    </table>
+                </ChildContent>
+            </AsyncContent>
+            break;
+        case Tab.Detail:
+            @if (_worker is null) { <EmptyState Title="Pilih pekerja" Description="Klik nama pekerja pada tab Ringkasan." /> }
+            else
+            {
+                <AsyncContent T="PayrollWorkerDetailDto" Key="@($"{_worker}|{_refresh}")" Loader="ct => Payroll.GetWorkerDetailAsync(Id, _worker.Value, ct)">
+                    <ChildContent Context="d">
+                        <h2>@d.WorkerCode @d.WorkerName — Dibayarkan Rp @IdFormat.Number(d.Paid)</h2>
+                        <div class="gms-inline">
+                            <label><input type="radio" name="detail-view" checked="@(!_byDay)" @onchange="() => _byDay = false" /> Per WO/Proses/Size</label>
+                            <label><input type="radio" name="detail-view" checked="@_byDay" @onchange="() => _byDay = true" /> Per Hari</label>
+                        </div>
+                        @if (!_byDay)
+                        {
+                            @foreach (var g in d.ByWo)
+                            {
+                                <h3>@g.WoCode · @g.ProcessName — Rp @IdFormat.Number(g.Subtotal)</h3>
+                                <table class="gms-table compact">
+                                    <thead><tr><th scope="col">Size</th><th scope="col" class="num">Qty</th><th scope="col" class="num">Tarif</th><th scope="col" class="num">Subtotal</th></tr></thead>
+                                    <tbody>@foreach (var l in g.Lines) { <tr><th scope="row">@l.SizeCode</th><td class="num">@IdFormat.Qty(l.Qty)</td><td class="num">@IdFormat.Rate(l.Rate)</td><td class="num">@IdFormat.Number(l.Subtotal, 5)</td></tr> }</tbody>
+                                </table>
+                            }
+
+                            @foreach (var a in d.Adjustments) { <p class="gms-note">Penyesuaian: @a.ProcessName · @a.SizeCode · @(a.Qty > 0 ? "+" : string.Empty)@a.Qty · Tgl asal @IdFormat.Date(a.OriginalDate) · "@a.Reason" · @IdFormat.Number(a.Subtotal, 5)</p> }
+                        }
+                        else
+                        {
+                            @foreach (var day in d.ByDay)
+                            {
+                                <h3>@IdFormat.Date(day.WorkDate) — subtotal Rp @IdFormat.Number(day.Subtotal, 5)</h3>
+                                <ul>@foreach (var r in day.Rows) { <li>@r.WoCode @r.ProcessName @r.SizeCode @r.Qty × @IdFormat.Number(r.Rate, 5) = @IdFormat.Number(r.Subtotal, 5)</li> }</ul>
+                            }
+                        }
+                    </ChildContent>
+                </AsyncContent>
+            }
+            break;
+        case Tab.Daily:
+            <AsyncContent T="PayrollDailyResult" Key="@($"{_refresh}|{_dailyPage}")" Loader="ct => Payroll.GetDailyAsync(Id, new PayrollDailyQuery { Page = _dailyPage }, ct)" IsEmpty="r => r.Rows.TotalCount == 0">
+                <EmptyContent><EmptyState Title="Belum ada output pada periode ini" /></EmptyContent>
+                <ChildContent Context="r">
+                    <table class="gms-table compact">
+                        <caption class="gms-sr-only">Rincian harian</caption>
+                        <thead><tr><th scope="col">Tanggal</th><th scope="col">Pekerja</th><th scope="col">WO</th><th scope="col">Proses</th><th scope="col">Size</th><th scope="col">Jenis</th><th scope="col" class="num">Qty</th><th scope="col" class="num">Tarif</th><th scope="col" class="num">Subtotal</th></tr></thead>
+                        <tbody>@foreach (var x in r.Rows.Items) { <tr><td>@IdFormat.Date(x.WorkDate)</td><td>@x.WorkerName</td><td>@x.WoCode</td><td>@x.ProcessName</td><td>@x.SizeCode</td><td>@(x.Kind == OutputKind.Output ? "Output" : "Penyesuaian")</td><td class="num">@x.Qty</td><td class="num">@IdFormat.Rate(x.Rate)</td><td class="num">@IdFormat.Number(x.Subtotal, 5)</td></tr> }</tbody>
+                        <tfoot><tr><th scope="row" colspan="8">Subtotal</th><td class="num"><strong>@IdFormat.Number(r.Subtotal, 5)</strong></td></tr></tfoot>
+                    </table>
+                    <PagerBar Page="r.Rows.Page" PageSize="r.Rows.PageSize" TotalCount="r.Rows.TotalCount" PageChanged="p => _dailyPage = p" />
+                </ChildContent>
+            </AsyncContent>
+            break;
+        case Tab.Matrix:
+            <div class="gms-inline" role="group" aria-label="Tampilan sel">
+                @foreach (var (mode, label) in new[] { (0, "Qty"), (1, "Rupiah"), (2, "Keduanya") }) { <label><input type="radio" name="matrix-mode" checked="@(_mode == mode)" @onchange="() => _mode = mode" /> @label</label> }
+            </div>
+            <AsyncContent T="PayrollMatrixDto" Key="_refresh" Loader="ct => Payroll.GetMatrixAsync(Id, ct)" IsEmpty="m => m.Rows.Count == 0">
+                <EmptyContent><EmptyState Title="Belum ada output pada periode ini" /></EmptyContent>
+                <ChildContent Context="m">
+                    <div class="gms-matrix-wrap">
+                        <table class="gms-table compact gms-daymatrix">
+                            <caption class="gms-sr-only">Matriks harian</caption>
+                            <thead><tr><th scope="col">Pekerja</th>@foreach (var d in m.Dates) { <th scope="col" class="num">@d.ToString("dd/MM")</th> }<th scope="col" class="num">Total</th></tr></thead>
+                            <tbody>
+                                @foreach (var row in m.Rows)
+                                {
+                                    <tr>
+                                        <th scope="row">@row.WorkerCode @row.WorkerName</th>
+                                        @foreach (var d in m.Dates)
+                                        {
+                                            var cell = row.Cells.FirstOrDefault(c => c.Date == d);
+                                            <td class="num">@(cell is null ? "·" : Cell(cell))</td>
+                                        }
+                                        <td class="num">@IdFormat.Qty(row.TotalQty) pcs · Rp @IdFormat.Number(row.TotalAmount)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </ChildContent>
+            </AsyncContent>
+            break;
+        default:
+            <AsyncContent T="IReadOnlyList<PayrollDailyRow>" Key="_refresh" Loader="ct => Payroll.GetAdjustmentsAsync(Id, ct)" IsEmpty="r => r.Count == 0">
+                <EmptyContent><EmptyState Title="Tidak ada penyesuaian pada periode ini" /></EmptyContent>
+                <ChildContent Context="rows">
+                    <table class="gms-table compact">
+                        <caption class="gms-sr-only">Penyesuaian</caption>
+                        <thead><tr><th scope="col">Pekerja</th><th scope="col">WO</th><th scope="col">Proses</th><th scope="col">Size</th><th scope="col" class="num">Qty (±)</th><th scope="col">Tgl Asal</th><th scope="col">Alasan</th><th scope="col" class="num">Subtotal</th></tr></thead>
+                        <tbody>@foreach (var a in rows) { <tr><th scope="row">@a.WorkerName</th><td>@a.WoCode</td><td>@a.ProcessName</td><td>@a.SizeCode</td><td class="num @(a.Qty < 0 ? "gms-negative" : null)">@(a.Qty > 0 ? "+" : string.Empty)@a.Qty</td><td>@IdFormat.Date(a.OriginalDate)</td><td>@a.Reason</td><td class="num">@IdFormat.Number(a.Subtotal, 5)</td></tr> }</tbody>
+                    </table>
+                </ChildContent>
+            </AsyncContent>
+            break;
+    }
+}
+
+<ReasonDialog Open="_editing" OpenChanged="o => _editing = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="Ubah periode" OnConfirm="SaveEditAsync">
+    <div class="gms-form">
+        <TextField Label="Tanggal Selesai" Type="date" @bind-Value="_eEnd" Required="true" />
+        <TextField Label="Catatan" @bind-Value="_eNotes" MaxLength="250" />
+    </div>
+</ReasonDialog>
+
+<ReasonDialog Open="_closing" OpenChanged="o => _closing = o" ShowReason="false" Danger="true" ConfirmText="Tutup Periode" Title="@($"Tutup periode {_period?.Code}?")"
+              CanConfirm="@(_closePreview is not null && string.Equals(_confirm?.Trim(), _closePreview.ConfirmationCode, StringComparison.Ordinal))" OnConfirm="CloseAsync">
+    @if (_closePreview is not null)
+    {
+        <p>Pekerja <strong>@_closePreview.WorkerCount</strong> · Total <strong>Rp @IdFormat.Number(_closePreview.TotalPaid)</strong></p>
+        @if (_closePreview.NegativeWorkers.Count > 0) { <p class="gms-warn" role="status"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" /> @_closePreview.NegativeWorkers.Count pekerja bertotal negatif (@string.Join(", ", _closePreview.NegativeWorkers.Select(w => w.WorkerName)))</p> }
+        @if (_closePreview.EndDateInFuture) { <p class="gms-warn" role="status"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" /> Tanggal selesai periode di masa depan.</p> }
+        <p class="gms-note"><FluentIcon Value="@(new Icons.Regular.Size16.Info())" Color="Color.Neutral" /> Penutupan PERMANEN. Input produksi pada tanggal ini akan terkunci; koreksi dilakukan lewat Penyesuaian pada periode berikutnya.</p>
+        <TextField Label="Ketik kode periode untuk konfirmasi" Value="@_confirm" ValueChanged="v => _confirm = v" MaxLength="40" Hint="@_closePreview.ConfirmationCode" />
+    }
+</ReasonDialog>
+
+<ReasonDialog Open="_slipOpen" OpenChanged="o => _slipOpen = o" ShowReason="false" Danger="false" ConfirmText="Buat PDF" Title="Slip Gaji PDF" OnConfirm="SlipAsync">
+    <div class="gms-form">
+        <label><input type="radio" name="slip-scope" checked="@(!_slipOne)" @onchange="() => _slipOne = false" /> Semua pekerja (1 berkas)</label>
+        <label><input type="radio" name="slip-scope" checked="@_slipOne" @onchange="() => _slipOne = true" /> Satu pekerja</label>
+        @if (_slipOne) { <LookupSelect Label="Pekerja" Items="_slipWorkers" @bind-Value="_slipWorker" ShowCode="true" /> }
+        <label><input type="checkbox" checked="@_slipDaily" @onchange="e => _slipDaily = (bool)e.Value!" /> Sertakan rincian harian</label>
+    </div>
+</ReasonDialog>
+
+@code {
+    private enum Tab { Summary, Detail, Daily, Matrix, Adjust }
+
+    [Parameter] public Guid Id { get; set; }
+
+    private PayrollPeriodDto? _period;
+    private GmsProblemDetails? _loadProblem, _actionProblem;
+    private ClosePreviewDto? _closePreview;
+    private IReadOnlyList<LookupItem> _slipWorkers = [];
+    private Tab _tab = Tab.Summary;
+    private Guid? _worker, _slipWorker;
+    private string? _q, _eEnd, _eNotes, _confirm;
+    private bool _byDay, _editing, _closing, _slipOpen, _slipOne, _slipDaily;
+    private int _refresh, _mode, _dailyPage = 1;
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+
+    private IEnumerable<(Tab, string)> Tabs => [(Tab.Summary, "Ringkasan"), (Tab.Detail, "Rincian"), (Tab.Daily, "Rincian Harian"), (Tab.Matrix, "Matriks Harian"), (Tab.Adjust, "Penyesuaian")];
+
+    private string Cell(PayrollMatrixCell c) => _mode switch
+    {
+        0 => IdFormat.Qty(c.Qty),
+        1 => IdFormat.Number(c.Amount),
+        _ => $"{IdFormat.Qty(c.Qty)} · {IdFormat.Number(c.Amount)}",
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _user = (await Auth.GetAuthenticationStateAsync()).User;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync() => _loadProblem = await Errors.RunAsync(async () => _period = await Payroll.GetPeriodAsync(Id));
+
+    private async Task RefreshAsync()
+    {
+        _refresh++;
+        await LoadAsync();
+    }
+
+    private void ShowWorker(Guid workerId)
+    {
+        _worker = workerId;
+        _tab = Tab.Detail;
+    }
+
+    private async Task ExportAsync(PayrollExportFormat format) =>
+        _actionProblem = await Errors.RunAsync(async () => await Downloader.SaveAsync(await Payroll.ExportAsync(Id, format)));
+
+    private void StartEdit()
+    {
+        _eEnd = _period!.EndDate.ToString("yyyy-MM-dd");
+        _eNotes = _period.Notes;
+        _editing = true;
+    }
+
+    private async Task SaveEditAsync(string _)
+    {
+        _period = await Payroll.UpdatePeriodAsync(Id, new SavePeriodRequest(null, DateOnly.ParseExact(_eEnd!, "yyyy-MM-dd"), string.IsNullOrWhiteSpace(_eNotes) ? null : _eNotes.Trim(), _period!.RowVersion));
+        _refresh++;
+        Toasts.ShowSuccess("Periode disimpan.");
+    }
+
+    private async Task StartClose()
+    {
+        _confirm = null;
+        _closePreview = null;
+        _actionProblem = await Errors.RunAsync(async () => _closePreview = await Payroll.PreviewClosePeriodAsync(Id));
+        if (_closePreview is not null) { _closing = true; }
+    }
+
+    private async Task CloseAsync(string _)
+    {
+        _period = await Payroll.ClosePeriodAsync(Id, new ClosePeriodRequest(_confirm!.Trim(), _period!.RowVersion));
+        _refresh++;
+        Toasts.ShowSuccess("Periode ditutup.");
+    }
+
+    private async Task SlipAsync(string _)
+    {
+        if (_slipOne && _slipWorker is null) { return; }
+        await Downloader.SaveAsync(await Payroll.GetSlipsAsync(Id, _slipOne ? _slipWorker : null, _slipDaily));
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _slipWorkers.Count == 0 && _period is not null)
+        {
+            var summary = await Errors.RunAsync(async () => _slipWorkers = (await Payroll.GetSummaryAsync(Id, null)).Rows.Select(r => new LookupItem(r.WorkerId, r.WorkerCode, r.WorkerName)).ToList());
+            if (summary is null) { StateHasChanged(); }
+        }
+    }
+}

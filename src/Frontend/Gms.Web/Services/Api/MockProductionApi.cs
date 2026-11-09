@@ -521,6 +521,16 @@ public sealed class MockProductionApi : IProductionApi
         }
     }
 
+    /// <summary>Sumber upah: entri Output/Penyesuaian aktif per baris WO (Payroll tiruan).</summary>
+    public IReadOnlyList<WageSource> WageSources()
+    {
+        lock (_gate)
+        {
+            return _entries.Where(e => e.Status == DocStatus.Active && e.Kind is EntryKind.Output or EntryKind.Adjustment && e.WorkerId is not null)
+                .SelectMany(e => e.Lines.Select(l => new WageSource(e.Id, e.Date, e.WorkerId!.Value, e.WoId, e.Seq, l.Key, e.Kind == EntryKind.Output ? OutputKind.Output : OutputKind.Adjustment, l.Value, e.OriginalDate, e.Reason))).ToList();
+        }
+    }
+
     /// <summary>Total output aktif (Internal) langkah terakhir per baris WO, untuk modul Serah Terima.</summary>
     public int LastStepOutput(Guid woId, Guid lineId)
     {
@@ -531,3 +541,6 @@ public sealed class MockProductionApi : IProductionApi
         }
     }
 }
+
+/// <summary>Satu baris sumber upah (entri × baris WO).</summary>
+public sealed record WageSource(Guid EntryId, DateOnly Date, Guid WorkerId, Guid WoId, int Seq, Guid WoLineId, OutputKind Kind, int Qty, DateOnly? OriginalDate, string? Reason);

@@ -85,6 +85,17 @@ public sealed class MockWoApi : IWorkOrdersApi
         }
     }
 
+    /// <summary>Tarif snapshot per langkah+size (Payroll memakai tarif snapshot WO).</summary>
+    public decimal? RateFor(Guid woId, int seq, Guid sizeId)
+    {
+        lock (_gate)
+        {
+            var wo = Find(woId);
+            var step = wo.Routing.FirstOrDefault(s => s.Seq == seq);
+            return step is not null && wo.Tariffs.TryGetValue((step.ProcessId, sizeId), out var rate) ? rate : null;
+        }
+    }
+
     public IReadOnlyList<WoListItem> ActiveForOutput()
     {
         lock (_gate) { return _wos.Where(w => w.Status is WoStatus.Released or WoStatus.InProgress).Select(ListItem).ToList(); }

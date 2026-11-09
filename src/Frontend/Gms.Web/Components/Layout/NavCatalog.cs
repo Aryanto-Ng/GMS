@@ -39,7 +39,7 @@ public static class NavCatalog
         ]),
         new("Penggajian",
         [
-            new("Periode Gaji", "/payroll", Permissions.Payroll.View, I<Icons.Regular.Size20.Money>()),
+            new("Periode Gaji", "/payroll", Permissions.Payroll.View, I<Icons.Regular.Size20.Money>(), Enabled: true),
         ]),
         new("Master Data",
         [
