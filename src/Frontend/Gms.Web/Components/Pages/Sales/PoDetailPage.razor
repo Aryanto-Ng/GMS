@@ -26,6 +26,7 @@ else
             @if (Can(PoActions.Edit, Permissions.CustomerPO.Edit)) { <FluentAnchor Href="@($"/purchase-orders/{_po.Id}/edit")" Appearance="Appearance.Neutral">Ubah</FluentAnchor> }
             @if (Can(PoActions.Confirm, Permissions.CustomerPO.Confirm)) { <FluentButton Appearance="Appearance.Accent" OnClick="() => _dialog = Dialog.Confirm">Konfirmasi</FluentButton> }
             @if (Can(PoActions.CreateWorkOrder, Permissions.WorkOrder.Create)) { <FluentAnchor Href="@($"/work-orders/new?poId={_po.Id}")" Appearance="Appearance.Neutral">Buat WO</FluentAnchor> }
+            @if (Can(PoActions.CreateDelivery, Permissions.Pengiriman.Create)) { <FluentAnchor Href="@($"/deliveries/new?poId={_po.Id}")" Appearance="Appearance.Neutral">Buat Pengiriman</FluentAnchor> }
             @if (Can(PoActions.Cancel, Permissions.CustomerPO.Cancel)) { <FluentButton Appearance="Appearance.Neutral" OnClick="() => _dialog = Dialog.Cancel">Batalkan</FluentButton> }
         </Actions>
     </PageHeader>

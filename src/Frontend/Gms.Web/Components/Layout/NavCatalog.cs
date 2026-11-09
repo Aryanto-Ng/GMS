@@ -23,7 +23,7 @@ public static class NavCatalog
         [
             new("Customer PO", "/purchase-orders", Permissions.CustomerPO.View, I<Icons.Regular.Size20.DocumentText>(), Enabled: true),
             new("Work Order", "/work-orders", Permissions.WorkOrder.View, I<Icons.Regular.Size20.ClipboardTaskListLtr>(), Enabled: true),
-            new("Pengiriman", "/deliveries", Permissions.Pengiriman.View, I<Icons.Regular.Size20.VehicleTruckProfile>()),
+            new("Pengiriman", "/deliveries", Permissions.Pengiriman.View, I<Icons.Regular.Size20.VehicleTruckProfile>(), Enabled: true),
         ]),
         new("Gudang FG",
         [

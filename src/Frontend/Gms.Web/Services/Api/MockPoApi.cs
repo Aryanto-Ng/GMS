@@ -367,6 +367,7 @@ public sealed class MockPoApi : IPurchaseOrdersApi
             l.Allocated += deltaAllocated;
             if (po.Status == PoStatus.Confirmed && MinAllowed(l) > 0) { po.Status = PoStatus.InProgress; }
             if (po.Status == PoStatus.InProgress && po.Lines.All(x => x.Delivered >= x.Qty)) { po.Status = PoStatus.Completed; }
+            else if (po.Status == PoStatus.Completed && po.Lines.Any(x => x.Delivered < x.Qty)) { po.Status = PoStatus.InProgress; }
             po.Version++;
         }
     }

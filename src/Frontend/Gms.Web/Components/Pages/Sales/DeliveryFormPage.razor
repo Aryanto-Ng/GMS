@@ -1,0 +1,170 @@
+@page "/deliveries/new"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.Pengiriman.Create)]
+@inject IDeliveriesApi Deliveries
+@inject IPurchaseOrdersApi Pos
+@inject ApiErrorHandler Errors
+@inject AuthenticationStateProvider Auth
+@inject NavigationManager Nav
+@inject IToastService Toasts
+
+<PageTitle>Buat Surat Jalan · GMS</PageTitle>
+<UnsavedChangesGuard HasChanges="_dirty && !_saved" />
+
+<PageHeader Title="Buat Surat Jalan" Subtitle="Kode: otomatis (SJ-YYYYMM-NNNN)" Breadcrumbs="@(new[] { new PageHeader.Crumb("Pengiriman", "/deliveries"), new PageHeader.Crumb("Baru") })" />
+
+<FormSummary Errors="_problem?.Errors" />
+@if (_problem is not null && _problem.Errors is null) { <ProblemBanner Problem="_problem" OnReload="LoadContextAsync" /> }
+
+<form @onsubmit="SaveAsync" @onsubmit:preventDefault novalidate>
+    <section class="gms-card gms-form">
+        <LookupSelect Label="PO (Confirmed/In Progress)" Items="_poItems" Value="_poId" ValueChanged="OnPoChangedAsync" Required="true" ShowCode="true" />
+        @if (_ctx is not null) { <p class="gms-note">No. PO Customer: @(_ctx.CustomerPoNumber ?? "—") · @_ctx.CustomerName</p> }
+        <TextField Label="Tanggal Kirim" Type="date" Value="@_date" ValueChanged="v => { _date = v; _dirty = true; }" Required="true" />
+        <TextField Label="Penerima" Value="@_recipient" ValueChanged="v => { _recipient = v; _dirty = true; }" MaxLength="100" />
+        <TextField Label="Kendaraan/No. Polisi" Value="@_vehicle" ValueChanged="v => { _vehicle = v; _dirty = true; }" MaxLength="30" />
+        <TextField Label="Sopir" Value="@_driver" ValueChanged="v => { _driver = v; _dirty = true; }" MaxLength="100" />
+        <TextField Label="Catatan" Value="@_notes" ValueChanged="v => { _notes = v; _dirty = true; }" MaxLength="250" Multiline="true" />
+    </section>
+
+    @if (_ctx is null)
+    {
+        <EmptyState Title="Pilih PO untuk mulai" Description="Hanya PO yang masih memiliki kebutuhan tersisa yang muncul." />
+    }
+    else
+    {
+        <section class="gms-card" aria-labelledby="dl-lines">
+            <h2 id="dl-lines">Baris yang dikirim</h2>
+            @if (_ctx.Lines.Count == 0)
+            {
+                <EmptyState Title="Semua baris sudah terkirim" />
+            }
+            else
+            {
+                <table class="gms-table compact">
+                    <caption class="gms-sr-only">Baris pengiriman</caption>
+                    <thead><tr><th scope="col">FG</th><th scope="col">Color</th><th scope="col">Size</th><th scope="col">Tgl Kirim PO</th><th scope="col" class="num">Qty PO</th><th scope="col" class="num">Terkirim</th><th scope="col" class="num">Dialokasikan</th><th scope="col" class="num">Maks kirim</th><th scope="col">Qty kirim</th></tr></thead>
+                    <tbody>
+                        @foreach (var l in _ctx.Lines)
+                        {
+                            var key = l.PoLineId;
+                            var over = int.TryParse(_qty.GetValueOrDefault(key), out var n) && n > l.MaxDeliver;
+                            <tr>
+                                <th scope="row">@l.FgCode</th><td>@l.ColorSize.ColorName</td><td>@l.ColorSize.SizeCode</td>
+                                <td>@IdFormat.Date(l.PoDeliveryDate) @if (l.IsLate) { <span class="gms-bad">Terlambat</span> }</td>
+                                <td class="num">@IdFormat.Qty(l.Qty)</td><td class="num">@IdFormat.Qty(l.DeliveredQty)</td><td class="num">@IdFormat.Qty(l.AllocatedQty)</td><td class="num">@IdFormat.Qty(l.MaxDeliver)</td>
+                                <td>
+                                    @if (l.MaxDeliver > 0)
+                                    {
+                                        <input type="text" inputmode="numeric" autocomplete="off" aria-label="@($"Qty kirim {l.FgCode} {l.ColorSize.ColorName} {l.ColorSize.SizeCode}")" aria-invalid="@(over ? "true" : null)"
+                                               value="@_qty.GetValueOrDefault(key)" @oninput="e => { _qty[key] = e.Value?.ToString() ?? string.Empty; _dirty = true; }" />
+                                        @if (over) { <div class="gms-cellmsg error"><FluentIcon Value="@(new Icons.Regular.Size12.DismissCircle())" Color="Color.Neutral" /> Maks @IdFormat.Qty(l.MaxDeliver)</div> }
+                                    }
+                                    else if (l.StockAvailable > 0)
+                                    {
+                                        @if (_user.HasPermission(Permissions.CustomerPO.Alokasi.Allocate)) { <FluentButton Appearance="Appearance.Lightweight" OnClick="() => OpenAllocateAsync(l)">Alokasikan stok</FluentButton> }
+                                        else { <span class="gms-muted">Minta Comfi mengalokasikan stok</span> }
+                                    }
+                                    else { <span class="gms-muted">Belum ada stok untuk dikirim. Produksi atau serah terima dahulu.</span> }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <p><strong>Total kirim: @IdFormat.Qty(Total) pcs</strong></p>
+            }
+        </section>
+
+        <div class="gms-formactions">
+            <FluentAnchor Href="/deliveries" Appearance="Appearance.Neutral">Batal</FluentAnchor>
+            <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="_saving">Simpan Surat Jalan</FluentButton>
+        </div>
+    }
+</form>
+
+<AllocationDialog Line="_allocLine" Allocate="true" PoCode="@(_ctx?.PoCode ?? string.Empty)" OnClose="() => _allocLine = null" OnDone="AfterAllocateAsync" />
+
+@code {
+    [SupplyParameterFromQuery(Name = "poId")] public Guid? QueryPoId { get; set; }
+
+    private IReadOnlyList<LookupItem> _poItems = [];
+    private DeliveryContextDto? _ctx;
+    private readonly Dictionary<Guid, string> _qty = [];
+    private Guid? _poId;
+    private string? _date, _recipient, _vehicle, _driver, _notes;
+    private GmsProblemDetails? _problem;
+    private PoLineDto? _allocLine;
+    private bool _dirty, _saved, _saving;
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+
+    private int Total => _ctx is null ? 0 : _ctx.Lines.Sum(l => int.TryParse(_qty.GetValueOrDefault(l.PoLineId), out var n) ? n : 0);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _user = (await Auth.GetAuthenticationStateAsync()).User;
+        _date = DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(IdFormat.Offset).DateTime).ToString("yyyy-MM-dd");
+        await Errors.RunAsync(async () =>
+        {
+            _poItems = (await Deliveries.ListEligiblePosAsync(null)).Select(p => new LookupItem(p.PoId, p.Code, p.CustomerName)).ToList();
+            if (QueryPoId is { } id && _poItems.Any(p => p.Id == id)) { await OnPoChangedAsync(id); }
+        });
+    }
+
+    private async Task OnPoChangedAsync(Guid? id)
+    {
+        _poId = id;
+        _qty.Clear();
+        await LoadContextAsync();
+    }
+
+    private async Task LoadContextAsync()
+    {
+        _ctx = null;
+        if (_poId is null) { return; }
+        _problem = await Errors.RunAsync(async () => _ctx = await Deliveries.GetContextAsync(_poId.Value));
+    }
+
+    private async Task OpenAllocateAsync(DeliveryLineOption option)
+    {
+        await Errors.RunAsync(async () => _allocLine = (await Pos.GetAsync(_poId!.Value)).Lines.First(l => l.Id == option.PoLineId));
+    }
+
+    private async Task AfterAllocateAsync()
+    {
+        _allocLine = null;
+        await LoadContextAsync();
+    }
+
+    private async Task SaveAsync()
+    {
+        _problem = null;
+        var lines = new List<DeliveryLineQty>();
+        foreach (var (line, text) in _qty.Where(q => !string.IsNullOrWhiteSpace(q.Value)))
+        {
+            if (!IdNumber.TryParseInt(text, out var n, out var error) || n < 0) { _problem = Local("lines", error ?? "Qty tidak valid."); return; }
+            if (n > 0) { lines.Add(new DeliveryLineQty(line, n)); }
+        }
+
+        if (_poId is null || !DateOnly.TryParseExact(_date, "yyyy-MM-dd", out var date)) { _problem = Local("poId", "PO dan Tanggal Kirim wajib diisi."); return; }
+        if (lines.Count == 0) { _problem = Local("lines", "Isi minimal satu baris."); return; }
+        _saving = true;
+        _problem = await Errors.RunAsync(async () =>
+        {
+            var saved = await Deliveries.CreateAsync(new SaveDeliveryRequest(_poId.Value, date, Clean(_recipient), Clean(_vehicle), Clean(_driver), Clean(_notes), lines));
+            _saved = true;
+            _dirty = false;
+            StateHasChanged();
+            await Task.Yield();
+            Toasts.ShowSuccess($"Surat jalan {saved.Item.Code} disimpan.");
+            Nav.NavigateTo($"/deliveries/{saved.Item.Id}");
+        });
+        if (_problem?.Code == ProblemCodes.DeliveryExceedsAllocation) { await LoadContextAsync(); } // batas terbaru; input dipertahankan
+        _saving = false;
+    }
+
+    private static string? Clean(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+
+    private static GmsProblemDetails Local(string field, string message) => new()
+    {
+        Type = ProblemTypes.ValidationFailed, Status = 422, Title = "Data belum valid.", Errors = new Dictionary<string, string[]> { [field] = [message] },
+    };
+}

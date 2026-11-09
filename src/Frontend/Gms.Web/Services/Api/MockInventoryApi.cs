@@ -428,6 +428,12 @@ public sealed class MockInventoryApi : IInventoryApi
         }
     }
 
+    /// <summary>Mutasi stok dari Pengiriman (kartu stok): Delivery = keluar, DeliveryReversal = kembali.</summary>
+    public void RecordDelivery(Guid fg, Guid color, Guid size, DateOnly date, Guid deliveryId, string label, int signedQty)
+    {
+        lock (_gate) { _ledger.Add(new Ledger(_ledgerId++, fg, color, size, date, signedQty < 0 ? StockLedgerKind.Delivery : StockLedgerKind.DeliveryReversal, "Delivery", deliveryId, label, signedQty, null)); }
+    }
+
     /// <summary>Saldo awal (dipakai impor CSV tiruan): menambah stok fisik dan mencatat kartu stok.</summary>
     public void AddOpeningBalance(Guid fg, Guid color, Guid size, int qty, DateOnly date)
     {

@@ -1,0 +1,149 @@
+@page "/deliveries/{Id:guid}"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.Pengiriman.View)]
+@inject IDeliveriesApi Deliveries
+@inject FileDownloader Downloader
+@inject ApiErrorHandler Errors
+@inject AuthenticationStateProvider Auth
+@inject NavigationManager Nav
+@inject IToastService Toasts
+
+<PageTitle>@(_doc?.Item.Code ?? "Surat Jalan") · GMS</PageTitle>
+
+@if (_loadProblem is not null)
+{
+    var view = ProblemPresenter.Describe(_loadProblem);
+    <PageHeader Title="Surat Jalan" Breadcrumbs="@(new[] { new PageHeader.Crumb("Pengiriman", "/deliveries"), new PageHeader.Crumb("…") })" />
+    <ErrorState Title="@view.Title" Detail="@view.Detail" TraceId="@view.TraceId" OnRetry="@(view.Kind is ProblemKind.NotFound or ProblemKind.Forbidden ? default : EventCallback.Factory.Create(this, LoadAsync))" />
+}
+else if (_doc is null)
+{
+    <SkeletonRows Rows="5" Columns="3" Label="Memuat surat jalan" />
+}
+else
+{
+    <PageHeader Title="@_doc.Item.Code" Subtitle="@($"{_doc.Item.PoCode} · {_doc.Item.CustomerName} ({_doc.Item.CustomerPoNumber ?? "tanpa No. PO"}) · Tgl Kirim {IdFormat.Date(_doc.Item.DeliveryDate)}")"
+                Breadcrumbs="@(new[] { new PageHeader.Crumb("Pengiriman", "/deliveries"), new PageHeader.Crumb(_doc.Item.Code) })">
+        <Chips><StatusChip Value="@_doc.Item.Status" /></Chips>
+        <Actions>
+            @if (Can(DeliveryActions.Print, Permissions.Pengiriman.Print)) { <FluentButton Appearance="Appearance.Neutral" OnClick="PrintAsync">Cetak PDF</FluentButton> }
+            @if (Can(DeliveryActions.EditInfo, Permissions.Pengiriman.Edit)) { <FluentButton Appearance="Appearance.Neutral" OnClick="StartEdit">Edit Info</FluentButton> }
+            @if (Can(DeliveryActions.Correct, Permissions.Pengiriman.Correct)) { <FluentButton Appearance="Appearance.Neutral" OnClick="StartCorrect">Koreksi</FluentButton> }
+            @if (Can(DeliveryActions.Void, Permissions.Pengiriman.Void)) { <FluentButton Appearance="Appearance.Neutral" OnClick="() => _voiding = true">Void</FluentButton> }
+        </Actions>
+    </PageHeader>
+
+    @if (_doc.Item.Status == DocStatus.Voided) { <div class="gms-banner warning" role="status"><div class="gms-banner-body"><p>Di-void: @_doc.VoidReason</p></div></div> }
+    @if (_printProblem is not null) { <ProblemBanner Problem="_printProblem" /> }
+
+    <p class="gms-note">Penerima: @(_doc.RecipientName ?? "—") · Kendaraan: @(_doc.Vehicle ?? "—") · Sopir: @(_doc.Driver ?? "—")@(string.IsNullOrEmpty(_doc.Notes) ? string.Empty : $" · Catatan: {_doc.Notes}") · Dicetak @_doc.Item.PrintCount kali</p>
+    <table class="gms-table compact">
+        <caption class="gms-sr-only">Baris surat jalan</caption>
+        <thead><tr><th scope="col">FG</th><th scope="col">Color</th><th scope="col">Size</th><th scope="col" class="num">Qty</th></tr></thead>
+        <tbody>@foreach (var l in _doc.Lines) { <tr><th scope="row">@l.FgCode</th><td>@l.ColorSize.ColorName</td><td>@l.ColorSize.SizeCode</td><td class="num">@IdFormat.Qty(l.Qty)</td></tr> }</tbody>
+        <tfoot><tr><th scope="row" colspan="3">Total</th><td class="num"><strong>@IdFormat.Qty(_doc.Item.TotalQty)</strong></td></tr></tfoot>
+    </table>
+    @if (_doc.ReplacesId is not null) { <p class="gms-note">Menggantikan <a href="/deliveries/@_doc.ReplacesId">surat jalan sebelumnya</a>.</p> }
+    @if (_doc.ReplacedById is not null) { <p class="gms-note">Digantikan oleh <a href="/deliveries/@_doc.ReplacedById">surat jalan koreksi</a>.</p> }
+}
+
+<ReasonDialog Open="_voiding" OpenChanged="o => _voiding = o" Danger="true" ConfirmText="Void surat jalan" Title="@($"Void {_doc?.Item.Code} ({IdFormat.Qty(_doc?.Item.TotalQty ?? 0)} pcs)")"
+              LoadPreview="ct => Deliveries.PreviewVoidAsync(Id, ct)" OnConfirm="VoidAsync" />
+
+<ReasonDialog Open="_editing" OpenChanged="o => _editing = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="Edit informasi" OnConfirm="SaveInfoAsync">
+    <div class="gms-form">
+        <TextField Label="Tanggal Kirim" Type="date" @bind-Value="_eDate" Required="true" />
+        <TextField Label="Penerima" @bind-Value="_eRecipient" MaxLength="100" />
+        <TextField Label="Kendaraan/No. Polisi" @bind-Value="_eVehicle" MaxLength="30" />
+        <TextField Label="Sopir" @bind-Value="_eDriver" MaxLength="100" />
+        <TextField Label="Catatan" @bind-Value="_eNotes" MaxLength="250" Multiline="true" />
+    </div>
+</ReasonDialog>
+
+<ReasonDialog Open="_correcting" OpenChanged="o => _correcting = o" Danger="false" ConfirmText="Simpan koreksi" Title="Koreksi surat jalan"
+              CanConfirm="@(_correctPreview?.CanProceed == true)" OnConfirm="CorrectAsync">
+    @if (_doc is not null)
+    {
+        <div class="gms-form">
+            <TextField Label="Tanggal Kirim" Type="date" Value="@_eDate" ValueChanged="v => { _eDate = v; _correctPreview = null; }" Required="true" />
+            @foreach (var l in _doc.Lines)
+            {
+                <TextField Label="@($"{l.FgCode} · {l.ColorSize.ColorName} · {l.ColorSize.SizeCode}")" InputMode="numeric" MaxLength="7" Value="@_cQty[l.PoLineId]" ValueChanged="v => { _cQty[l.PoLineId] = v ?? string.Empty; _correctPreview = null; }" />
+            }
+        </div>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="CheckAsync">Periksa dampak</FluentButton>
+        @if (_correctPreview is not null) { <ImpactPreviewTable Preview="_correctPreview" /> }
+    }
+</ReasonDialog>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private DeliveryDto? _doc;
+    private GmsProblemDetails? _loadProblem, _printProblem;
+    private ImpactPreview? _correctPreview;
+    private bool _voiding, _editing, _correcting;
+    private string? _eDate, _eRecipient, _eVehicle, _eDriver, _eNotes;
+    private readonly Dictionary<Guid, string> _cQty = [];
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+
+    private bool Can(string action, string permission) => _doc is not null && _doc.AllowedActions.Contains(action) && _user.HasPermission(permission);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _user = (await Auth.GetAuthenticationStateAsync()).User;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync() => _loadProblem = await Errors.RunAsync(async () => _doc = await Deliveries.GetAsync(Id));
+
+    private async Task PrintAsync()
+    {
+        _printProblem = await Errors.RunAsync(async () =>
+        {
+            await Downloader.SaveAsync(await Deliveries.GetPdfAsync(Id));
+            await LoadAsync(); // jumlah cetak bertambah
+        });
+    }
+
+    private void StartEdit()
+    {
+        _eDate = _doc!.Item.DeliveryDate.ToString("yyyy-MM-dd");
+        (_eRecipient, _eVehicle, _eDriver, _eNotes) = (_doc.RecipientName, _doc.Vehicle, _doc.Driver, _doc.Notes);
+        _editing = true;
+    }
+
+    private async Task SaveInfoAsync(string _)
+    {
+        _doc = await Deliveries.UpdateInfoAsync(Id, new UpdateDeliveryInfoRequest(DateOnly.ParseExact(_eDate!, "yyyy-MM-dd"), Clean(_eRecipient), Clean(_eVehicle), Clean(_eDriver), Clean(_eNotes), _doc!.RowVersion));
+        Toasts.ShowSuccess("Informasi disimpan.");
+    }
+
+    private async Task VoidAsync(string reason)
+    {
+        _doc = await Deliveries.VoidAsync(Id, new ReasonRequest(reason));
+        Toasts.ShowSuccess("Surat jalan di-void.");
+    }
+
+    private void StartCorrect()
+    {
+        _eDate = _doc!.Item.DeliveryDate.ToString("yyyy-MM-dd");
+        _correctPreview = null;
+        _cQty.Clear();
+        foreach (var l in _doc.Lines) { _cQty[l.PoLineId] = l.Qty.ToString(); }
+        _correcting = true;
+    }
+
+    private CorrectDeliveryRequest Build(string reason) => new(reason, DateOnly.ParseExact(_eDate!, "yyyy-MM-dd"), _doc!.RecipientName, _doc.Vehicle, _doc.Driver, _doc.Notes,
+        _cQty.Where(q => int.TryParse(q.Value, out var n) && n > 0).Select(q => new DeliveryLineQty(q.Key, int.Parse(q.Value))).ToList());
+
+    private async Task CheckAsync() => await Errors.RunAsync(async () => _correctPreview = await Deliveries.PreviewCorrectAsync(Id, Build(string.Empty)));
+
+    private async Task CorrectAsync(string reason)
+    {
+        var replacement = await Deliveries.CorrectAsync(Id, Build(reason));
+        Toasts.ShowSuccess($"Koreksi disimpan sebagai {replacement.Item.Code}.");
+        Nav.NavigateTo($"/deliveries/{replacement.Item.Id}");
+    }
+
+    private static string? Clean(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+}

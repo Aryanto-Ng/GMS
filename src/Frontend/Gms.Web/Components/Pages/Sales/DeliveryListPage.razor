@@ -1,0 +1,66 @@
+@page "/deliveries"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.Pengiriman.View)]
+@inject IDeliveriesApi Deliveries
+@inject AuthenticationStateProvider Auth
+
+<PageTitle>Pengiriman · GMS</PageTitle>
+
+<PageHeader Title="Pengiriman" Subtitle="@(_total is null ? null : $"{IdFormat.Qty(_total)} surat jalan")">
+    <Actions>
+        @if (_user.HasPermission(Permissions.Pengiriman.Create)) { <FluentAnchor Href="/deliveries/new" Appearance="Appearance.Accent">Buat Surat Jalan</FluentAnchor> }
+    </Actions>
+</PageHeader>
+
+<div class="gms-toolbar" role="search">
+    <div class="gms-field">
+        <label for="dl-q">Cari kode SJ / PO / customer</label>
+        <input id="dl-q" type="search" value="@_q" @onchange="e => { _q = e.Value?.ToString(); _page = 1; }" />
+    </div>
+    <div class="gms-field">
+        <label for="dl-status">Status</label>
+        <select id="dl-status" @onchange="e => { _status = Enum.TryParse<DocStatus>(e.Value?.ToString(), out var s) ? s : null; _page = 1; }">
+            <option value="">Semua status</option>
+            <option value="Active" selected="@(_status == DocStatus.Active)">Aktif</option>
+            <option value="Voided" selected="@(_status == DocStatus.Voided)">Void</option>
+        </select>
+    </div>
+</div>
+
+<AsyncContent T="PagedResult<DeliveryListItem>" Key="@($"{_page}|{_q}|{_status}")" Loader="LoadAsync" IsEmpty="r => r.TotalCount == 0">
+    <EmptyContent><EmptyState Icon="@(new Icons.Regular.Size48.Box())" Title="Belum ada surat jalan" ActionText="@(_user.HasPermission(Permissions.Pengiriman.Create) ? "Buat Surat Jalan" : null)" ActionHref="/deliveries/new" /></EmptyContent>
+    <ChildContent Context="result">
+        <table class="gms-table">
+            <caption class="gms-sr-only">Daftar surat jalan</caption>
+            <thead><tr><th scope="col">Kode SJ</th><th scope="col">Tgl Kirim</th><th scope="col">PO</th><th scope="col">No. PO Customer</th><th scope="col">Customer</th><th scope="col" class="num">Total pcs</th><th scope="col">Status</th></tr></thead>
+            <tbody>
+                @foreach (var d in result.Items)
+                {
+                    <tr class="@(d.Status == DocStatus.Voided ? "gms-inactive" : null)">
+                        <th scope="row"><a href="/deliveries/@d.Id">@d.Code</a></th><td>@IdFormat.Date(d.DeliveryDate)</td><td>@d.PoCode</td><td>@(d.CustomerPoNumber ?? "—")</td><td>@d.CustomerName</td>
+                        <td class="num">@if (d.Status == DocStatus.Voided) { <s>@IdFormat.Qty(d.TotalQty)</s> } else { @IdFormat.Qty(d.TotalQty) }</td>
+                        <td><StatusChip Value="@d.Status" /></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <PagerBar Page="result.Page" PageSize="result.PageSize" TotalCount="result.TotalCount" PageChanged="p => _page = p" />
+    </ChildContent>
+</AsyncContent>
+
+@code {
+    private string? _q;
+    private DocStatus? _status = DocStatus.Active;
+    private int _page = 1;
+    private int? _total;
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+
+    protected override async Task OnInitializedAsync() => _user = (await Auth.GetAuthenticationStateAsync()).User;
+
+    private async Task<PagedResult<DeliveryListItem>> LoadAsync(CancellationToken ct)
+    {
+        var result = await Deliveries.ListAsync(new DeliveryListQuery { Page = _page, Q = _q, Status = _status }, ct);
+        _total = result.TotalCount;
+        await InvokeAsync(StateHasChanged);
+        return result;
+    }
+}
