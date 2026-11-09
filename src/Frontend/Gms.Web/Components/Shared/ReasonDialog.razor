@@ -1,0 +1,221 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject ApiErrorHandler Errors
+
+@* Dialog aksi dengan ALASAN WAJIB + pratinjau dampak (_Foundation-UI.md 4.4): Void, Koreksi, Cancel, Reopen, Penyesuaian, Pelepasan alokasi.
+   Memakai <dialog> native (showModal): fokus terkurung, Esc menutup, fokus kembali ke pemicu. Esc diblok saat memproses. *@
+<dialog @ref="_dialog" class="gms-dialog" aria-labelledby="@_titleId" aria-describedby="@_descId" aria-busy="@(_busy ? "true" : "false")">
+    @if (Open)
+    {
+        <div class="gms-dialog-body">
+            <h2 id="@_titleId">@Title</h2>
+            @if (!string.IsNullOrEmpty(Description))
+            {
+                <p id="@_descId">@Description</p>
+            }
+
+            @ChildContent
+
+            @if (LoadPreview is not null)
+            {
+                @if (_previewLoading)
+                {
+                    <SkeletonRows Rows="3" Columns="4" Label="Menghitung dampak" />
+                }
+                else if (_previewProblem is not null)
+                {
+                    <ProblemBanner Problem="_previewProblem" OnReload="LoadPreviewAsync" />
+                }
+                else
+                {
+                    <ImpactPreviewTable Preview="_preview" />
+                }
+            }
+
+            <label for="@_reasonId">Alasan @(ReasonRequired ? "" : "(opsional)") @if (ReasonRequired) { <span class="gms-required">wajib</span> }</label>
+            <textarea id="@_reasonId" class="gms-reason" rows="3" maxlength="@MaxLength" autofocus
+                      aria-describedby="@(_reasonId)-hint" value="@_reason" @oninput="e => _reason = e.Value?.ToString() ?? string.Empty"></textarea>
+            <small id="@(_reasonId)-hint">@_reason.Length / @MaxLength karakter</small>
+
+            @if (_problem is not null)
+            {
+                <ProblemBanner Problem="_problem" />
+            }
+        </div>
+
+        <div class="gms-dialog-actions">
+            <FluentButton Appearance="Appearance.Neutral" Disabled="_busy" OnClick="CancelAsync">Batal</FluentButton>
+            <FluentButton Appearance="Appearance.Accent" Class="@(Danger ? "gms-danger" : string.Empty)" Disabled="@(!CanSubmit)" OnClick="SubmitAsync">
+                @if (_busy) { <FluentProgressRing Width="16px" Style="margin-inline-end:6px" /> }
+                @ConfirmText
+            </FluentButton>
+        </div>
+    }
+</dialog>
+
+@code {
+    private static int _counter;
+    private readonly string _titleId = $"gms-dlg-title-{Interlocked.Increment(ref _counter)}";
+    private string _descId => _titleId.Replace("title", "desc");
+    private string _reasonId => _titleId.Replace("title", "reason");
+
+    private ElementReference _dialog;
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<ReasonDialog>? _self;
+    private bool _wasOpen;
+    private bool _busy;
+    private string _reason = string.Empty;
+    private GmsProblemDetails? _problem;
+    private ImpactPreview? _preview;
+    private bool _previewLoading;
+    private GmsProblemDetails? _previewProblem;
+
+    [Parameter] public bool Open { get; set; }
+
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    [Parameter] public string? Description { get; set; }
+
+    [Parameter] public string ConfirmText { get; set; } = "Ya, lanjutkan";
+
+    /// <summary>Aksi destruktif: tombol utama berwarna bahaya.</summary>
+    [Parameter] public bool Danger { get; set; } = true;
+
+    [Parameter] public bool ReasonRequired { get; set; } = true;
+
+    [Parameter] public int MaxLength { get; set; } = 500;
+
+    /// <summary>Syarat tambahan dari pemanggil (mis. konfirmasi kode periode).</summary>
+    [Parameter] public bool CanConfirm { get; set; } = true;
+
+    /// <summary>Memuat pratinjau dampak dari server (jalur kode yang sama dengan eksekusi). Bila melanggar, tombol utama nonaktif.</summary>
+    [Parameter] public Func<CancellationToken, Task<ImpactPreview>>? LoadPreview { get; set; }
+
+    /// <summary>Eksekusi aksi. Melempar <see cref="ApiException"/> menampilkan penahan di dalam dialog tanpa menutupnya.</summary>
+    [Parameter, EditorRequired] public Func<string, Task> OnConfirm { get; set; } = _ => Task.CompletedTask;
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private bool ReasonOk => !ReasonRequired || !string.IsNullOrWhiteSpace(_reason);
+
+    private bool PreviewOk => LoadPreview is null || (_preview is { CanProceed: true } && !_previewLoading);
+
+    public bool CanSubmit => !_busy && ReasonOk && CanConfirm && PreviewOk;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Open && !_wasOpen)
+        {
+            _reason = string.Empty;
+            _problem = null;
+            _preview = null;
+            _previewProblem = null;
+            if (LoadPreview is not null)
+            {
+                await LoadPreviewAsync();
+            }
+        }
+    }
+
+    private async Task LoadPreviewAsync()
+    {
+        if (LoadPreview is null)
+        {
+            return;
+        }
+
+        _previewLoading = true;
+        _previewProblem = null;
+        StateHasChanged();
+        _previewProblem = await Errors.RunAsync(async () => _preview = await LoadPreview(CancellationToken.None));
+        _previewLoading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Open == _wasOpen)
+        {
+            return;
+        }
+
+        _wasOpen = Open;
+        _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Shared/ReasonDialog.razor.js");
+        if (Open)
+        {
+            _self ??= DotNetObjectReference.Create(this);
+            await _module.InvokeVoidAsync("show", _dialog, _self);
+        }
+        else
+        {
+            await _module.InvokeVoidAsync("close", _dialog);
+        }
+    }
+
+    /// <summary>Dipanggil JS saat Esc/cancel native; diabaikan saat memproses.</summary>
+    [JSInvokable]
+    public async Task RequestClose()
+    {
+        if (!_busy)
+        {
+            await CancelAsync();
+        }
+    }
+
+    private async Task CancelAsync()
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        await SetOpenAsync(false);
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (!CanSubmit)
+        {
+            return;
+        }
+
+        _busy = true;
+        _problem = null;
+        StateHasChanged();
+        try
+        {
+            _problem = await Errors.RunAsync(() => OnConfirm(_reason.Trim()));
+            if (_problem is null)
+            {
+                await SetOpenAsync(false);
+            }
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task SetOpenAsync(bool value)
+    {
+        Open = value;
+        await OpenChanged.InvokeAsync(value);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _self?.Dispose();
+        if (_module is not null)
+        {
+            try
+            {
+                await _module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // sirkuit sudah tertutup
+            }
+        }
+    }
+}

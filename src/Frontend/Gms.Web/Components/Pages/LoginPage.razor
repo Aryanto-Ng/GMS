@@ -1,0 +1,67 @@
+@page "/login"
+@layout AccountLayout
+@attribute [ExcludeFromInteractiveRouting]
+@attribute [AllowAnonymous]
+
+<PageTitle>Masuk · GMS</PageTitle>
+
+<h1 class="gms-account-title">Masuk</h1>
+
+@if (Message is { } message)
+{
+    <div class="gms-banner @message.Kind" role="alert"><strong>@message.Title</strong> @message.Text</div>
+}
+
+<form method="post" action="/account/login" class="gms-form">
+    <AntiforgeryToken />
+    <input type="hidden" name="ReturnUrl" value="@SafeReturn" />
+
+    <label for="username">Username <span class="gms-required">wajib</span></label>
+    <input id="username" name="Username" type="text" autocomplete="username" autofocus required maxlength="100" />
+
+    <label for="password">Password <span class="gms-required">wajib</span></label>
+    <input id="password" name="Password" type="password" autocomplete="current-password" required maxlength="200" />
+
+    <button type="submit" class="gms-primary">Masuk</button>
+</form>
+
+@code {
+    [SupplyParameterFromQuery] private string? Error { get; set; }
+
+    [SupplyParameterFromQuery] private string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery] private string? Info { get; set; }
+
+    [SupplyParameterFromQuery] private long? Until { get; set; }
+
+    private string SafeReturn => AccountEndpoints.SafeReturnUrl(ReturnUrl);
+
+    private LoginMessage? Message => Describe(Error, Info, Until);
+
+    public sealed record LoginMessage(string Kind, string Title, string Text);
+
+    /// <summary>Pesan galat tanpa membocorkan apakah username ada (hanya "username atau password salah").</summary>
+    public static LoginMessage? Describe(string? error, string? info, long? until)
+    {
+        if (info == "signed-out")
+        {
+            return new LoginMessage("info", "Anda telah keluar.", "Masuk kembali untuk melanjutkan.");
+        }
+
+        return error switch
+        {
+            null or "" => null,
+            "invalid-credentials" => new LoginMessage("error", "Login gagal.", "Username atau password salah."),
+            "required" => new LoginMessage("error", "Lengkapi isian.", "Username dan password wajib diisi."),
+            "account-locked" => new LoginMessage("error", "Akun terkunci.",
+                until is { } u
+                    ? $"Terlalu banyak percobaan. Coba lagi pukul {IdFormat.Time(DateTimeOffset.FromUnixTimeSeconds(u))} atau hubungi Administrator."
+                    : "Terlalu banyak percobaan. Coba lagi nanti atau hubungi Administrator."),
+            "account-disabled" => new LoginMessage("error", "Akun dinonaktifkan.", "Hubungi Administrator."),
+            "session-expired" => new LoginMessage("warning", "Sesi berakhir.", "Anda tidak aktif terlalu lama. Silakan masuk kembali."),
+            "session-replaced" => new LoginMessage("warning", "Sesi digantikan.", "Akun ini masuk dari perangkat lain. Silakan masuk kembali."),
+            "unavailable" => new LoginMessage("error", "Server tidak dapat dihubungi.", "Periksa koneksi lalu coba lagi."),
+            _ => new LoginMessage("error", "Terjadi kesalahan.", "Coba lagi. Bila berlanjut, hubungi administrator."),
+        };
+    }
+}

@@ -1,0 +1,115 @@
+@typeparam T
+@implements IDisposable
+@inject ApiErrorHandler Errors
+
+@* Pola state UI wajib (_Foundation-UI.md 7): skeleton saat memuat awal; konten lama tetap terlihat saat memuat ulang (indikator tipis);
+   state kosong; state galat dengan "Coba lagi". Mengubah Key memicu muat ulang otomatis (mis. filter/halaman berubah). *@
+<div class="gms-async" aria-busy="@(_loading ? "true" : "false")">
+    @if (_loading && _hasData)
+    {
+        <div class="gms-progress" role="progressbar" aria-label="Memuat ulang"></div>
+    }
+
+    @if (!_hasData && _loading)
+    {
+        @(Skeleton ?? (b => { b.OpenComponent<SkeletonRows>(0); b.CloseComponent(); }))
+    }
+    else if (!_hasData && _problem is not null)
+    {
+        var view = ProblemPresenter.Describe(_problem);
+        <ErrorState Title="@view.Title" Detail="@view.Detail" TraceId="@view.TraceId" OnRetry="@(view.Kind is ProblemKind.NotFound or ProblemKind.Forbidden ? default : EventCallback.Factory.Create(this, ReloadAsync))" />
+    }
+    else if (_hasData && IsEmpty?.Invoke(_data!) == true)
+    {
+        @EmptyContent
+    }
+    else if (_hasData)
+    {
+        @if (_problem is not null)
+        {
+            <ProblemBanner Problem="_problem" OnReload="ReloadAsync" />
+        }
+
+        @ChildContent(_data!)
+    }
+</div>
+
+@code {
+    private CancellationTokenSource? _cts;
+    private T? _data;
+    private bool _hasData;
+    private bool _loading;
+    private GmsProblemDetails? _problem;
+    private object? _lastKey;
+    private bool _started;
+
+    [Parameter, EditorRequired] public Func<CancellationToken, Task<T>> Loader { get; set; } = default!;
+
+    [Parameter, EditorRequired] public RenderFragment<T> ChildContent { get; set; } = default!;
+
+    [Parameter] public RenderFragment? Skeleton { get; set; }
+
+    [Parameter] public RenderFragment? EmptyContent { get; set; }
+
+    [Parameter] public Func<T, bool>? IsEmpty { get; set; }
+
+    /// <summary>Berubahnya nilai ini (filter, halaman, urutan) memuat ulang data.</summary>
+    [Parameter] public object? Key { get; set; }
+
+    public bool Loading => _loading;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!_started || !Equals(_lastKey, Key))
+        {
+            _started = true;
+            _lastKey = Key;
+            await ReloadAsync();
+        }
+    }
+
+    public async Task ReloadAsync()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+        var cts = _cts = new CancellationTokenSource();
+        _loading = true;
+        _problem = null;
+        StateHasChanged();
+        try
+        {
+            var result = await Loader(cts.Token);
+            if (cts.IsCancellationRequested)
+            {
+                return;
+            }
+
+            _data = result;
+            _hasData = true;
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        catch (ApiException ex)
+        {
+            if (!Errors.TryHandleSessionEnd(ex.Problem))
+            {
+                _problem = ex.Problem;
+            }
+        }
+        finally
+        {
+            if (!cts.IsCancellationRequested)
+            {
+                _loading = false;
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+    }
+}

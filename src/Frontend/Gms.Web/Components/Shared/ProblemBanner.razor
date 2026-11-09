@@ -1,0 +1,38 @@
+@* Banner galat server/bisnis di atas konten (_Foundation-UI.md 6-7). Tidak hilang otomatis. 409 aturan bisnis menjelaskan PENAHAN (sel, qty, dokumen). *@
+@if (Problem is not null)
+{
+    var view = ProblemPresenter.Describe(Problem);
+    <div class="gms-banner @(view.Kind == ProblemKind.Business || view.Kind == ProblemKind.Concurrency ? "warning" : "error")" role="alert">
+        <FluentIcon Value="@(new Icons.Regular.Size20.Warning())" Color="Color.Neutral" />
+        <div class="gms-banner-body">
+            <strong>@view.Title</strong>
+            @if (!string.IsNullOrEmpty(view.Detail))
+            {
+                <p>@view.Detail</p>
+            }
+            @if (Problem.Violations is { Count: > 0 })
+            {
+                <ul class="gms-violations">
+                    @foreach (var v in Problem.Violations)
+                    {
+                        <li><strong>@v.Subject</strong>: @v.Message</li>
+                    }
+                </ul>
+            }
+            @if (!string.IsNullOrEmpty(view.TraceId))
+            {
+                <p class="gms-trace">ID rujukan: <code>@view.TraceId</code></p>
+            }
+            @if (OnReload.HasDelegate && (view.Kind == ProblemKind.Concurrency || view.CanRetry))
+            {
+                <FluentButton Appearance="Appearance.Neutral" OnClick="OnReload">@(view.Kind == ProblemKind.Concurrency ? "Muat ulang" : "Coba lagi")</FluentButton>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public GmsProblemDetails? Problem { get; set; }
+
+    [Parameter] public EventCallback OnReload { get; set; }
+}

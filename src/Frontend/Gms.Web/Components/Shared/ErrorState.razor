@@ -1,0 +1,29 @@
+@* State galat (_Foundation-UI.md 7): judul, penjelasan manusiawi, ID rujukan (traceId), tombol "Coba lagi". Detail teknis tidak ditampilkan. *@
+<div class="gms-state error" role="alert">
+    <FluentIcon Value="@(new Icons.Regular.Size48.ErrorCircle())" Color="Color.Neutral" />
+    <h2>@Title</h2>
+    @if (!string.IsNullOrEmpty(Detail))
+    {
+        <p>@Detail</p>
+    }
+    @if (!string.IsNullOrEmpty(TraceId))
+    {
+        <p class="gms-trace">ID rujukan: <code>@TraceId</code></p>
+    }
+    @if (OnRetry.HasDelegate)
+    {
+        <FluentButton Appearance="Appearance.Accent" OnClick="OnRetry">@RetryText</FluentButton>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    [Parameter] public string? Detail { get; set; }
+
+    [Parameter] public string? TraceId { get; set; }
+
+    [Parameter] public EventCallback OnRetry { get; set; }
+
+    [Parameter] public string RetryText { get; set; } = "Coba lagi";
+}

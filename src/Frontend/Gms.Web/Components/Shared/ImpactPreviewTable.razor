@@ -1,0 +1,75 @@
+@* Pratinjau dampak (_Foundation-UI.md 4.4): tabel sebelum → sesudah, batas, dan status. Bila melanggar, pesan PENAHAN ditampilkan. Hasil hitung server. *@
+@if (Preview is not null)
+{
+    <div class="gms-impact">
+        @if (Preview.Rows.Count > 0)
+        {
+            <table class="gms-table compact">
+                <caption>Dampak aksi ini</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Objek</th>
+                        <th scope="col">Ukuran</th>
+                        <th scope="col" class="num">Sebelum</th>
+                        <th scope="col" class="num">Sesudah</th>
+                        <th scope="col" class="num">Batas</th>
+                        <th scope="col">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Preview.Rows)
+                    {
+                        <tr class="@(row.Ok ? string.Empty : "violation")">
+                            <th scope="row">@row.Subject</th>
+                            <td>@row.Metric</td>
+                            <td class="num">@Format(row.Before)</td>
+                            <td class="num">@Format(row.After)</td>
+                            <td class="num">@Format(row.Limit)</td>
+                            <td>
+                                @if (row.Ok)
+                                {
+                                    <span class="gms-ok"><FluentIcon Value="@(new Icons.Regular.Size16.CheckmarkCircle())" Color="Color.Neutral" /> Aman</span>
+                                }
+                                else
+                                {
+                                    <span class="gms-bad"><FluentIcon Value="@(new Icons.Regular.Size16.DismissCircle())" Color="Color.Neutral" /> Melanggar</span>
+                                    @if (!string.IsNullOrEmpty(row.Message))
+                                    {
+                                        <div class="gms-cell-msg">@row.Message</div>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        @if (!Preview.CanProceed)
+        {
+            <div class="gms-banner error" role="alert">
+                <FluentIcon Value="@(new Icons.Regular.Size20.ErrorCircle())" Color="Color.Neutral" />
+                <div class="gms-banner-body">
+                    <strong>Aksi tidak dapat dilanjutkan.</strong>
+                    <ul class="gms-violations">
+                        @foreach (var violation in Preview.Violations)
+                        {
+                            <li>@violation.Message</li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        }
+
+        @foreach (var note in Preview.Notes)
+        {
+            <p class="gms-note"><FluentIcon Value="@(new Icons.Regular.Size16.Info())" Color="Color.Neutral" /> @note</p>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public ImpactPreview? Preview { get; set; }
+
+    private static string Format(decimal? value) => value is { } v ? IdFormat.Number(v, 5) : "—";
+}

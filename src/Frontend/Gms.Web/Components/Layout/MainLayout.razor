@@ -1,9 +1,87 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@inject AuthenticationStateProvider Auth
 
-@Body
+<FluentDesignTheme @bind-Mode="_theme" StorageName="gms-theme" />
+<FluentToastProvider MaxToastCount="4" Timeout="4000" Position="ToastPosition.TopEnd" />
+<FluentDialogProvider />
+<FluentTooltipProvider />
 
-<div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
-</div>
+<a class="gms-skip" href="#gms-main">Lewati ke konten utama</a>
+
+<FluentLayout Class="gms-layout">
+    <FluentHeader Class="gms-topbar">
+        <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.Navigation())" Title="Buka atau tutup navigasi"
+                      aria-label="Buka atau tutup navigasi" aria-controls="gms-nav" aria-expanded="@_navOpen.ToString().ToLowerInvariant()"
+                      OnClick="() => _navOpen = !_navOpen" />
+        <span class="gms-brand">GMS <span class="gms-brand-sub">Garment Management System</span></span>
+        <FluentSpacer />
+        <FluentButton Appearance="Appearance.Stealth" IconStart="@ThemeIcon" Title="@ThemeTitle" aria-label="@ThemeTitle" OnClick="CycleTheme" />
+        <div class="gms-user">
+            <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.Person())" IconEnd="@(new Icons.Regular.Size16.ChevronDown())"
+                          aria-haspopup="true" aria-expanded="@_userOpen.ToString().ToLowerInvariant()" OnClick="() => _userOpen = !_userOpen">
+                @_name
+            </FluentButton>
+            @if (_userOpen)
+            {
+                <div class="gms-user-panel" role="menu" aria-label="Menu pengguna">
+                    <div class="gms-user-info"><strong>@_name</strong><span>@_role</span></div>
+                    <a href="/account/change-password" role="menuitem">Ganti Password</a>
+                    <form method="post" action="/account/logout">
+                        <AntiforgeryToken />
+                        <button type="submit" role="menuitem" class="gms-linkbutton">Keluar</button>
+                    </form>
+                </div>
+            }
+        </div>
+    </FluentHeader>
+
+    <div class="gms-shell @(_navOpen ? "nav-open" : "nav-closed")">
+        <NavMenu Open="_navOpen" OnNavigate="() => _userOpen = false" />
+        <FluentBodyContent Class="gms-body">
+            <main id="gms-main" tabindex="-1" class="gms-main">
+                <ErrorBoundary>
+                    <ChildContent>@Body</ChildContent>
+                    <ErrorContent Context="exception">
+                        <ErrorState Title="Terjadi kesalahan pada halaman ini" Detail="Muat ulang halaman. Bila berlanjut, laporkan kepada administrator." OnRetry="() => { }" RetryText="Muat ulang" />
+                    </ErrorContent>
+                </ErrorBoundary>
+            </main>
+        </FluentBodyContent>
+    </div>
+</FluentLayout>
+
+@code {
+    private DesignThemeModes _theme = DesignThemeModes.System;
+    private bool _navOpen = true;
+    private bool _userOpen;
+    private string _name = "Pengguna";
+    private string _role = string.Empty;
+
+    private Icon ThemeIcon => _theme switch
+    {
+        DesignThemeModes.Light => new Icons.Regular.Size20.WeatherSunny(),
+        DesignThemeModes.Dark => new Icons.Regular.Size20.WeatherMoon(),
+        _ => new Icons.Regular.Size20.WeatherPartlyCloudyNight(),
+    };
+
+    private string ThemeTitle => _theme switch
+    {
+        DesignThemeModes.Light => "Tema: terang (klik untuk gelap)",
+        DesignThemeModes.Dark => "Tema: gelap (klik untuk mengikuti sistem)",
+        _ => "Tema: ikuti sistem (klik untuk terang)",
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await Auth.GetAuthenticationStateAsync()).User;
+        _name = user.DisplayName();
+        _role = user.FindFirstValue(GmsClaims.RoleName) ?? string.Empty;
+    }
+
+    private void CycleTheme() => _theme = _theme switch
+    {
+        DesignThemeModes.System => DesignThemeModes.Light,
+        DesignThemeModes.Light => DesignThemeModes.Dark,
+        _ => DesignThemeModes.System,
+    };
+}

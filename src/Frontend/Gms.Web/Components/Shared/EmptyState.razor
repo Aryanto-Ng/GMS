@@ -1,0 +1,41 @@
+@* State kosong (_Foundation-UI.md 7): ikon sederhana, judul, penjelasan, dan tombol aksi bila pengguna berhak. *@
+<div class="gms-state empty" role="status">
+    @if (Icon is not null)
+    {
+        <FluentIcon Value="@Icon" Color="Color.Neutral" />
+    }
+    <h2>@Title</h2>
+    @if (!string.IsNullOrEmpty(Description))
+    {
+        <p>@Description</p>
+    }
+    @if (!string.IsNullOrEmpty(ActionText))
+    {
+        @if (ActionHref is not null)
+        {
+            <a class="gms-primary gms-linkbtn" href="@ActionHref">@ActionText</a>
+        }
+        else
+        {
+            <FluentButton Appearance="Appearance.Accent" OnClick="OnAction">@ActionText</FluentButton>
+        }
+    }
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public Icon? Icon { get; set; }
+
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    [Parameter] public string? Description { get; set; }
+
+    /// <summary>Teks tombol aksi; kosongkan bila pengguna tidak berhak melakukan aksinya.</summary>
+    [Parameter] public string? ActionText { get; set; }
+
+    [Parameter] public string? ActionHref { get; set; }
+
+    [Parameter] public EventCallback OnAction { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

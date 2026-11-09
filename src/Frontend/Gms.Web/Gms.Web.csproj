@@ -7,7 +7,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Microsoft Fluent UI (MIT). Versi terpusat di Directory.Packages.props. -->
+    <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components" />
+    <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.Icons" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Web HANYA mereferensi Shared (kontrak). Tidak boleh mereferensi Api/Domain/Infrastructure. -->
     <ProjectReference Include="..\..\Shared\Gms.Shared\Gms.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Gms.Web.Tests" />
   </ItemGroup>
 
 </Project>

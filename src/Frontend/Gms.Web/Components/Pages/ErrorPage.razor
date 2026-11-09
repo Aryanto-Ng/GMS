@@ -1,0 +1,23 @@
+@page "/Error"
+@layout AccountLayout
+@attribute [ExcludeFromInteractiveRouting]
+@attribute [AllowAnonymous]
+@using System.Diagnostics
+
+<PageTitle>Kesalahan · GMS</PageTitle>
+
+<h1 class="gms-account-title">Terjadi kesalahan</h1>
+<p>Permintaan Anda tidak dapat diproses. Coba lagi. Bila berlanjut, laporkan kepada administrator dengan menyebut ID rujukan di bawah.</p>
+@if (!string.IsNullOrEmpty(_requestId))
+{
+    <p><strong>ID rujukan:</strong> <code>@_requestId</code></p>
+}
+<a class="gms-primary gms-linkbtn" href="/">Kembali ke Beranda</a>
+
+@code {
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+
+    private string? _requestId;
+
+    protected override void OnInitialized() => _requestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+}

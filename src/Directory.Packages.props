@@ -9,6 +9,7 @@
       - EF Core standar + provider PostgreSQL (Npgsql)             -> keputusan database, 2026-11-08
       - ASP.NET Core Identity (EF Core store)                      -> 2026-11-08
       - Microsoft.FluentUI.AspNetCore.Components                   -> 2026-11-08
+      - Microsoft.FluentUI.AspNetCore.Components.Icons             -> 2026-11-09
       - PDFsharp-MigraDoc (slip gaji + surat jalan)                -> 2026-11-08
       - ClosedXML (ekspor Excel)                                   -> 2026-11-08
 
@@ -48,6 +49,8 @@
   <ItemGroup Label="UI">
     <!-- 4.14.x = jalur matang (Fluent 2, net10). 5.0.x adalah major baru; ditinjau Frontend sebelum dipakai. -->
     <PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components" Version="4.14.5" />
+    <!-- Set ikon Fluent 2 (paket terpisah di Fluent UI v4). Diizinkan user 2026-11-09. Versi mengikuti paket utama. -->
+    <PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="4.14.5" />
   </ItemGroup>
 
   <ItemGroup Label="Dokumen (PDF + Excel)">

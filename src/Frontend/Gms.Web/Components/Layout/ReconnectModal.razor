@@ -1,31 +1,31 @@
 ﻿<script type="module" src="@Assets["Components/Layout/ReconnectModal.razor.js"]"></script>
 
-<dialog id="components-reconnect-modal" data-nosnippet>
+<dialog id="components-reconnect-modal" data-nosnippet aria-labelledby="gms-reconnect-title">
     <div class="components-reconnect-container">
         <div class="components-rejoining-animation" aria-hidden="true">
             <div></div>
             <div></div>
         </div>
-        <p class="components-reconnect-first-attempt-visible">
-            Rejoining the server...
+        <p id="gms-reconnect-title" class="components-reconnect-first-attempt-visible">
+            Menyambung ulang ke server…
         </p>
         <p class="components-reconnect-repeated-attempt-visible">
-            Rejoin failed... trying again in <span id="components-seconds-to-next-attempt"></span> seconds.
+            Gagal menyambung. Mencoba lagi dalam <span id="components-seconds-to-next-attempt"></span> detik.
         </p>
         <p class="components-reconnect-failed-visible">
-            Failed to rejoin.<br />Please retry or reload the page.
+            Gagal menyambung.<br />Coba lagi atau muat ulang halaman. Isian yang belum tersimpan mungkin hilang.
         </p>
         <button id="components-reconnect-button" class="components-reconnect-failed-visible">
-            Retry
+            Coba lagi
         </button>
         <p class="components-pause-visible">
-            The session has been paused by the server.
+            Sesi dijeda oleh server.
         </p>
         <p class="components-resume-failed-visible">
-            Failed to resume the session.<br />Please retry or reload the page.
+            Gagal melanjutkan sesi.<br />Coba lagi atau muat ulang halaman.
         </p>
         <button id="components-resume-button" class="components-pause-visible components-resume-failed-visible">
-            Resume
+            Lanjutkan
         </button>
     </div>
 </dialog>

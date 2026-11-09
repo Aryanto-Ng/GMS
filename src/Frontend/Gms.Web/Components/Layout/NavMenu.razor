@@ -1,0 +1,52 @@
+@inject AuthenticationStateProvider Auth
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<nav id="gms-nav" class="gms-nav @(Open ? "open" : "closed")" aria-label="Navigasi utama">
+    <NavLink href="/" Match="NavLinkMatch.All" class="gms-navlink" ActiveClass="active" @onclick="Clicked">
+        <FluentIcon Value="@(new Icons.Regular.Size20.Home())" Color="Color.Neutral" /> <span>Beranda</span>
+    </NavLink>
+
+    @foreach (var group in _groups)
+    {
+        <details class="gms-navgroup" open="@(!group.CollapsedByDefault || ContainsActive(group))">
+            <summary>@group.Title</summary>
+            @foreach (var item in group.Items)
+            {
+                <NavLink href="@item.Href" class="gms-navlink" ActiveClass="active" @onclick="Clicked">
+                    <FluentIcon Value="@item.Icon" Color="Color.Neutral" /> <span>@item.Title</span>
+                </NavLink>
+            }
+        </details>
+    }
+</nav>
+
+@code {
+    [Parameter] public bool Open { get; set; } = true;
+
+    /// <summary>Katalog navigasi; bawaan <see cref="NavCatalog.Groups"/>. Dapat diganti (mis. pada tes).</summary>
+    [Parameter] public IReadOnlyList<NavGroup>? Catalog { get; set; }
+
+    [Parameter] public EventCallback OnNavigate { get; set; }
+
+    private IReadOnlyList<NavGroup> _groups = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await Auth.GetAuthenticationStateAsync()).User;
+        _groups = NavCatalog.VisibleFor(user.HasPermission, Catalog);
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    private bool ContainsActive(NavGroup group)
+    {
+        var path = "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0];
+        return group.Items.Any(i => path.StartsWith(i.Href, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private Task Clicked() => OnNavigate.InvokeAsync();
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+}

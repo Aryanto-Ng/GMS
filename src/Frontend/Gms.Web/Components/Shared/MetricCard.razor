@@ -1,0 +1,39 @@
+@* Kartu metrik (_Foundation-UI.md 5.3): angka besar, label, deskripsi satu baris, tautan "Lihat". Status tidak dibedakan oleh warna saja. *@
+<section class="gms-metric @(Tone == MetricTone.Warning ? "warning" : Tone == MetricTone.Danger ? "danger" : string.Empty)" aria-label="@Label">
+    <div class="gms-metric-label">
+        @if (Tone != MetricTone.Neutral)
+        {
+            <FluentIcon Value="@(Tone == MetricTone.Danger ? (Icon)new Icons.Regular.Size16.ErrorCircle() : new Icons.Regular.Size16.Warning())" Color="Color.Neutral" />
+        }
+        <span>@Label</span>
+    </div>
+    <div class="gms-metric-value">@Value</div>
+    @if (!string.IsNullOrEmpty(Description))
+    {
+        <div class="gms-metric-desc">@Description</div>
+    }
+    @if (ChildContent is not null)
+    {
+        <div class="gms-metric-extra">@ChildContent</div>
+    }
+    @if (Href is not null)
+    {
+        <a class="gms-metric-link" href="@Href" aria-label="@($"Lihat {Label}")">Lihat</a>
+    }
+</section>
+
+@code {
+    public enum MetricTone { Neutral, Warning, Danger }
+
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired] public string Value { get; set; } = string.Empty;
+
+    [Parameter] public string? Description { get; set; }
+
+    [Parameter] public string? Href { get; set; }
+
+    [Parameter] public MetricTone Tone { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

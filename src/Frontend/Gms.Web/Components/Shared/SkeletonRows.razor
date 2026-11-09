@@ -1,0 +1,20 @@
+@* Skeleton yang meniru bentuk tabel/kartu (bukan spinner penuh halaman). aria-busy memberi tahu pembaca layar. *@
+<div class="gms-skeleton" role="status" aria-busy="true" aria-label="@Label">
+    @for (var r = 0; r < Rows; r++)
+    {
+        <div class="gms-skeleton-row">
+            @for (var c = 0; c < Columns; c++)
+            {
+                <span class="gms-skeleton-cell" style="flex:@(c == 0 ? 2 : 1)"></span>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int Rows { get; set; } = 6;
+
+    [Parameter] public int Columns { get; set; } = 5;
+
+    [Parameter] public string Label { get; set; } = "Memuat data";
+}

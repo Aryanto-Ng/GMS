@@ -1,0 +1,33 @@
+@* Paging server (_Foundation-UI.md 4.1): "x–y dari z", sebelumnya/berikutnya. Tombol dinonaktifkan di tepi dan saat memuat. *@
+<nav class="gms-pager" aria-label="Halaman data">
+    <span aria-live="polite">@Summary</span>
+    <div class="gms-pager-buttons">
+        <FluentButton Appearance="Appearance.Neutral" Disabled="@(!HasPrevious || Busy)" OnClick="() => Go(Page - 1)" aria-label="Halaman sebelumnya">Sebelumnya</FluentButton>
+        <span class="gms-pager-page">Halaman @Page dari @PageCount</span>
+        <FluentButton Appearance="Appearance.Neutral" Disabled="@(!HasNext || Busy)" OnClick="() => Go(Page + 1)" aria-label="Halaman berikutnya">Berikutnya</FluentButton>
+    </div>
+</nav>
+
+@code {
+    [Parameter] public int Page { get; set; } = 1;
+
+    [Parameter] public int PageSize { get; set; } = 25;
+
+    [Parameter] public int TotalCount { get; set; }
+
+    [Parameter] public bool Busy { get; set; }
+
+    [Parameter] public EventCallback<int> PageChanged { get; set; }
+
+    public int PageCount => Math.Max(1, (int)Math.Ceiling(TotalCount / (double)Math.Max(1, PageSize)));
+
+    public bool HasPrevious => Page > 1;
+
+    public bool HasNext => Page < PageCount;
+
+    public string Summary => TotalCount == 0
+        ? "Tidak ada data"
+        : $"{IdFormat.Qty((Page - 1) * PageSize + 1)}–{IdFormat.Qty(Math.Min(Page * PageSize, TotalCount))} dari {IdFormat.Qty(TotalCount)}";
+
+    private Task Go(int page) => PageChanged.InvokeAsync(Math.Clamp(page, 1, PageCount));
+}

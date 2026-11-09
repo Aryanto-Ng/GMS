@@ -1,7 +1,28 @@
-﻿@page "/"
+@page "/"
+@inject AuthenticationStateProvider Auth
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Beranda · GMS</PageTitle>
 
-<h1>Hello, world!</h1>
+<PageHeader Title="Beranda" Subtitle="@($"Selamat datang, {_name}")" />
 
-Welcome to your new app.
+<div class="gms-welcome">
+    <MetricCard Label="Peran Anda" Value="@_role" Description="Hak akses mengikuti peran ini." />
+    <MetricCard Label="Hak akses" Value="@_permissionCount.ToString()" Description="Menu hanya menampilkan yang boleh Anda lihat." />
+</div>
+
+<EmptyState Icon="@(new Icons.Regular.Size48.Home())" Title="Modul sedang disiapkan"
+            Description="Menu dan ringkasan kerja akan tampil di sini seiring modul diselesaikan satu per satu." />
+
+@code {
+    private string _name = string.Empty;
+    private string _role = string.Empty;
+    private int _permissionCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await Auth.GetAuthenticationStateAsync()).User;
+        _name = user.DisplayName();
+        _role = user.FindFirstValue(GmsClaims.RoleName) ?? "-";
+        _permissionCount = user.FindAll(GmsClaims.Permission).Count();
+    }
+}

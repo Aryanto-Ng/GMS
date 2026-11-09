@@ -1,0 +1,18 @@
+@inject IJSRuntime JS
+
+@* Penjaga perubahan belum tersimpan (_Foundation-UI.md 4.2): menutup tab/pindah situs dikonfirmasi browser; navigasi internal dikonfirmasi di sini. *@
+<NavigationLock ConfirmExternalNavigation="HasChanges" OnBeforeInternalNavigation="OnBeforeNavigation" />
+
+@code {
+    [Parameter] public bool HasChanges { get; set; }
+
+    [Parameter] public string Message { get; set; } = "Perubahan belum disimpan akan hilang. Tinggalkan halaman ini?";
+
+    private async Task OnBeforeNavigation(LocationChangingContext context)
+    {
+        if (HasChanges && !await JS.InvokeAsync<bool>("confirm", Message))
+        {
+            context.PreventNavigation();
+        }
+    }
+}

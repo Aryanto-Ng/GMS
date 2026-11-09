@@ -1,0 +1,58 @@
+@* Header halaman (_Foundation-UI.md 4): breadcrumb, judul h1, subjudul/chip status, dan aksi di kanan. *@
+<header class="gms-pageheader">
+    @if (Breadcrumbs is { Count: > 0 })
+    {
+        <nav aria-label="Breadcrumb" class="gms-breadcrumb">
+            <ol>
+                @for (var i = 0; i < Breadcrumbs.Count; i++)
+                {
+                    var crumb = Breadcrumbs[i];
+                    var last = i == Breadcrumbs.Count - 1;
+                    <li>
+                        @if (!last && crumb.Href is not null)
+                        {
+                            <a href="@crumb.Href">@crumb.Title</a>
+                        }
+                        else
+                        {
+                            <span aria-current="@(last ? "page" : null)">@crumb.Title</span>
+                        }
+                    </li>
+                }
+            </ol>
+        </nav>
+    }
+
+    <div class="gms-pageheader-row">
+        <div class="gms-pageheader-title">
+            <h1>@Title</h1>
+            @if (!string.IsNullOrEmpty(Subtitle) || Chips is not null)
+            {
+                <div class="gms-pageheader-sub">
+                    @if (!string.IsNullOrEmpty(Subtitle)) { <span>@Subtitle</span> }
+                    @Chips
+                </div>
+            }
+        </div>
+        @if (Actions is not null)
+        {
+            <div class="gms-pageheader-actions">@Actions</div>
+        }
+    </div>
+</header>
+
+@code {
+    public sealed record Crumb(string Title, string? Href = null);
+
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    [Parameter] public string? Subtitle { get; set; }
+
+    [Parameter] public IReadOnlyList<Crumb>? Breadcrumbs { get; set; }
+
+    /// <summary>Chip status dan penanda di samping subjudul.</summary>
+    [Parameter] public RenderFragment? Chips { get; set; }
+
+    /// <summary>Tombol aksi (hanya yang diperbolehkan status dan permission).</summary>
+    [Parameter] public RenderFragment? Actions { get; set; }
+}
