@@ -1,0 +1,107 @@
+# Produksi VPS: Traefik (TLS Let's Encrypt) -> Web (Blazor) -> API -> PostgreSQL. Semua data di bind-mount host (./data).
+# Jalankan dari folder deploy/:  cp .env.example .env  (isi nilainya)  lalu  docker compose up -d
+name: gms
+
+services:
+  traefik:
+    image: traefik:v3.2
+    restart: unless-stopped
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.le.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
+    ports: ["80:80", "443:443"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./data/letsencrypt:/letsencrypt
+    networks: [edge]
+
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gms
+      POSTGRES_USER: gms
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      TZ: Asia/Jakarta
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gms -d gms"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [backend]
+
+  api:
+    image: ${REGISTRY_IMAGE_API:-ghcr.io/aryanto-ng/gms-api}:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: Host=db;Port=5432;Database=gms;Username=gms;Password=${DB_PASSWORD}
+      Database__MigrateOnStartup: "true"
+      Database__SeedOnStartup: "true"
+      Seed__AdminUserName: admin
+      Seed__AdminPassword: ${ADMIN_BOOTSTRAP_PASSWORD}
+      App__TimeZone: Asia/Jakarta
+      App__Comfi__Name: ${COMFI_NAME:-}
+      App__Comfi__Address: ${COMFI_ADDRESS:-}
+      App__Konveksi__Name: ${KONVEKSI_NAME:-}
+      App__Konveksi__Address: ${KONVEKSI_ADDRESS:-}
+    networks: [backend]   # tidak dipublikasikan ke luar; hanya Web yang boleh memanggil
+
+  web:
+    image: ${REGISTRY_IMAGE_WEB:-ghcr.io/aryanto-ng/gms-web}:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      api: { condition: service_healthy }
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Api__BaseUrl: http://api:8080
+      Api__UseMock: "false"
+      DataProtection__KeysPath: /keys
+    volumes:
+      - ./data/web-keys:/keys
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=gms_edge
+      - traefik.http.routers.gms.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.gms.entrypoints=websecure
+      - traefik.http.routers.gms.tls.certresolver=le
+      - traefik.http.services.gms.loadbalancer.server.port=8080
+    networks: [edge, backend]
+
+  backup:
+    build: { context: ./backup }
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      PGHOST: db
+      PGUSER: gms
+      PGDATABASE: gms
+      PGPASSWORD: ${DB_PASSWORD}
+      BACKUP_SCHEDULE: ${BACKUP_SCHEDULE:-0 2 * * *}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      # Tujuan off-site (rclone, backend S3-kompatibel: AWS S3 / Cloudflare R2 / dll.)
+      RCLONE_CONFIG_OFFSITE_TYPE: s3
+      RCLONE_CONFIG_OFFSITE_PROVIDER: ${BACKUP_S3_PROVIDER:-Cloudflare}
+      RCLONE_CONFIG_OFFSITE_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY}
+      RCLONE_CONFIG_OFFSITE_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_KEY}
+      RCLONE_CONFIG_OFFSITE_ENDPOINT: ${BACKUP_S3_ENDPOINT}
+      BACKUP_REMOTE_PATH: offsite:${BACKUP_S3_BUCKET}/gms
+    volumes:
+      - ./data/backups:/backups
+    networks: [backend]
+
+networks:
+  edge: {}
+  backend: { internal: false }

@@ -13,6 +13,8 @@ using Gms.Web.Infrastructure.Http;
 using Gms.Web.Services.Api;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.FluentUI.AspNetCore.Components;
@@ -26,6 +28,20 @@ var api = builder.Configuration.GetSection(ApiOptions.SectionName).Get<ApiOption
 services.AddRazorComponents().AddInteractiveServerComponents();
 services.AddFluentUIComponents();
 services.AddHttpContextAccessor();
+
+// Produksi: kunci Data Protection (enkripsi cookie gms.auth) disimpan di volume agar login bertahan setelah restart/deploy.
+if (builder.Configuration["DataProtection:KeysPath"] is { Length: > 0 } keysPath)
+{
+    services.AddDataProtection().SetApplicationName("gms-web").PersistKeysToFileSystem(new DirectoryInfo(keysPath));
+}
+
+// Di belakang reverse proxy (Traefik/Nginx, TLS berakhir di proxy): percayai X-Forwarded-* dari jaringan container.
+services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // Autentikasi: cookie terenkripsi berisi token sesi opaque + klaim permission (pola BFF, ADR-002).
 services.AddAuthentication(GmsClaims.Scheme)
@@ -109,6 +125,8 @@ services.AddScoped<IAuditApi>(sp => api.UseMock ? ActivatorUtilities.CreateInsta
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
@@ -123,6 +141,7 @@ app.UseMiddleware<MustChangePasswordMiddleware>();
 app.UseAntiforgery();
 
 app.MapStaticAssets().AllowAnonymous();
+app.MapGet("/healthz", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
 AccountEndpoints.Map(app);
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 

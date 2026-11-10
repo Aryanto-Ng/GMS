@@ -1,0 +1,25 @@
+# syntax=docker/dockerfile:1
+# Konteks build: root repository.  docker build -f deploy/Dockerfile.api -t gms-api .
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY global.json ./
+COPY src/Directory.Build.props src/Directory.Packages.props ./src/
+COPY src/Shared/ ./src/Shared/
+COPY src/Backend/ ./src/Backend/
+RUN dotnet publish src/Backend/Gms.Api/Gms.Api.csproj -c Release -o /app/publish --nologo
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+# tzdata: hari kerja/tutup periode memakai Asia/Jakarta. Liberation Sans (SIL OFL, metrik sama dengan Arial) untuk PDF di Linux.
+RUN apt-get update && apt-get install -y --no-install-recommends tzdata fonts-liberation curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /app/Fonts \
+    && cp /usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf /app/Fonts/Regular.ttf \
+    && cp /usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf /app/Fonts/Bold.ttf
+WORKDIR /app
+COPY --from=build /app/publish .
+ENV ASPNETCORE_URLS=http://+:8080 \
+    App__TimeZone=Asia/Jakarta
+USER $APP_UID
+EXPOSE 8080
+HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=12 CMD curl -fsS http://localhost:8080/api/v1/health || exit 1
+ENTRYPOINT ["dotnet", "Gms.Api.dll"]

@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest   # Docker tersedia (Testcontainers PostgreSQL untuk tes integrasi & E2E)
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Build
+        run: dotnet build src/Gms.slnx -c Release --nologo
+      - name: Tes unit + integrasi (xUnit, bUnit, API)
+        shell: bash
+        run: |
+          for project in src/Tests/*/; do
+            case "$project" in *Gms.E2E.Tests*) continue ;; esac
+            dotnet test --project "$project" -c Release --no-build
+          done
+      - name: Pasang Chromium Playwright
+        run: pwsh src/Tests/Gms.E2E.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+      - name: Tes E2E (PostgreSQL + API + Web + Chromium)
+        run: dotnet test --project src/Tests/Gms.E2E.Tests -c Release --no-build
+      - name: Unggah log E2E bila gagal
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-logs
+          path: src/Tests/Gms.E2E.Tests/bin/Release/net10.0/logs/

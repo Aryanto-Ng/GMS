@@ -1,0 +1,22 @@
+# syntax=docker/dockerfile:1
+# Konteks build: root repository.  docker build -f deploy/Dockerfile.web -t gms-web .
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY global.json ./
+COPY src/Directory.Build.props src/Directory.Packages.props ./src/
+COPY src/Shared/ ./src/Shared/
+COPY src/Frontend/ ./src/Frontend/
+RUN dotnet publish src/Frontend/Gms.Web/Gms.Web.csproj -c Release -o /app/publish --nologo
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+RUN apt-get update && apt-get install -y --no-install-recommends tzdata curl && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /keys && chown $APP_UID /keys
+WORKDIR /app
+COPY --from=build /app/publish .
+ENV ASPNETCORE_URLS=http://+:8080 \
+    DataProtection__KeysPath=/keys
+USER $APP_UID
+EXPOSE 8080
+VOLUME /keys
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=5 CMD curl -fsS http://localhost:8080/healthz || exit 1
+ENTRYPOINT ["dotnet", "Gms.Web.dll"]

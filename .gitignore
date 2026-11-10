@@ -43,3 +43,6 @@ node_modules/
 # OS
 Thumbs.db
 .DS_Store
+
+# Data produksi/uji lokal (bind mount compose)
+deploy/data/
