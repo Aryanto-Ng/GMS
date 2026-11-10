@@ -261,13 +261,16 @@ public sealed class MasterRulesTests(ApiFixture fixture)
         var ready = await H.NewReadyFgAsync();
         var notReady = await H.NewReadyFgAsync(fillTariffs: false);
 
-        var all = (await H.Api.GetAsync($"{Base}/fgs?pageSize=200", H.AdminToken)).Ok().As<PagedResult<FgListItem>>();
-        Assert.True(all.Items.Single(f => f.Id == ready.Fg.Id).IsReady);
-        Assert.False(all.Items.Single(f => f.Id == notReady.Fg.Id).IsReady);
+        // Database tes dipakai bersama banyak tes: cari per kode agar tidak bergantung pada batas 200 baris/halaman.
+        async Task<PagedResult<FgListItem>> ListAsync(string code, bool readyOnly) =>
+            (await H.Api.GetAsync($"{Base}/fgs?pageSize=200&q={Uri.EscapeDataString(code)}{(readyOnly ? "&readyOnly=true" : string.Empty)}", H.AdminToken)).Ok().As<PagedResult<FgListItem>>();
 
-        var onlyReady = (await H.Api.GetAsync($"{Base}/fgs?pageSize=200&readyOnly=true", H.AdminToken)).Ok().As<PagedResult<FgListItem>>();
-        Assert.Contains(onlyReady.Items, f => f.Id == ready.Fg.Id);
-        Assert.DoesNotContain(onlyReady.Items, f => f.Id == notReady.Fg.Id);
-        Assert.All(onlyReady.Items, f => Assert.True(f.IsReady));
+        Assert.True((await ListAsync(ready.Fg.Code, false)).Items.Single(f => f.Id == ready.Fg.Id).IsReady);
+        Assert.False((await ListAsync(notReady.Fg.Code, false)).Items.Single(f => f.Id == notReady.Fg.Id).IsReady);
+
+        Assert.Contains((await ListAsync(ready.Fg.Code, true)).Items, f => f.Id == ready.Fg.Id);
+        var onlyReadyNot = await ListAsync(notReady.Fg.Code, true);
+        Assert.DoesNotContain(onlyReadyNot.Items, f => f.Id == notReady.Fg.Id);
+        Assert.All(onlyReadyNot.Items, f => Assert.True(f.IsReady));
     }
 }

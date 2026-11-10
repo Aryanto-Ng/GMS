@@ -40,6 +40,11 @@ public static class PdfFonts
                     : Path.Combine(AppContext.BaseDirectory, string.IsNullOrWhiteSpace(fontDirectory) ? "Fonts" : fontDirectory);
                 var regular = Path.Combine(directory, "Regular.ttf");
                 var bold = Path.Combine(directory, "Bold.ttf");
+                if ((!File.Exists(regular) || !File.Exists(bold)) && FindSystemFonts() is { } system)
+                {
+                    (regular, bold) = system; // cadangan: font sistem Linux (paket fonts-liberation / DejaVu)
+                }
+
                 if (!File.Exists(regular) || !File.Exists(bold))
                 {
                     throw new Gms.Api.Common.ProblemException(StatusCodes.Status503ServiceUnavailable, ProblemTypes.ServiceUnavailable,
@@ -51,6 +56,26 @@ public static class PdfFonts
 
             _initialized = true;
         }
+    }
+
+    private static (string Regular, string Bold)? FindSystemFonts()
+    {
+        (string, string)[] candidates =
+        [
+            ("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"),
+            ("/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf", "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf"),
+            ("/usr/share/fonts/liberation/LiberationSans-Regular.ttf", "/usr/share/fonts/liberation/LiberationSans-Bold.ttf"),
+            ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
+        ];
+        foreach (var (regular, bold) in candidates)
+        {
+            if (File.Exists(regular) && File.Exists(bold))
+            {
+                return (regular, bold);
+            }
+        }
+
+        return null;
     }
 
     private sealed class FileFontResolver(byte[] regular, byte[] bold) : IFontResolver
