@@ -2,7 +2,7 @@
 
 ## Tech Stack Utama
 - **Backend:** .NET Core C# (Versi Terbaru)
-- **Frontend:** Blazor WebApp (AntDesign v5 Enterprise)
+- **Frontend:** Blazor WebApp (AntDesign Blazor 1.x, gaya Ant Design Enterprise sesuai `docs/Design.md`)
 - **Mobile:** .NET MAUI (MVVM)
 - **Database:** PostgreSQL
 - **Arsitektur:** Vertical Slice Design + Clean Architecture (Backend), MVVM (Mobile)

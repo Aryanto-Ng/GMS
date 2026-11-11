@@ -43,7 +43,7 @@ Claude_Code_Master_Project/
     │   ├── appsettings.Development.json
     │   ├── appsettings.UAT.json
     │   └── appsettings.Production.json
-    ├── Frontend/                       # Blazor WebApp (Fluent UI 2)
+    ├── Frontend/                       # Blazor WebApp (AntDesign Blazor)
     │   └── wwwroot/
     │       ├── appsettings.json
     │       ├── appsettings.UAT.json
