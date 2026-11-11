@@ -27,6 +27,7 @@ var api = builder.Configuration.GetSection(ApiOptions.SectionName).Get<ApiOption
 
 services.AddRazorComponents().AddInteractiveServerComponents();
 services.AddFluentUIComponents();
+services.AddAntDesign();
 services.AddHttpContextAccessor();
 
 // Produksi: kunci Data Protection (enkripsi cookie gms.auth) disimpan di volume agar login bertahan setelah restart/deploy.

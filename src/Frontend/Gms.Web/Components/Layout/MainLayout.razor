@@ -1,26 +1,41 @@
 @inherits LayoutComponentBase
+@using System.Text.Json
 @inject AuthenticationStateProvider Auth
+@inject IJSRuntime JS
 
-<FluentDesignTheme @bind-Mode="_theme" StorageName="gms-theme" />
+@* Sementara halaman belum seluruhnya bermigrasi dari Fluent, penyedia Fluent tetap dipasang (dialog/toast/tooltip halaman lama).
+   Tema Fluent mengikuti pilihan tema GMS agar komponen lama tetap terbaca di mode gelap. *@
+<FluentDesignTheme Mode="_fluentMode" />
 <FluentToastProvider MaxToastCount="4" Timeout="4000" Position="ToastPosition.TopEnd" />
 <FluentDialogProvider />
 <FluentTooltipProvider />
 
 <a class="gms-skip" href="#gms-main">Lewati ke konten utama</a>
 
-<FluentLayout Class="gms-layout">
-    <FluentHeader Class="gms-topbar">
-        <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.Navigation())" Title="Buka atau tutup navigasi"
-                      aria-label="Buka atau tutup navigasi" aria-controls="gms-nav" aria-expanded="@_navOpen.ToString().ToLowerInvariant()"
-                      OnClick="() => _navOpen = !_navOpen" />
-        <span class="gms-brand">GMS <span class="gms-brand-sub">Garment Management System</span></span>
-        <FluentSpacer />
-        <FluentButton Appearance="Appearance.Stealth" IconStart="@ThemeIcon" Title="@ThemeTitle" aria-label="@ThemeTitle" OnClick="CycleTheme" />
+<div class="gms-app">
+    <header class="gms-header">
+        <a href="/" class="gms-brand" aria-label="GMS, ke Beranda"><span class="gms-brand-mark" aria-hidden="true">G</span><span class="gms-brand-name">GMS</span></a>
+
+        <MegaMenu Catalog="_catalog" />
+
+        <div class="gms-header-spacer"></div>
+
+        <button type="button" class="gms-search-btn" data-palette-open aria-haspopup="dialog" aria-label="Cari menu (Ctrl K)">
+            <AntDesign.Icon Type="search" />
+            <span class="gms-search-text">Cari menu</span>
+            <kbd>Ctrl K</kbd>
+        </button>
+
+        <button type="button" class="gms-iconbtn" title="@ThemeTitle" aria-label="@ThemeTitle" @onclick="CycleTheme">
+            <AntDesign.Icon Type="bg-colors" />
+        </button>
+
         <div class="gms-user">
-            <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.Person())" IconEnd="@(new Icons.Regular.Size16.ChevronDown())"
-                          aria-haspopup="true" aria-expanded="@_userOpen.ToString().ToLowerInvariant()" OnClick="() => _userOpen = !_userOpen">
-                @_name
-            </FluentButton>
+            <button type="button" class="gms-user-btn" aria-haspopup="true" aria-expanded="@_userOpen.ToString().ToLowerInvariant()" @onclick="() => _userOpen = !_userOpen">
+                <AntDesign.Icon Type="user" />
+                <span class="gms-user-name">@_name</span>
+                <AntDesign.Icon Type="down" />
+            </button>
             @if (_userOpen)
             {
                 <div class="gms-user-panel" role="menu" aria-label="Menu pengguna">
@@ -33,41 +48,34 @@
                 </div>
             }
         </div>
-    </FluentHeader>
+    </header>
 
-    <div class="gms-shell @(_navOpen ? "nav-open" : "nav-closed")">
-        <NavMenu Open="_navOpen" OnNavigate="() => _userOpen = false" />
-        <FluentBodyContent Class="gms-body">
-            <main id="gms-main" tabindex="-1" class="gms-main">
-                <ErrorBoundary>
-                    <ChildContent>@Body</ChildContent>
-                    <ErrorContent Context="exception">
-                        <ErrorState Title="Terjadi kesalahan pada halaman ini" Detail="Muat ulang halaman. Bila berlanjut, laporkan kepada administrator." OnRetry="() => { }" RetryText="Muat ulang" />
-                    </ErrorContent>
-                </ErrorBoundary>
-            </main>
-        </FluentBodyContent>
-    </div>
-</FluentLayout>
+    <main id="gms-main" tabindex="-1" class="gms-main">
+        <ErrorBoundary>
+            <ChildContent>@Body</ChildContent>
+            <ErrorContent Context="exception">
+                <ErrorState Title="Terjadi kesalahan pada halaman ini" Detail="Muat ulang halaman. Bila berlanjut, laporkan kepada administrator." OnRetry="() => { }" RetryText="Muat ulang" />
+            </ErrorContent>
+        </ErrorBoundary>
+    </main>
+</div>
+
+@* Katalog untuk CommandPalette (disaring di browser oleh shell.js; tidak ada panggilan SignalR per ketikan). *@
+<div id="gms-catalog" hidden data-json="@_catalogJson"></div>
 
 @code {
-    private DesignThemeModes _theme = DesignThemeModes.System;
-    private bool _navOpen = true;
+    private DesignThemeModes _fluentMode = DesignThemeModes.System;
+    private string _theme = "system";
+    private IReadOnlyList<NavCategory> _catalog = [];
+    private string _catalogJson = "[]";
     private bool _userOpen;
     private string _name = "Pengguna";
     private string _role = string.Empty;
 
-    private Icon ThemeIcon => _theme switch
-    {
-        DesignThemeModes.Light => new Icons.Regular.Size20.WeatherSunny(),
-        DesignThemeModes.Dark => new Icons.Regular.Size20.WeatherMoon(),
-        _ => new Icons.Regular.Size20.WeatherPartlyCloudyNight(),
-    };
-
     private string ThemeTitle => _theme switch
     {
-        DesignThemeModes.Light => "Tema: terang (klik untuk gelap)",
-        DesignThemeModes.Dark => "Tema: gelap (klik untuk mengikuti sistem)",
+        "light" => "Tema: terang (klik untuk gelap)",
+        "dark" => "Tema: gelap (klik untuk mengikuti sistem)",
         _ => "Tema: ikuti sistem (klik untuk terang)",
     };
 
@@ -76,12 +84,35 @@
         var user = (await Auth.GetAuthenticationStateAsync()).User;
         _name = user.DisplayName();
         _role = user.FindFirstValue(GmsClaims.RoleName) ?? string.Empty;
+        _catalog = NavCatalog.VisibleFor(user.HasPermission);
+        _catalogJson = JsonSerializer.Serialize(
+            NavCatalog.Flatten(_catalog).Select(e => new { k = e.Key, l = e.Label, d = e.Desc, h = e.Href, t = e.Kind == NavKind.Action ? "action" : "page", w = e.Keywords, c = e.Category, g = e.Group }));
     }
 
-    private void CycleTheme() => _theme = _theme switch
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        DesignThemeModes.System => DesignThemeModes.Light,
-        DesignThemeModes.Light => DesignThemeModes.Dark,
-        _ => DesignThemeModes.System,
-    };
+        if (!firstRender)
+        {
+            return;
+        }
+
+        var stored = await JS.InvokeAsync<string?>("gmsShell.getTheme");
+        if (stored is "light" or "dark" or "system" && stored != _theme)
+        {
+            Apply(stored);
+            StateHasChanged();
+        }
+    }
+
+    private async Task CycleTheme()
+    {
+        Apply(_theme switch { "system" => "light", "light" => "dark", _ => "system" });
+        await JS.InvokeVoidAsync("gmsShell.setTheme", _theme);
+    }
+
+    private void Apply(string theme)
+    {
+        _theme = theme;
+        _fluentMode = theme switch { "light" => DesignThemeModes.Light, "dark" => DesignThemeModes.Dark, _ => DesignThemeModes.System };
+    }
 }

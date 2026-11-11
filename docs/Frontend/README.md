@@ -24,3 +24,17 @@ Interactive Server untuk halaman kerja; Static SSR untuk halaman akun (sesuai FS
 - Selesai: seluruh modul (5.0–5.9). Berikutnya: QA (smoke terhadap API nyata, Playwright) dan DevOps.
 - Komponen tersisa: Matriks Progres (bersama modul WO).
 - Perilaku JS (keyboard/tempel grid, dialog native) diuji via Playwright (QA).
+
+## Migrasi ke AntDesign Blazor (acuan: `docs/Design.md`)
+
+Status: **fondasi dan shell selesai (2026-11-11)**; halaman dan komponen bersama masih Fluent dan dimigrasi bertahap (Fluent dihapus setelah selesai).
+
+**Mekanisme tema (keputusan):** AntDesign Blazor 1.6.2 hanya menjadikan palet warna sebagai variabel CSS; radius, tinggi kontrol, dan warna komponen berupa nilai tetap, dan tema gelap adalah stylesheet terpisah. Karena itu token `Design.md` diterapkan dalam tiga lapis:
+1. `wwwroot/css/tokens.css`: token bagian 4 sebagai CSS variable (`--primary`, `--bg-container`, `--space-4`, ...) untuk terang dan gelap (`html[data-theme]`), plus alias `--gms-*` agar CSS halaman lama ikut palet baru.
+2. `wwwroot/css/ant-theme.css`: menimpa komponen AntDesign (Button, Input, Select, Table, Modal, Tag, Alert, Tabs, ...) memakai token; menimpa variabel palet `--ant-*`. Dimuat setelah stylesheet AntDesign.
+3. `wwwroot/js/theme-init.js` (sinkron di `<head>`): memilih stylesheet AntDesign terang (`variable.css`) atau gelap (`dark.css`) dan mengatur `data-theme` sebelum render pertama. Pilihan disimpan di `localStorage` (`gms.theme`: system/light/dark). `FluentDesignTheme` mengikuti pilihan itu selama komponen Fluent masih ada.
+
+**Shell:** `Components/Layout/MainLayout.razor` (header 56px, tanpa sider), `MegaMenu.razor` (klik, satu panel, Esc/scrim, `aria-expanded`), katalog di `NavCatalog.cs` (Kategori → Grup → Halaman/Aksi, disaring menurut izin), CommandPalette `wwwroot/js/shell.js` (`Ctrl K`, penyaringan di browser dari `#gms-catalog`, Terakhir dibuka di `localStorage`). Komponen AntDesign dipakai dengan nama penuh (`<AntDesign.Icon>`) selama namespace Fluent masih global, untuk menghindari bentrok nama (`Icon`, `Button`, `Color`).
+
+**Catatan:** AntDesign Blazor 1.x bergaya Ant Design 4 (bukan v5). Master Data memuat 13 entri katalog (batas Design.md: ±12).
+

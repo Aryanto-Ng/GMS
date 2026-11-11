@@ -1,0 +1,120 @@
+@implements IDisposable
+@inject NavigationManager Navigation
+
+@* MegaMenu (Design.md 7.2): kategori horizontal di header, panel multi-kolom dibuka dengan KLIK (bukan hover), satu panel pada satu waktu.
+   Tutup: Esc, klik scrim, atau klik kategori yang sama. Katalog sudah disaring menurut izin oleh pemanggil. *@
+<nav class="gms-mm" aria-label="Navigasi utama" @onkeydown="OnKeyDown">
+    <a href="@NavCatalog.Home.Href" class="gms-mm-trigger @(_bestKey == NavCatalog.Home.Key ? "active" : null)" aria-current="@(_bestKey == NavCatalog.Home.Key ? "page" : null)" @onclick="Close">
+        @NavCatalog.Home.Label
+    </a>
+    @foreach (var category in Catalog)
+    {
+        var isOpen = _open == category.Key;
+        <button type="button" class="gms-mm-trigger @(ContainsActive(category) ? "active" : null) @(isOpen ? "open" : null)"
+                aria-expanded="@(isOpen ? "true" : "false")" aria-controls="@PanelId(category.Key)" @onclick="() => Toggle(category.Key)">
+            <span>@category.Title</span>
+            <AntDesign.Icon Type="down" Class="gms-mm-caret" />
+        </button>
+    }
+</nav>
+
+@if (_open is not null && Catalog.FirstOrDefault(c => c.Key == _open) is { } current)
+{
+    <div class="gms-mm-scrim" @onclick="Close" aria-hidden="true"></div>
+    <div id="@PanelId(current.Key)" class="gms-mm-panel" role="region" aria-label="@current.Title" @onkeydown="OnKeyDown">
+        <div class="gms-mm-inner">
+            @foreach (var group in current.Groups)
+            {
+                <section class="gms-mm-col" aria-label="@group.Title">
+                    <h2 class="gms-mm-group">@group.Title</h2>
+                    <ul class="gms-mm-list">
+                        @foreach (var entry in group.Entries.Where(e => e.Kind == NavKind.Page))
+                        {
+                            <li>
+                                <a href="@entry.Href" class="gms-mm-item @(_bestKey == entry.Key ? "active" : null)" aria-current="@(_bestKey == entry.Key ? "page" : null)" @onclick="Close">
+                                    <span class="gms-mm-label">@entry.Label</span>
+                                    <span class="gms-mm-desc">@entry.Desc</span>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                    @if (group.Entries.Any(e => e.Kind == NavKind.Action))
+                    {
+                        <ul class="gms-mm-list gms-mm-actions">
+                            @foreach (var entry in group.Entries.Where(e => e.Kind == NavKind.Action))
+                            {
+                                <li>
+                                    <a href="@entry.Href" class="gms-mm-action @(_bestKey == entry.Key ? "active" : null)" aria-current="@(_bestKey == entry.Key ? "page" : null)" @onclick="Close">
+                                        <AntDesign.Icon Type="plus" />
+                                        <span>@entry.Label</span>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </section>
+            }
+        </div>
+        <div class="gms-mm-footer">Cari cepat dengan <kbd>Ctrl</kbd> + <kbd>K</kbd></div>
+    </div>
+}
+
+@code {
+    [Parameter] public IReadOnlyList<NavCategory> Catalog { get; set; } = [];
+
+    private string? _open;
+    private string? _bestKey;
+
+    protected override void OnInitialized()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+        ComputeActive();
+    }
+
+    protected override void OnParametersSet() => ComputeActive();
+
+    private static string PanelId(string key) => "gms-mm-panel-" + key;
+
+    private void Toggle(string key) => _open = _open == key ? null : key;
+
+    private void Close() => _open = null;
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            Close();
+        }
+    }
+
+    private bool ContainsActive(NavCategory category) =>
+        _bestKey is not null && category.Groups.Any(g => g.Entries.Any(e => e.Key == _bestKey));
+
+    /// <summary>Entri aktif = rute terpanjang yang cocok dengan jalur saat ini (agar /stock/ledger tidak ikut menandai /stock).</summary>
+    private void ComputeActive()
+    {
+        var path = "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].TrimEnd('/');
+        path = path == "/" ? "/" : path.TrimEnd('/');
+        if (path == "/")
+        {
+            _bestKey = NavCatalog.Home.Key;
+            return;
+        }
+
+        _bestKey = Catalog
+            .SelectMany(c => c.Groups.SelectMany(g => g.Entries))
+            .Where(e => path.Equals(e.Href, StringComparison.OrdinalIgnoreCase) || path.StartsWith(e.Href + "/", StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(e => e.Href.Length)
+            .Select(e => e.Key)
+            .FirstOrDefault();
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        _open = null;
+        ComputeActive();
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+}

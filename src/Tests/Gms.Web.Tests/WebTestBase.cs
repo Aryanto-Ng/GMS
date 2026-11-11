@@ -17,6 +17,7 @@ public abstract class WebTestBase : BunitContext
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddFluentUIComponents();
+        Services.AddAntDesign();
         Services.AddScoped<ApiErrorHandler>();
         Services.AddSingleton<AuthenticationStateProvider>(new FakeAuth(User(Array.Empty<string>())));
         Services.AddSingleton<Microsoft.AspNetCore.Components.Forms.AntiforgeryStateProvider, FakeAntiforgery>();

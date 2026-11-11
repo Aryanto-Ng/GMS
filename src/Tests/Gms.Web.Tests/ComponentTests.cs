@@ -266,31 +266,77 @@ public sealed class ComponentTests : WebTestBase
         Assert.Empty(Render<ImpactPreviewTable>().Markup.Trim());
     }
 
-    [Fact]
-    public void NavMenu_hanya_menampilkan_item_yang_diizinkan_dan_tersedia_dengan_nav_bernama_dan_Beranda_selalu()
-    {
-        SignIn(Permissions.CustomerPO.View);
-        IReadOnlyList<NavGroup> catalog =
+    private static IReadOnlyList<NavCategory> SampleCatalog() =>
+    [
+        new("sales", "Penjualan", "file-text",
         [
-            new("Penjualan",
+            new("Customer PO",
             [
-                new("Customer PO", "/purchase-orders", Permissions.CustomerPO.View, new Icons.Regular.Size20.Home(), Enabled: true),
-                new("Work Order", "/work-orders", Permissions.WorkOrder.View, new Icons.Regular.Size20.Home(), Enabled: true),
+                new("po.list", "Daftar PO", "Pesanan customer", "/purchase-orders", Permissions.CustomerPO.View),
+                new("po.new", "Buat PO", "Catat pesanan baru", "/purchase-orders/new", Permissions.CustomerPO.Create, NavKind.Action),
             ]),
-            new("Penggajian", [new("Periode Gaji", "/payroll", Permissions.Payroll.View, new Icons.Regular.Size20.Home(), Enabled: true)]),
-        ];
+        ]),
+        new("payroll", "Penggajian", "wallet", [new("Payroll", [new("payroll.list", "Periode Gaji", "Periode", "/payroll", Permissions.Payroll.View)])]),
+    ];
 
-        var cut = Render<NavMenu>(p => p.Add(x => x.Catalog, catalog));
+    [Fact]
+    public void MegaMenu_menampilkan_Beranda_dan_kategori_dalam_nav_bernama_dan_panel_tertutup_awalnya()
+    {
+        var cut = Render<MegaMenu>(p => p.Add(x => x.Catalog, SampleCatalog()));
 
         Assert.Equal("Navigasi utama", cut.Find("nav").GetAttribute("aria-label"));
-        var links = cut.FindAll("a.gms-navlink").Select(a => a.TextContent.Trim()).ToList();
-        Assert.Equal(["Beranda", "Customer PO"], links);
-        Assert.Single(cut.FindAll("summary")); // grup Penggajian disembunyikan
-        Assert.Contains("closed", Render<NavMenu>(p => p.Add(x => x.Open, false).Add(x => x.Catalog, catalog)).Find("nav").ClassName);
+        Assert.Equal("Beranda", cut.Find("a.gms-mm-trigger").TextContent.Trim());
+        Assert.Equal(["Penjualan", "Penggajian"], cut.FindAll("button.gms-mm-trigger").Select(b => b.TextContent.Trim()));
+        Assert.All(cut.FindAll("button.gms-mm-trigger"), b => Assert.Equal("false", b.GetAttribute("aria-expanded")));
+        Assert.Empty(cut.FindAll(".gms-mm-panel"));
     }
 
     [Fact]
-    public void MainLayout_memuat_skip_link_nama_pengguna_logout_berantiforgery_dan_pengalih_tema()
+    public void MegaMenu_dibuka_dengan_klik_satu_panel_saja_memisahkan_halaman_dan_aksi_dan_menutup_dengan_Esc_scrim_atau_klik_ulang()
+    {
+        var cut = Render<MegaMenu>(p => p.Add(x => x.Catalog, SampleCatalog()));
+
+        cut.FindAll("button.gms-mm-trigger")[0].Click();
+
+        Assert.Equal("true", cut.FindAll("button.gms-mm-trigger")[0].GetAttribute("aria-expanded"));
+        var panel = cut.Find(".gms-mm-panel");
+        Assert.Equal("region", panel.GetAttribute("role"));
+        Assert.Equal(["Daftar PO"], panel.QuerySelectorAll("a.gms-mm-item .gms-mm-label").Select(x => x.TextContent.Trim()));
+        Assert.Equal(["Buat PO"], panel.QuerySelectorAll("a.gms-mm-action").Select(x => x.TextContent.Trim()));
+        Assert.Contains("Ctrl", cut.Find(".gms-mm-footer").TextContent);
+
+        cut.FindAll("button.gms-mm-trigger")[1].Click(); // kategori lain menggantikan, bukan menumpuk
+        Assert.Single(cut.FindAll(".gms-mm-panel"));
+        Assert.Equal("Penggajian", cut.Find(".gms-mm-panel").GetAttribute("aria-label"));
+
+        cut.Find(".gms-mm-panel").KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs { Key = "Escape" });
+        Assert.Empty(cut.FindAll(".gms-mm-panel"));
+
+        cut.FindAll("button.gms-mm-trigger")[0].Click();
+        cut.Find(".gms-mm-scrim").Click();
+        Assert.Empty(cut.FindAll(".gms-mm-panel"));
+
+        cut.FindAll("button.gms-mm-trigger")[0].Click();
+        cut.FindAll("button.gms-mm-trigger")[0].Click();
+        Assert.Empty(cut.FindAll(".gms-mm-panel"));
+    }
+
+    [Fact]
+    public void MegaMenu_menandai_kategori_dan_item_aktif_dengan_rute_terpanjang_dan_aria_current()
+    {
+        Nav.NavigateTo("/purchase-orders/new");
+        var cut = Render<MegaMenu>(p => p.Add(x => x.Catalog, SampleCatalog()));
+
+        Assert.Contains("active", cut.FindAll("button.gms-mm-trigger")[0].ClassName);
+        Assert.DoesNotContain("active", cut.FindAll("button.gms-mm-trigger")[1].ClassName);
+
+        cut.FindAll("button.gms-mm-trigger")[0].Click();
+        Assert.Equal("page", cut.Find("a.gms-mm-action").GetAttribute("aria-current")); // /purchase-orders/new, bukan /purchase-orders
+        Assert.Null(cut.Find("a.gms-mm-item").GetAttribute("aria-current"));
+    }
+
+    [Fact]
+    public void MainLayout_memuat_skip_link_nama_pengguna_logout_berantiforgery_pengalih_tema_dan_katalog_palette_sesuai_izin()
     {
         SignIn(Permissions.CustomerPO.View);
         var cut = Render<MainLayout>(p => p.Add(x => x.Body, b => b.AddMarkupContent(0, "<p id='isi'>Halaman</p>")));
@@ -298,12 +344,19 @@ public sealed class ComponentTests : WebTestBase
         Assert.Equal("#gms-main", cut.Find("a.gms-skip").GetAttribute("href"));
         Assert.NotNull(cut.Find("main#gms-main #isi"));
         Assert.Contains("Budi", cut.Markup);
-        Assert.Contains("Tema:", cut.Markup);
+        Assert.Equal(["Penjualan"], cut.FindAll("button.gms-mm-trigger").Select(b => b.TextContent.Trim())); // hanya kategori yang boleh dilihat
+        Assert.NotNull(cut.Find("button[data-palette-open]"));
 
-        cut.FindAll("fluent-button").First(b => b.GetAttribute("title")?.StartsWith("Tema") == true).Click();
-        Assert.Contains("terang", cut.FindAll("fluent-button").First(b => b.GetAttribute("title")?.StartsWith("Tema") == true).GetAttribute("title"));
+        var catalog = cut.Find("#gms-catalog").GetAttribute("data-json")!;
+        Assert.Contains("Daftar PO", catalog);
+        Assert.DoesNotContain("Work Order", catalog); // tanpa izin tidak ada di palette
+        Assert.DoesNotContain("Buat PO", catalog);    // aksi butuh izin Create
 
-        cut.FindAll("fluent-button").First(b => b.GetAttribute("aria-haspopup") == "true").Click();
+        Assert.Contains("Tema:", cut.Find("button.gms-iconbtn").GetAttribute("title"));
+        cut.Find("button.gms-iconbtn").Click();
+        Assert.Contains("terang", cut.Find("button.gms-iconbtn").GetAttribute("title"));
+
+        cut.Find("button.gms-user-btn").Click();
         var form = cut.Find("form[action='/account/logout']");
         Assert.Equal("post", form.GetAttribute("method"));
         Assert.Contains("Ganti Password", cut.Markup);

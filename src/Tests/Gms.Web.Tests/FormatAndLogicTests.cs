@@ -243,34 +243,55 @@ public sealed class FormatAndLogicTests
     // ===== Navigasi =====
 
     [Fact]
-    public void Navigasi_menyembunyikan_item_tanpa_izin_dan_yang_belum_tersedia_serta_grup_kosong()
+    public void Navigasi_menyembunyikan_entri_tanpa_izin_grup_kosong_dan_kategori_kosong()
     {
-        IReadOnlyList<NavGroup> catalog =
+        IReadOnlyList<NavCategory> catalog =
         [
-            new("Penjualan",
+            new("sales", "Penjualan", "file-text",
             [
-                new("Customer PO", "/purchase-orders", Permissions.CustomerPO.View, new Icons.Regular.Size20.Home(), Enabled: true),
-                new("Work Order", "/work-orders", Permissions.WorkOrder.View, new Icons.Regular.Size20.Home(), Enabled: true),
-                new("Belum Ada", "/segera", Permissions.CustomerPO.View, new Icons.Regular.Size20.Home(), Enabled: false),
+                new("Customer PO",
+                [
+                    new("po.list", "Daftar PO", "d", "/purchase-orders", Permissions.CustomerPO.View),
+                    new("po.new", "Buat PO", "d", "/purchase-orders/new", Permissions.CustomerPO.Create, NavKind.Action),
+                ]),
+                new("WO", [new("wo.list", "Daftar WO", "d", "/work-orders", Permissions.WorkOrder.View)]),
             ]),
-            new("Penggajian", [new("Periode", "/payroll", Permissions.Payroll.View, new Icons.Regular.Size20.Home(), Enabled: true)]),
+            new("payroll", "Penggajian", "wallet", [new("Payroll", [new("p", "Periode", "d", "/payroll", Permissions.Payroll.View)])]),
         ];
 
         var visible = NavCatalog.VisibleFor(p => p == Permissions.CustomerPO.View, catalog);
 
-        var group = Assert.Single(visible);
-        Assert.Equal("Penjualan", group.Title);
-        Assert.Equal(["Customer PO"], group.Items.Select(i => i.Title));
+        var category = Assert.Single(visible);
+        Assert.Equal("Penjualan", category.Title);
+        var group = Assert.Single(category.Groups);
+        Assert.Equal(["Daftar PO"], group.Entries.Select(e => e.Label)); // aksi butuh Create; grup WO dan kategori Penggajian hilang
         Assert.Empty(NavCatalog.VisibleFor(_ => false, catalog));
     }
 
     [Fact]
-    public void Katalog_bawaan_mencakup_semua_grup_rancangan_dan_setiap_item_memakai_permission_yang_ada()
+    public void Katalog_bawaan_mengikuti_Design_md_kategori_berurutan_kunci_unik_dan_setiap_izin_dikenal()
     {
-        Assert.Equal(["Penjualan", "Gudang FG", "Produksi", "Penggajian", "Master Data", "Administrasi"], NavCatalog.Groups.Select(g => g.Title));
+        Assert.Equal(["Penjualan", "Produksi", "Gudang", "Penggajian", "Master Data", "Administrasi"], NavCatalog.Categories.Select(c => c.Title));
+        var entries = NavCatalog.Categories.SelectMany(c => c.Groups).SelectMany(g => g.Entries).ToList();
         var known = PermissionCatalog.All.Select(p => p.Key).ToHashSet();
-        Assert.All(NavCatalog.Groups.SelectMany(g => g.Items), item => Assert.Contains(item.Permission, known));
-        Assert.True(NavCatalog.Groups.First(g => g.Title == "Master Data").CollapsedByDefault);
+        Assert.All(entries, e => Assert.Contains(e.Permission, known));
+        Assert.Equal(entries.Count, entries.Select(e => e.Key).Distinct().Count());
+        Assert.All(entries, e => Assert.StartsWith("/", e.Href));
+        // Design.md 7.1: "maksimal ±12 item per kategori" (toleransi 1). Lebih dari itu: pecah kategori, jangan menambah kolom.
+        Assert.All(NavCatalog.Categories, c => Assert.True(c.Groups.Sum(g => g.Entries.Count) <= 13, $"{c.Title} melebihi batas item per kategori"));
+        Assert.Contains(entries, e => e.Kind == NavKind.Action);
+    }
+
+    [Fact]
+    public void Daftar_datar_untuk_palette_memuat_Beranda_pertama_dan_jalur_kategori_grup()
+    {
+        var visible = NavCatalog.VisibleFor(p => p == Permissions.CustomerPO.View || p == Permissions.CustomerPO.Create);
+
+        var flat = NavCatalog.Flatten(visible);
+
+        Assert.Equal("Beranda", flat[0].Label);
+        var buat = Assert.Single(flat, e => e.Key == "po.new");
+        Assert.Equal(("Penjualan", "Customer PO", NavKind.Action), (buat.Category, buat.Group, buat.Kind));
     }
 
     // ===== Status chip =====

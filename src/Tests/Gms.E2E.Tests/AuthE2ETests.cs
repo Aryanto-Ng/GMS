@@ -114,6 +114,7 @@ public sealed class AuthE2ETests(StackFixture stack)
     public async Task Logout_mengakhiri_sesi_dan_halaman_terlindungi_kembali_meminta_login()
     {
         var page = await stack.LoginAsAdminAsync();
+        await StackFixture.GotoInteractiveAsync(page, "/"); // klik sebelum sirkuit Blazor tersambung tidak diproses
         await Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToContainTextAsync("Selamat datang");
 
         await page.Locator("button[aria-haspopup=true]").ClickAsync();

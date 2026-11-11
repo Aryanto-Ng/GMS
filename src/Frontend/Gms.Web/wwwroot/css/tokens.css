@@ -1,0 +1,167 @@
+/*
+ * Token desain GMS — salinan docs/Design.md bagian 4. Nama token adalah kontrak; nilai hanya berubah lewat Design.md.
+ * Tema: atribut data-theme="light|dark" pada <html> (diatur shell.js; mode "system" di-resolve ke light/dark).
+ */
+:root, :root[data-theme="light"] {
+    color-scheme: light;
+
+    --primary: #1668dc;
+    --primary-hover: #0958d9;
+    --primary-active: #003eb3;
+    --primary-bg: #e6f4ff;
+    --primary-bg-hover: #bae0ff;
+    --primary-border: #91caff;
+    --on-primary: #ffffff;
+    --link: #1668dc;
+    --focus-ring: #1668dc;
+
+    --text: #1f1f1f;
+    --text-secondary: #595959;
+    --text-tertiary: #6b6b6b;
+    --text-disabled: #bfbfbf;
+
+    --border: #d9d9d9;
+    --border-secondary: #f0f0f0;
+    --border-control: #8c8c8c;
+
+    --bg-layout: #f5f5f5;
+    --bg-container: #ffffff;
+    --bg-elevated: #ffffff;
+    --fill-alter: #fafafa;
+    --fill-hover: #f5f5f5;
+    --mask: rgba(0, 0, 0, 0.45);
+
+    --success: #52c41a;
+    --success-text: #237804;
+    --success-bg: #f6ffed;
+    --success-border: #b7eb8f;
+    --warning: #faad14;
+    --warning-text: #874d00;
+    --warning-bg: #fffbe6;
+    --warning-border: #ffe58f;
+    --danger: #d9363e;
+    --danger-hover: #cf1322;
+    --danger-text: #cf1322;
+    --danger-bg: #fff1f0;
+    --danger-border: #ffccc7;
+    --cyan-text: #006d75;
+    --cyan-bg: #e6fffb;
+    --cyan-border: #87e8de;
+
+    --shadow-card: 0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+    --shadow-popup: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+
+    --primary: #1668dc;
+    --primary-hover: #1554ad;
+    --primary-active: #15417e;
+    --primary-bg: #111a2c;
+    --primary-bg-hover: #112545;
+    --primary-border: #15325b;
+    --on-primary: #ffffff;
+    --link: #3c89e8;
+    --focus-ring: #3c89e8;
+
+    --text: #dbdbdb;
+    --text-secondary: #a6a6a6;
+    --text-tertiary: #8c8c8c;
+    --text-disabled: #5a5a5a;
+
+    --border: #424242;
+    --border-secondary: #303030;
+    --border-control: #6b6b6b;
+
+    --bg-layout: #000000;
+    --bg-container: #141414;
+    --bg-elevated: #1f1f1f;
+    --fill-alter: #1d1d1d;
+    --fill-hover: #262626;
+    --mask: rgba(0, 0, 0, 0.65);
+
+    --success: #49aa19;
+    --success-text: #6abe39;
+    --success-bg: #162312;
+    --success-border: #274916;
+    --warning: #d89614;
+    --warning-text: #e8b339;
+    --warning-bg: #2b2111;
+    --warning-border: #594214;
+    --danger: #c8353a;
+    --danger-hover: #a61d24;
+    --danger-text: #e86e6b;
+    --danger-bg: #2c1618;
+    --danger-border: #5b2526;
+    --cyan-text: #33bcb7;
+    --cyan-bg: #112123;
+    --cyan-border: #144848;
+
+    --shadow-card: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-popup: 0 6px 16px 0 rgba(0, 0, 0, 0.48), 0 3px 6px -4px rgba(0, 0, 0, 0.6), 0 9px 28px 8px rgba(0, 0, 0, 0.3);
+}
+
+:root {
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    --font-mono: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-12: 48px;
+
+    --radius-xs: 2px;
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+
+    --control-height-sm: 24px;
+    --control-height: 32px;
+    --control-height-lg: 40px;
+    --header-height: 56px;
+    --megamenu-width: 1200px;
+    --palette-width: 640px;
+
+    --z-header: 100;
+    --z-megamenu: 900;
+    --z-modal: 1000;
+    --z-palette: 1050;
+
+    /* Jembatan: halaman yang masih memakai CSS --gms-* (migrasi bertahap) ikut palet Design.md. */
+    --gms-fg: var(--text);
+    --gms-muted: var(--text-secondary);
+    --gms-bg: var(--bg-layout);
+    --gms-bg2: var(--fill-hover);
+    --gms-card: var(--bg-container);
+    --gms-stroke: var(--border);
+    --gms-accent: var(--primary);
+    --gms-on-accent: var(--on-primary);
+    --gms-error: var(--danger-text);
+    --gms-warning: var(--warning-text);
+    --gms-success: var(--success-text);
+    --gms-info: var(--link);
+}
+
+html, body {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 22px;
+    color: var(--text);
+    background: var(--bg-layout);
+}
+
+a { color: var(--link); }
+
+:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+
+.doc-number { font-family: var(--font-mono); font-size: 13px; font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.num { font-variant-numeric: tabular-nums; text-align: right; }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
