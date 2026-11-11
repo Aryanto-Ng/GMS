@@ -12,11 +12,12 @@ using Microsoft.EntityFrameworkCore;
 namespace Gms.Api.Features.Access.Users;
 
 /// <summary>Membuka kunci akun lebih awal (AC-AM-03).</summary>
-public sealed class UnlockUserHandler(GmsDbContext db, UserManager<AppUser> users, IAuditWriter audit)
+public sealed class UnlockUserHandler(GmsDbContext db, UserManager<AppUser> users, ICurrentUser current, IAuditWriter audit)
 {
     public async Task HandleAsync(Guid id, CancellationToken ct)
     {
         var user = await users.FindByIdAsync(id.ToString()) ?? throw ProblemException.NotFound("Pengguna");
+        await SystemRoleGuard.EnsureCanManageUserAsync(db, current, id, ct);
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         await users.SetLockoutEndDateAsync(user, null);
@@ -28,7 +29,7 @@ public sealed class UnlockUserHandler(GmsDbContext db, UserManager<AppUser> user
 }
 
 /// <summary>Mengakhiri paksa sesi aktif pengguna (AC-AM-06b). Idempoten bila tidak ada sesi aktif.</summary>
-public sealed class EndUserSessionHandler(GmsDbContext db, IAuditWriter audit, TimeProvider time)
+public sealed class EndUserSessionHandler(GmsDbContext db, ICurrentUser current, IAuditWriter audit, TimeProvider time)
 {
     public async Task HandleAsync(Guid id, CancellationToken ct)
     {
@@ -36,6 +37,8 @@ public sealed class EndUserSessionHandler(GmsDbContext db, IAuditWriter audit, T
         {
             throw ProblemException.NotFound("Pengguna");
         }
+
+        await SystemRoleGuard.EnsureCanManageUserAsync(db, current, id, ct);
 
         var ended = await db.UserSessions
             .Where(s => s.UserId == id && s.RevokedAt == null)
@@ -60,6 +63,7 @@ public sealed class SetUserActiveHandler(GmsDbContext db, ICurrentUser current, 
     public async Task<UserDetail> HandleAsync(Guid id, bool isActive, uint rowVersion, CancellationToken ct)
     {
         var user = await db.Users.SingleOrDefaultAsync(u => u.Id == id, ct) ?? throw ProblemException.NotFound("Pengguna");
+        await SystemRoleGuard.EnsureCanManageUserAsync(db, current, id, ct);
         db.Entry(user).Property(u => u.RowVersion).OriginalValue = rowVersion;
         var now = time.GetUtcNow();
 

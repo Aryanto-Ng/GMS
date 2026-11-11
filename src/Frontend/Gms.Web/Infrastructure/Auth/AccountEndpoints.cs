@@ -17,6 +17,7 @@ public sealed record ChangePasswordForm(string? CurrentPassword, string? NewPass
 public static class AccountEndpoints
 {
     public const string LoginPath = "/login";
+    public const string LoginRateLimitPolicy = "login";
     public const string ChangePasswordPath = "/account/change-password";
 
     public static void Map(IEndpointRouteBuilder app)
@@ -43,7 +44,7 @@ public static class AccountEndpoints
             {
                 return Results.LocalRedirect(LoginUrl(ErrorCode(ex.Problem), returnUrl, ex.Problem.LockedUntil));
             }
-        }).AllowAnonymous();
+        }).AllowAnonymous().RequireRateLimiting(LoginRateLimitPolicy);
 
         group.MapPost("/logout", async (HttpContext http, IAuthApi auth, ISessionTokenProvider tokens, CancellationToken ct) =>
         {

@@ -24,6 +24,7 @@ public sealed class ResetPasswordHandler(
     public async Task<ResetPasswordResponse> HandleAsync(Guid id, ResetPasswordRequest request, CancellationToken ct)
     {
         var user = await users.FindByIdAsync(id.ToString()) ?? throw ProblemException.NotFound("Pengguna");
+        await SystemRoleGuard.EnsureCanManageUserAsync(db, current, id, ct);
         var password = string.IsNullOrEmpty(request.NewPassword) ? TemporaryPassword.Generate() : request.NewPassword;
         var now = time.GetUtcNow();
 

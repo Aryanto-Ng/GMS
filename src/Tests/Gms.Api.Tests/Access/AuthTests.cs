@@ -268,4 +268,43 @@ public sealed class AuthTests(ApiFixture fixture)
         Assert.Contains(field, problem.Errors!.Keys);
         Assert.Contains(problem.Errors[field], m => m.Contains(messagePart, StringComparison.OrdinalIgnoreCase));
     }
+
+    [Fact]
+    public async Task Ganti_password_dengan_password_lama_salah_berulang_mengunci_akun()
+    {
+        var user = await H.CreateReadyUserAsync(H.AdminRoleId);
+
+        for (var i = 0; i < 4; i++)
+        {
+            var wrong = await H.Api.PostAsync("/api/v1/auth/change-password", new ChangePasswordRequest("Salah12345", "BaruAman123"), user.Token);
+            ProblemAssert.Is(wrong, HttpStatusCode.UnprocessableEntity, ProblemTypes.ValidationFailed);
+        }
+
+        var fifth = await H.Api.PostAsync("/api/v1/auth/change-password", new ChangePasswordRequest("Salah12345", "BaruAman123"), user.Token);
+        ProblemAssert.Is(fifth, HttpStatusCode.Unauthorized, ProblemTypes.AccountLocked);
+
+        // Password benar pun ditolak selama terkunci, dan login juga terkunci.
+        ProblemAssert.Is(await H.Api.PostAsync("/api/v1/auth/change-password", new ChangePasswordRequest(user.Password, "BaruAman123"), user.Token),
+            HttpStatusCode.Unauthorized, ProblemTypes.AccountLocked);
+        ProblemAssert.Is(await H.Api.PostAsync("/api/v1/auth/login", new LoginRequest(user.UserName, user.Password)),
+            HttpStatusCode.Unauthorized, ProblemTypes.AccountLocked);
+    }
+
+    [Fact]
+    public async Task Ganti_password_berhasil_mereset_hitungan_gagal()
+    {
+        var user = await H.CreateReadyUserAsync(H.AdminRoleId);
+        for (var i = 0; i < 3; i++)
+        {
+            await H.Api.PostAsync("/api/v1/auth/change-password", new ChangePasswordRequest("Salah12345", "BaruAman123"), user.Token);
+        }
+
+        (await H.Api.PostAsync("/api/v1/auth/change-password", new ChangePasswordRequest(user.Password, "BaruAman123"), user.Token)).Ok();
+
+        for (var i = 0; i < 3; i++)
+        {
+            var wrong = await H.Api.PostAsync("/api/v1/auth/change-password", new ChangePasswordRequest("Salah12345", "LebihBaru789"), user.Token);
+            ProblemAssert.Is(wrong, HttpStatusCode.UnprocessableEntity, ProblemTypes.ValidationFailed); // belum terkunci: hitungan mulai dari nol
+        }
+    }
 }

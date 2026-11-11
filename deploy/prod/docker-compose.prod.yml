@@ -71,6 +71,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production      # Api__BaseUrl dibaca dari appsettings.Production.json
       DataProtection__KeysPath: /keys
+      AllowedHosts: ${DOMAIN}   # SEC-003: Web hanya melayani Host domain produksi
     volumes:
       - ./data/web-keys:/keys                   # kunci cookie login; jangan dihapus
     labels:

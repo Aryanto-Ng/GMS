@@ -56,6 +56,7 @@ public sealed partial class CreateUserHandler(
         }
 
         errors.ThrowIfAny();
+        await SystemRoleGuard.EnsureCanAssignRoleAsync(db, current, role!.Id, ct);
 
         var now = time.GetUtcNow();
         var user = new AppUser

@@ -9,13 +9,22 @@
 
 | ID | Tingkat | Temuan | Tiket |
 |---|---|---|---|
-| SEC-001 | **Tinggi** | Eskalasi hak: pemegang izin Pengguna (Create/Edit/ResetPassword) dapat menjadi atau mengambil alih Administrator | `Bugs/SEC-001-Eskalasi-Hak-Administrator.md` |
+| SEC-001 | ~~Tinggi~~ **Rendah** (dikoreksi) | Pertahanan berlapis: handler pengguna tidak membatasi pengelolaan role/akun Administrator oleh non-Administrator. Saat ini tidak dapat dieksploitasi karena izin `AccessManagement.*` hanya untuk Administrator | `Bugs/SEC-001-Eskalasi-Hak-Administrator.md` |
 | SEC-002 | Sedang | Web tidak mengirim header keamanan (CSP, anti-framing, nosniff, Referrer-Policy) | `Bugs/SEC-002-Header-Keamanan-Web.md` |
 | SEC-003 | Sedang | Compose UAT mempublikasikan Web di `0.0.0.0:5001` (HTTP polos) | `Bugs/SEC-003-Port-UAT-Terbuka.md` |
 | SEC-004 | Rendah | Ganti password tidak membatasi percobaan "password lama" salah; login tanpa pembatasan per IP | `Bugs/SEC-004-Throttling-Password.md` |
 | SEC-005 | Info | Hal yang bergantung pada isolasi jaringan (IP/UA dari body login, ForwardedHeaders, `AllowedHosts`, waktu respons user tak dikenal) | dicatat di laporan |
 
-Tidak ada temuan Kritis. Satu temuan Tinggi (SEC-001) harus diputuskan/diperbaiki sebelum UAT diserahkan ke pengguna.
+Tidak ada temuan Kritis. **Koreksi 2026-11-12:** tingkat awal SEC-001 (Tinggi) keliru. Saat membuktikannya dengan tes, API role menolak pemberian `AccessManagement.*` ke role selain Administrator (`IsAssignable=false`), sehingga tidak ada non-Administrator yang dapat memegang izin pengelolaan pengguna lewat jalur normal. Tingkat diturunkan menjadi Rendah (pertahanan berlapis); guard tetap dipasang.
+
+## Status perbaikan (2026-11-12)
+
+| ID | Status | Perbaikan | Bukti |
+|---|---|---|---|
+| SEC-001 | Selesai | `SystemRoleGuard`: hanya Administrator yang boleh menetapkan role sistem dan mengelola pengguna ber-role sistem (ubah, reset password, buka kunci, akhiri sesi, nonaktif/aktif); non-Administrator tidak dapat mengubah role sendiri; `ICurrentUser.IsAdministrator` | `PrivilegeEscalationTests` (6 tes; izin disisipkan langsung ke DB), uji mutasi: 4 tes gagal saat guard dimatikan |
+| SEC-002 | Selesai | `SecurityHeaders` middleware: CSP dengan nonce per permintaan untuk import map (tanpa `unsafe-inline` skrip), `frame-ancestors 'none'`, `nosniff`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` | `SecurityE2ETests` (header, nol pelanggaran CSP pada alur login/MegaMenu/palette/tema, iframe diblokir); 44 E2E lulus |
+| SEC-003 | Selesai | UAT dipublikasikan hanya di `127.0.0.1:5001`; `AllowedHosts` dari `UAT_ALLOWED_HOSTS` (UAT) dan `DOMAIN` (prod); `Deployment.md` diperbarui | `docker compose config` kedua lingkungan. **Belum diuji di server nyata** |
+| SEC-004 | Selesai | Backend: password lama salah dihitung sebagai kegagalan (lockout, audit, reset saat sukses). Web: rate limit login per IP (`RateLimit:LoginPerMinute`, bawaan 20/menit) dengan pesan di halaman login | `AuthTests` (2 baru), `SecurityE2ETests` (batas per IP); 512 tes API lulus |
 
 ## Yang diperiksa dan dinyatakan baik
 
@@ -37,8 +46,8 @@ Tidak ada temuan Kritis. Satu temuan Tinggi (SEC-001) harus diputuskan/diperbaik
 
 ## Temuan
 
-### SEC-001 (Tinggi): Eskalasi hak ke Administrator
-`CreateUserHandler` dan `UpdateUserHandler` menerima `RoleId` apa pun, termasuk role sistem Administrator, tanpa memeriksa bahwa pelaku sendiri Administrator. `ResetPasswordHandler` juga tidak membatasi target. Akibat: pengguna dengan role "admin pengguna" (izin `User.Create`/`User.Edit`/`User.ResetPassword`, yang dapat diberikan ke role biasa) dapat (a) membuat pengguna baru ber-role Administrator, (b) mengubah role dirinya sendiri menjadi Administrator, atau (c) mereset password Administrator lalu login sebagai Administrator. Kondisi: harus ada role non-Administrator yang memegang izin tersebut (diizinkan oleh matriks izin). Temuan dari pembacaan kode; belum dibuktikan dengan tes dinamis.
+### SEC-001 (Rendah setelah koreksi, awalnya Tinggi): Eskalasi hak ke Administrator
+`CreateUserHandler` dan `UpdateUserHandler` menerima `RoleId` apa pun, termasuk role sistem Administrator, tanpa memeriksa bahwa pelaku sendiri Administrator. `ResetPasswordHandler` juga tidak membatasi target. Akibat: pengguna dengan role "admin pengguna" (izin `User.Create`/`User.Edit`/`User.ResetPassword`, yang dapat diberikan ke role biasa) dapat (a) membuat pengguna baru ber-role Administrator, (b) mengubah role dirinya sendiri menjadi Administrator, atau (c) mereset password Administrator lalu login sebagai Administrator. Kondisi: harus ada role non-Administrator yang memegang izin tersebut. Awalnya dinilai mungkin lewat matriks izin; pembuktian dengan tes menunjukkan izin `AccessManagement.*` tidak dapat diberikan ke role lain lewat API (hanya lewat suntingan data langsung atau perubahan katalog di masa depan).
 Rekomendasi: hanya Administrator yang boleh memberi/mencabut role sistem dan mengelola pengguna ber-role sistem; ubah role diri sendiri ditolak; uji API untuk ketiga skenario.
 
 ### SEC-002 (Sedang): Header keamanan Web
@@ -61,4 +70,4 @@ Rekomendasi: hitung kegagalan password lama lewat `AccessFailedAsync`/lockout; t
 - Logout (POST) tanpa token antiforgery eksplisit; dilindungi SameSite=Lax, dampak hanya logout paksa.
 
 ## Tindak lanjut
-Tiket SEC-001..004 dibuat di `docs/Bugs/`. Urutan: SEC-001 (wajib sebelum UAT), SEC-003 (konfigurasi, cepat), SEC-002, SEC-004.
+Tiket SEC-001..004 di `docs/Bugs/` sudah diperbaiki (lihat Status perbaikan). Verifikasi ulang: tes otomatis di atas lulus; yang tersisa adalah pengujian di server UAT nyata (TLS, header lewat proxy, port loopback).

@@ -26,10 +26,11 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: UAT      # Api__BaseUrl dibaca dari appsettings.UAT.json
       DataProtection__KeysPath: /keys
+      AllowedHosts: ${UAT_ALLOWED_HOSTS:-*}   # SEC-003: isi dengan domain UAT (mis. uat.contoh.id) di .env
     volumes:
       - ./data/web-keys:/keys
     ports:
-      - "5001:8080"
+      - "127.0.0.1:5001:8080"   # SEC-003: hanya loopback; reverse proxy TLS di host yang meneruskan ke sini
     networks: [backend]
 
 networks:

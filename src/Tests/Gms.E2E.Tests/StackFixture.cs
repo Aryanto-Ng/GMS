@@ -60,6 +60,7 @@ public sealed class StackFixture : IAsyncLifetime
             ["ASPNETCORE_ENVIRONMENT"] = "Development",
             ["Api__BaseUrl"] = ApiUrl,
             ["Api__UseMock"] = "false",
+            ["RateLimit__LoginPerMinute"] = "10000", // E2E melakukan banyak login dari satu IP
             ["Logging__LogLevel__Default"] = "Warning",
         });
         await WaitAsync($"{WebUrl}/login", expected: HttpStatusCode.OK, "Web");
@@ -101,6 +102,24 @@ public sealed class StackFixture : IAsyncLifetime
         await page.GetByLabel("Username").FillAsync(user);
         await page.GetByLabel("Password").FillAsync(password);
         await page.GetByRole(AriaRole.Button, new() { Name = "Masuk" }).ClickAsync();
+    }
+
+    /// <summary>Menjalankan Web kedua (API yang sama) dengan batas login per IP yang rendah untuk menguji pembatasan; mengembalikan URL-nya.</summary>
+    public async Task<string> StartRateLimitedWebAsync(int loginPerMinute)
+    {
+        var url = $"http://127.0.0.1:{FreePort()}";
+        var logs = Path.Combine(AppContext.BaseDirectory, "logs");
+        StartProcess("web-ratelimit", Path.Combine(FindOutput("Frontend", "Gms.Web"), "Gms.Web.dll"), logs, new Dictionary<string, string>
+        {
+            ["ASPNETCORE_URLS"] = url,
+            ["ASPNETCORE_ENVIRONMENT"] = "Development",
+            ["Api__BaseUrl"] = ApiUrl,
+            ["Api__UseMock"] = "false",
+            ["RateLimit__LoginPerMinute"] = loginPerMinute.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ["Logging__LogLevel__Default"] = "Warning",
+        });
+        await WaitAsync($"{url}/login", expected: HttpStatusCode.OK, "Web");
+        return url;
     }
 
     private static int FreePort()

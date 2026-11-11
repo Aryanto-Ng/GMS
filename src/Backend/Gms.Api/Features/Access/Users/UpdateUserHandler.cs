@@ -35,6 +35,9 @@ public sealed class UpdateUserHandler(GmsDbContext db, ICurrentUser current, IAu
         errors.ThrowIfAny();
 
         var user = await db.Users.SingleOrDefaultAsync(u => u.Id == id, ct) ?? throw ProblemException.NotFound("Pengguna");
+        await SystemRoleGuard.EnsureCanManageUserAsync(db, current, id, ct);
+        await SystemRoleGuard.EnsureCanAssignRoleAsync(db, current, newRole!.Id, ct);
+        SystemRoleGuard.EnsureNotOwnRoleChange(current, id, user.RoleId != newRole.Id);
         db.Entry(user).Property(u => u.RowVersion).OriginalValue = request.RowVersion;
 
         var oldRoleName = await db.Roles.Where(r => r.Id == user.RoleId).Select(r => r.Name).SingleAsync(ct);

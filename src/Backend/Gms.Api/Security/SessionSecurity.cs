@@ -38,6 +38,10 @@ public interface ICurrentUser
     Guid? Id { get; }
     string? UserName { get; }
     Guid? SessionId { get; }
+
+    /// <summary>True bila pengguna ber-role sistem (Administrator).</summary>
+    bool IsAdministrator { get; }
+
     bool HasPermission(string permission);
     IReadOnlyList<string> Permissions { get; }
 }
@@ -53,6 +57,8 @@ internal sealed class CurrentUser(IHttpContextAccessor accessor) : ICurrentUser
     public string? UserName => Principal?.Identity?.Name;
 
     public Guid? SessionId => Guid.TryParse(Principal?.FindFirstValue(GmsClaims.SessionId), out var id) ? id : null;
+
+    public bool IsAdministrator => Principal?.FindFirstValue(GmsClaims.IsAdministrator) == "true";
 
     public bool HasPermission(string permission) => Principal?.HasClaim(GmsClaims.Permission, permission) == true;
 

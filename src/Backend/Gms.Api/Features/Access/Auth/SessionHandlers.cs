@@ -81,6 +81,28 @@ public sealed class ChangePasswordHandler(
         var userId = current.Id ?? throw ProblemException.Forbidden();
         var user = await users.FindByIdAsync(userId.ToString()) ?? throw ProblemException.NotFound("Pengguna");
 
+        // SEC-004: tebakan "password lama" dihitung seperti gagal login (lockout), agar sesi curian tidak dapat menebak tanpa batas.
+        if (await users.IsLockedOutAsync(user))
+        {
+            throw ProblemException.AccountLocked(user.LockoutEnd);
+        }
+
+        if (!await users.CheckPasswordAsync(user, request.CurrentPassword))
+        {
+            await users.AccessFailedAsync(user);
+            var locked = await users.IsLockedOutAsync(user);
+            audit.Add(AuditEvents.LoginFailed, "User", user.Id.ToString(), newValue: new { reason = "WrongCurrentPassword" },
+                actorUserId: user.Id, actorUsername: user.UserName);
+            if (locked)
+            {
+                audit.Add(AuditEvents.AccountLocked, "User", user.Id.ToString(), newValue: new { until = user.LockoutEnd },
+                    actorUserId: user.Id, actorUsername: user.UserName);
+            }
+
+            await db.SaveChangesAsync(ct);
+            throw locked ? ProblemException.AccountLocked(user.LockoutEnd) : ProblemException.Validation("currentPassword", "Password lama salah.");
+        }
+
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
         var result = await users.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
@@ -89,6 +111,7 @@ public sealed class ChangePasswordHandler(
             throw IdentityErrorMapper.ToProblem(result.Errors, "newPassword");
         }
 
+        await users.ResetAccessFailedCountAsync(user);
         user.MustChangePassword = false;
         user.UpdatedAt = time.GetUtcNow();
         user.UpdatedBy = userId;

@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["css/shell.css"]" />
     <link rel="stylesheet" href="@Assets["Gms.Web.styles.css"]" />
-    <ImportMap />
+    <ImportMap nonce="@Nonce" />
     <HeadOutlet @rendermode="PageRenderMode" />
 </head>
 
@@ -33,6 +33,9 @@
 @code {
     [CascadingParameter]
     private HttpContext? HttpContext { get; set; }
+
+    // Nonce CSP per permintaan (SecurityHeaders): satu-satunya skrip inline adalah import map yang dihasilkan framework.
+    private string? Nonce => HttpContext?.Items[Gms.Web.Infrastructure.SecurityHeaders.NonceItemKey] as string;
 
     // Halaman bertanda [ExcludeFromInteractiveRouting] (login, ganti password, 403) tetap Static SSR; selebihnya Interactive Server.
     private IComponentRenderMode? PageRenderMode =>

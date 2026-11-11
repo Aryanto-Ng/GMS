@@ -1,3 +1,4 @@
+using System.Threading.RateLimiting;
 using Gms.Shared.Access;
 using Gms.Shared.CustomerPo;
 using Gms.Shared.Dashboard;
@@ -8,6 +9,7 @@ using Gms.Shared.Payroll;
 using Gms.Shared.Production;
 using Gms.Shared.WorkOrders;
 using Gms.Web.Components;
+using Gms.Web.Infrastructure;
 using Gms.Web.Infrastructure.Auth;
 using Gms.Web.Infrastructure.Http;
 using Gms.Web.Services.Api;
@@ -28,6 +30,20 @@ services.AddRazorComponents().AddInteractiveServerComponents();
 services.AddAntDesign();
 services.AddScoped<Gms.Web.Services.IGmsToast, Gms.Web.Services.GmsToast>();
 services.AddHttpContextAccessor();
+
+// SEC-004: pembatasan percobaan login per alamat IP (melengkapi lockout per akun yang dapat disalahgunakan untuk password spraying).
+var loginPerMinute = builder.Configuration.GetValue("RateLimit:LoginPerMinute", 20);
+services.AddRateLimiter(options =>
+{
+    options.AddPolicy(AccountEndpoints.LoginRateLimitPolicy, http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = loginPerMinute, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    options.OnRejected = (context, _) =>
+    {
+        context.HttpContext.Response.Redirect($"{AccountEndpoints.LoginPath}?error=too-many-requests");
+        return ValueTask.CompletedTask;
+    };
+});
 
 // Produksi: kunci Data Protection (enkripsi cookie gms.auth) disimpan di volume agar login bertahan setelah restart/deploy.
 if (builder.Configuration["DataProtection:KeysPath"] is { Length: > 0 } keysPath)
@@ -126,6 +142,7 @@ services.AddScoped<IAuditApi>(sp => api.UseMock ? ActivatorUtilities.CreateInsta
 var app = builder.Build();
 
 app.UseForwardedHeaders();
+app.UseSecurityHeaders();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -137,6 +154,7 @@ app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages:
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.UseMiddleware<MustChangePasswordMiddleware>();
 app.UseAntiforgery();
 

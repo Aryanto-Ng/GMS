@@ -32,7 +32,7 @@ curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker deploy            # user khusus deploy, bukan root
 sudo mkdir -p /opt/gms && sudo chown deploy: /opt/gms
 ```
-Production: arahkan A record `DOMAIN` ke IP VPS; buka port 80 dan 443 (`ufw allow 80,443/tcp`) serta SSH. UAT: pasang reverse proxy dengan TLS di depan port 5001 (cookie login berstatus Secure di lingkungan non-Development).
+Production: arahkan A record `DOMAIN` ke IP VPS; buka port 80 dan 443 (`ufw allow 80,443/tcp`) serta SSH. UAT: port Web dipublikasikan hanya di loopback (`127.0.0.1:5001`); pasang reverse proxy dengan TLS di host yang meneruskan ke port itu (cookie login berstatus Secure di lingkungan non-Development) dan isi `UAT_ALLOWED_HOSTS` dengan domain UAT. Production membatasi `AllowedHosts` ke `DOMAIN` otomatis.
 
 ## 2. Konfigurasi
 - GitHub: isi Secrets sesuai `docs/Secrets-Checklist.md` (Environment `uat` dan `production`), aktifkan required reviewers pada `production`.
