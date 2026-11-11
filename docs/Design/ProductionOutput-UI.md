@@ -162,4 +162,4 @@ Acuan: `docs/Design.md` dan `docs/Design/_Foundation-UI.md` v2.0. Nama komponen 
 - **Komponen umum:** AppShell (header + MegaMenu + CommandPalette), `PageHeader`, tabel `gms-table` + `PagerBar` (DataTable), `StatusTag`, `ProblemBanner` (Alert), `EmptyState` / `ErrorState` / `SkeletonRows`, `AntDesign.Button` (satu `Primary` per area), `IGmsToast`.
 - **Khusus modul:** `QtyGrid` (grid output per Color × Size dengan hint "maks N" dan galat per sel), `ConfirmDialog` + `ImpactPreviewTable` (Void, Koreksi, Penyesuaian), tab Kirim/Terima Vendor, `ProblemBanner` untuk penahan server, `StatusTag` `voided`.
 - **Token yang dipakai:** `danger-bg` + `danger-text` (sel melebihi batas), `warning-bg` (melebihi Qty WO), `border-control`, `radius-xs` (sel grid), `space-2`.
-- **Deviasi:** `ConfirmDialog` memakai `<dialog>` native (lihat `_Foundation-UI.md` 4.4). Tidak ada deviasi lain pada modul ini.
+- **Deviasi:** tidak ada.

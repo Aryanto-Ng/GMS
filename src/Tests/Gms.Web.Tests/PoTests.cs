@@ -274,7 +274,7 @@ public sealed class PoPageTests : WebTestBase
     }
 
     private static IElement DialogConfirm<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent =>
-        cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).QuerySelectorAll("button.ant-btn").Last();
+        cut.FindAll(".ant-modal-wrap").Last(d => d.QuerySelector("h2") is not null).QuerySelectorAll("button.ant-btn").Last();
 
     // ===== Daftar =====
 
@@ -448,7 +448,7 @@ public sealed class PoPageTests : WebTestBase
         cut.WaitForAssertion(() => Assert.Contains("Draft", cut.Markup));
 
         cut.FindAll(".gms-pageheader-actions button.ant-btn").Single(b => b.TextContent.Contains("Konfirmasi")).Click();
-        Assert.Contains("1 baris, total 80 pcs", cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).TextContent);
+        Assert.Contains("1 baris, total 80 pcs", cut.FindAll(".ant-modal-wrap").Last(d => d.QuerySelector("h2") is not null).TextContent);
         DialogConfirm(cut).Click();
 
         cut.WaitForAssertion(() => Assert.Equal("Confirmed", cut.Find(".gms-pageheader .gms-tag").TextContent.Trim()));
@@ -479,8 +479,8 @@ public sealed class PoPageTests : WebTestBase
         cut.WaitForAssertion(() => Assert.Equal(4, cut.FindAll("tbody tr").Count));
 
         cut.FindAll("tbody button.ant-btn").First(b => b.GetAttribute("aria-label")!.StartsWith("Alokasi KMJ-001")).Click();
-        cut.WaitForAssertion(() => Assert.Contains("Tersedia 120", cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).TextContent));
-        var dialog = () => cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null);
+        cut.WaitForAssertion(() => Assert.Contains("Tersedia 120", cut.FindAll(".ant-modal-wrap").Last(d => d.QuerySelector("h2") is not null).TextContent));
+        var dialog = () => cut.FindAll(".ant-modal-wrap").Last(d => d.QuerySelector("h2") is not null);
         Assert.Contains("Maks 100", dialog().TextContent);
         dialog().QuerySelector("input")!.Input("101");
         Assert.Contains("melebihi batas", dialog().TextContent);
@@ -498,15 +498,15 @@ public sealed class PoPageTests : WebTestBase
         var cut = Render<PoDetailPage>(p => p.Add(x => x.Id, MockPoApi.SeedPoId));
         cut.WaitForAssertion(() => Assert.Equal(4, cut.FindAll("tbody tr").Count));
         cut.FindAll("tbody button.ant-btn").First(b => b.GetAttribute("aria-label")!.StartsWith("Alokasi KMJ-001")).Click();
-        cut.WaitForAssertion(() => Assert.Contains("Maks 100", cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).TextContent));
+        cut.WaitForAssertion(() => Assert.Contains("Maks 100", cut.FindAll(".ant-modal-wrap").Last(d => d.QuerySelector("h2") is not null).TextContent));
         var line = Sync(_pos.GetAsync(MockPoApi.SeedPoId)).Lines[0];
-        cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).QuerySelector("input")!.Input("90");
+        cut.FindAll(".ant-modal-wrap").Last(d => d.QuerySelector("h2") is not null).QuerySelector("input")!.Input("90");
         _pos.AdjustStock(line.FgId, line.ColorSize.ColorId, line.ColorSize.SizeId, -80); // stok berkurang oleh pengguna lain
 
         DialogConfirm(cut).Click();
 
-        cut.WaitForAssertion(() => Assert.Contains("Stok tersedia berubah menjadi 40", cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).TextContent));
-        Assert.Contains("Maks 40", cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).TextContent);
+        cut.WaitForAssertion(() => Assert.Contains("Stok tersedia berubah menjadi 40", cut.FindAll(".ant-modal-wrap").Last(d => d.QuerySelector("h2") is not null).TextContent));
+        Assert.Contains("Maks 40", cut.FindAll(".ant-modal-wrap").Last(d => d.QuerySelector("h2") is not null).TextContent);
     }
 
     [Fact]
@@ -517,7 +517,7 @@ public sealed class PoPageTests : WebTestBase
 
         cut.FindAll(".gms-pageheader-actions button.ant-btn").Single(b => b.TextContent.Contains("Batalkan")).Click();
         Assert.True(DialogConfirm(cut).HasAttribute("disabled"));
-        cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).QuerySelector("textarea")!.Input("customer batal");
+        cut.FindAll(".ant-modal-wrap").Last(d => d.QuerySelector("h2") is not null).QuerySelector("textarea")!.Input("customer batal");
         DialogConfirm(cut).Click();
 
         cut.WaitForAssertion(() => Assert.Contains("Dibatalkan: customer batal", cut.Markup));

@@ -174,4 +174,4 @@ Acuan: `docs/Design.md` dan `docs/Design/_Foundation-UI.md` v2.0. Nama komponen 
 - **Komponen umum:** AppShell (header + MegaMenu + CommandPalette), `PageHeader`, tabel `gms-table` + `PagerBar` (DataTable), `StatusTag`, `ProblemBanner` (Alert), `EmptyState` / `ErrorState` / `SkeletonRows`, `AntDesign.Button` (satu `Primary` per area), `IGmsToast`.
 - **Khusus modul:** `TextField`/`LookupSelect` (FormField) untuk form pengguna dan role; `ConfirmDialog` untuk reset password, nonaktifkan/aktifkan, buka kunci, dan hapus role; matriks izin berupa tabel `gms-perm` dengan checkbox; daftar aturan password dengan ikon centang/silang.
 - **Token yang dipakai:** `bg-container`, `fill-alter` (header tabel), `border-secondary`, `success-text`/`danger-text` (aturan password), `space-4`/`space-6`, `radius-lg`.
-- **Deviasi:** `ConfirmDialog` memakai `<dialog>` native (lihat `_Foundation-UI.md` 4.4). Tidak ada deviasi lain pada modul ini.
+- **Deviasi:** tidak ada.

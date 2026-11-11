@@ -150,4 +150,4 @@ Acuan: `docs/Design.md` dan `docs/Design/_Foundation-UI.md` v2.0. Nama komponen 
 - **Komponen umum:** AppShell (header + MegaMenu + CommandPalette), `PageHeader`, tabel `gms-table` + `PagerBar` (DataTable), `StatusTag`, `ProblemBanner` (Alert), `EmptyState` / `ErrorState` / `SkeletonRows`, `AntDesign.Button` (satu `Primary` per area), `IGmsToast`.
 - **Khusus modul:** `QtyGrid` (qty kirim dengan batas alokasi), `AllocationDialog` (alokasi stok), `ConfirmDialog` + `ImpactPreviewTable` (Void, Koreksi), tombol Cetak PDF (`Default`) dan penanda "CETAK ULANG"/"DIBATALKAN" pada dokumen PDF, `StatusTag` `voided`.
 - **Token yang dipakai:** `primary` (aksi utama Simpan), `danger` (Void), `fill-alter`, `space-4`. PDF memakai font Liberation Sans, bukan token UI.
-- **Deviasi:** `ConfirmDialog` memakai `<dialog>` native (lihat `_Foundation-UI.md` 4.4). Tidak ada deviasi lain pada modul ini.
+- **Deviasi:** tidak ada.

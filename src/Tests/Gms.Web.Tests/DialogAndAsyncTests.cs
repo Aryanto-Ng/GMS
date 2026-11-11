@@ -39,20 +39,21 @@ public sealed class DialogAndAsyncTests : WebTestBase
     // ===== ConfirmDialog =====
 
     [Fact]
-    public void Dialog_memakai_dialog_native_dengan_judul_deskripsi_dan_label_alasan_terhubung()
+    public void Dialog_memakai_Modal_role_dialog_dengan_judul_h2_deskripsi_dan_label_alasan_terhubung()
     {
         var cut = Dialog();
 
-        var dialog = cut.Find("dialog");
+        Assert.Equal("dialog", cut.Find(".ant-modal-wrap").GetAttribute("role"));
         var title = cut.Find("h2");
-        Assert.Equal(title.Id, dialog.GetAttribute("aria-labelledby"));
         Assert.Contains("Void entri output", title.TextContent);
-        Assert.Equal(cut.Find("p").Id, dialog.GetAttribute("aria-describedby"));
+        Assert.Equal(title.Id, cut.Find(".ant-modal-title h2").Id); // judul berada di header Modal
+        Assert.Contains("Entri akan dibatalkan.", cut.Find(".gms-dialog-body p").TextContent);
         var textarea = cut.Find("textarea");
         Assert.Equal(textarea.Id, cut.Find("label").GetAttribute("for"));
         Assert.Contains("wajib", cut.Find("label").TextContent); // penanda wajib berupa teks
         Assert.Equal("500", textarea.GetAttribute("maxlength"));
         Assert.Contains("0 / 500", cut.Find("small").TextContent);
+        Assert.Equal(["Batal", "Ya, lanjutkan"], cut.FindAll(".ant-modal-footer button.ant-btn").Select(x => x.TextContent.Trim())); // Batal lalu aksi utama
     }
 
     [Fact]
@@ -60,7 +61,7 @@ public sealed class DialogAndAsyncTests : WebTestBase
     {
         var cut = Dialog(open: false);
 
-        Assert.Empty(cut.FindAll("h2, textarea"));
+        Assert.Empty(cut.FindAll("h2, textarea, .ant-modal-wrap")); // konten dihancurkan saat tertutup
     }
 
     [Fact]
@@ -196,18 +197,19 @@ public sealed class DialogAndAsyncTests : WebTestBase
     }
 
     [Fact]
-    public async Task Modul_JS_dimuat_saat_dibuka_dan_Esc_diabaikan_saat_memproses()
+    public async Task Esc_dan_tombol_tutup_diabaikan_saat_memproses_dan_Batal_dinonaktifkan()
     {
         var gate = new TaskCompletionSource();
         bool? opened = null;
         var cut = Dialog(onConfirm: _ => gate.Task, openChanged: EventCallback.Factory.Create<bool>(this, v => opened = v));
         cut.Find("textarea").Input("alasan");
-        cut.WaitForAssertion(() => Assert.Contains(JSInterop.Invocations, i => i.Identifier == "show"));
 
         var running = cut.InvokeAsync(() => Confirm(cut).Click());
-        await cut.InvokeAsync(() => cut.Instance.RequestClose()); // Esc saat memproses
+        await cut.InvokeAsync(() => cut.Instance.RequestClose()); // Esc saat memproses (dari modul JS)
         Assert.Null(opened);
-        Assert.Equal("true", cut.Find("dialog").GetAttribute("aria-busy"));
+        Assert.Equal("true", cut.Find(".gms-dialog-body").GetAttribute("aria-busy"));
+        Assert.True(cut.FindAll(".ant-modal-footer button.ant-btn").First().HasAttribute("disabled")); // Batal
+        Assert.Empty(cut.FindAll("button.ant-modal-close")); // tombol X disembunyikan
 
         gate.SetResult();
         await running;
@@ -215,13 +217,32 @@ public sealed class DialogAndAsyncTests : WebTestBase
     }
 
     [Fact]
-    public async Task Esc_saat_tidak_memproses_menutup_dan_Batal_menutup()
+    public async Task Esc_saat_tidak_memproses_dan_Batal_menutup_tanpa_menjalankan_aksi()
+    {
+        var states = new List<bool>();
+        var confirmed = 0;
+        var cut = Dialog(onConfirm: _ => { confirmed++; return Task.CompletedTask; }, openChanged: EventCallback.Factory.Create<bool>(this, states.Add));
+
+        await cut.InvokeAsync(() => cut.Instance.RequestClose()); // Esc
+        Assert.Equal([false], states);
+
+        var second = Dialog(onConfirm: _ => { confirmed++; return Task.CompletedTask; }, openChanged: EventCallback.Factory.Create<bool>(this, states.Add));
+        second.FindAll(".ant-modal-footer button.ant-btn").First().Click();
+        Assert.Equal([false, false], states);
+        Assert.Equal(0, confirmed);
+    }
+
+    [Fact]
+    public void Klik_latar_tidak_menutup_dialog_aksi_berisiko()
     {
         var states = new List<bool>();
         var cut = Dialog(openChanged: EventCallback.Factory.Create<bool>(this, states.Add));
 
-        await cut.InvokeAsync(() => cut.Instance.RequestClose());
-        Assert.Equal([false], states);
+        cut.Find(".ant-modal-wrap").MouseDown();
+        cut.Find(".ant-modal-wrap").MouseUp();
+
+        Assert.Empty(states);
+        Assert.NotEmpty(cut.FindAll(".ant-modal-wrap"));
     }
 
     // ===== AsyncContent =====

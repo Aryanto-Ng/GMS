@@ -86,9 +86,9 @@ public sealed class FlowsE2ETests(StackFixture stack)
         await Expect(page.Locator("tbody tr")).ToHaveCountAsync(1);
 
         await page.Locator("tbody tr", new() { HasText = wo.Code }).GetByRole(AriaRole.Button, new() { Name = "Void entri" }).ClickAsync();
-        await Expect(page.Locator("dialog[open] .gms-impact")).ToBeVisibleAsync();
-        await page.Locator("dialog[open] textarea").FillAsync("salah input");
-        await page.Locator("dialog[open]").GetByRole(AriaRole.Button, new() { Name = "Void entri" }).ClickAsync();
+        await Expect(page.Locator(".ant-modal-wrap .gms-impact")).ToBeVisibleAsync();
+        await page.Locator(".ant-modal-wrap textarea").FillAsync("salah input");
+        await page.Locator(".ant-modal-wrap").GetByRole(AriaRole.Button, new() { Name = "Void entri" }).ClickAsync();
 
         await Expect(page.GetByText("Entri di-void.")).ToBeVisibleAsync();
         Assert.Equal(0, (await stack.Seed.GetAsync<WoProgressDto>($"/api/v1/work-orders/{wo.Id}/progress")).Steps[0].TotalOutput);
@@ -105,8 +105,8 @@ public sealed class FlowsE2ETests(StackFixture stack)
         await WaitIdleAsync(page);
 
         await page.GetByRole(AriaRole.Button, new() { Name = "Rilis", Exact = true }).ClickAsync();
-        await Expect(page.Locator("dialog[open]")).ToContainTextAsync("Terpenuhi");
-        await page.Locator("dialog[open]").GetByRole(AriaRole.Button, new() { Name = "Rilis WO" }).ClickAsync();
+        await Expect(page.Locator(".ant-modal-wrap")).ToContainTextAsync("Terpenuhi");
+        await page.Locator(".ant-modal-wrap").GetByRole(AriaRole.Button, new() { Name = "Rilis WO" }).ClickAsync();
 
         await Expect(page.GetByText("WO dirilis.")).ToBeVisibleAsync();
         Assert.Equal("Released", (await stack.Seed.GetAsync<WoDto>($"/api/v1/work-orders/{draft.Id}")).Status.ToString());
@@ -152,18 +152,18 @@ public sealed class FlowsE2ETests(StackFixture stack)
         await WaitIdleAsync(page);
 
         await page.GetByRole(AriaRole.Button, new() { Name = "Buat Periode", Exact = true }).First.ClickAsync();
-        await page.Locator("dialog[open] input[type=date]").Nth(0).FillAsync(today.AddDays(-1).ToString("yyyy-MM-dd"));
-        await page.Locator("dialog[open]").GetByRole(AriaRole.Button, new() { Name = "7 hari" }).ClickAsync();
-        await page.Locator("dialog[open]").GetByRole(AriaRole.Button, new() { Name = "Buat Periode" }).ClickAsync();
+        await page.Locator(".ant-modal-wrap input[type=date]").Nth(0).FillAsync(today.AddDays(-1).ToString("yyyy-MM-dd"));
+        await page.Locator(".ant-modal-wrap").GetByRole(AriaRole.Button, new() { Name = "7 hari" }).ClickAsync();
+        await page.Locator(".ant-modal-wrap").GetByRole(AriaRole.Button, new() { Name = "Buat Periode" }).ClickAsync();
 
         await Expect(Heading(page)).ToContainTextAsync("GJ-");
         await Expect(page.GetByText("Angka bersifat sementara")).ToBeVisibleAsync();
         await Expect(page.Locator("tbody tr").First).ToContainTextAsync(data.WorkerId == Guid.Empty ? "" : "Pekerja");
         await page.GetByRole(AriaRole.Button, new() { Name = "Tutup Periode", Exact = true }).ClickAsync();
-        await Expect(page.Locator("dialog[open]")).ToContainTextAsync("Penutupan PERMANEN");
-        var code = await page.Locator("dialog[open] .gms-field small, dialog[open] small").First.InnerTextAsync();
-        await page.Locator("dialog[open] input").FillAsync(code.Trim());
-        await page.Locator("dialog[open]").GetByRole(AriaRole.Button, new() { Name = "Tutup Periode" }).ClickAsync();
+        await Expect(page.Locator(".ant-modal-wrap")).ToContainTextAsync("Penutupan PERMANEN");
+        var code = await page.Locator(".ant-modal-wrap .gms-field small, .ant-modal-wrap small").First.InnerTextAsync();
+        await page.Locator(".ant-modal-wrap input").FillAsync(code.Trim());
+        await page.Locator(".ant-modal-wrap").GetByRole(AriaRole.Button, new() { Name = "Tutup Periode" }).ClickAsync();
 
         await Expect(page.GetByText(new Regex("Periode ditutup pada"))).ToBeVisibleAsync();
         var periods = await stack.Seed.GetAsync<List<PayrollPeriodListItem>>("/api/v1/payroll/periods");

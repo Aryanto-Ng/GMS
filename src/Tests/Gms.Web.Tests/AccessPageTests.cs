@@ -25,7 +25,7 @@ public sealed class AccessPageTests : WebTestBase
         SignIn(AllAdmin);
     }
 
-    private static IElement DialogConfirm(IRenderedComponent<IComponent> cut) => cut.FindAll("dialog button.ant-btn").Last();
+    private static IElement DialogConfirm(IRenderedComponent<IComponent> cut) => cut.FindAll(".ant-modal-wrap button.ant-btn").Last();
 
     private static void WaitRows<T>(IRenderedComponent<T> cut, int count) where T : IComponent =>
         cut.WaitForAssertion(() => Assert.Equal(count, cut.FindAll("tbody tr").Count));
@@ -80,8 +80,8 @@ public sealed class AccessPageTests : WebTestBase
         WaitRows(cut, 4);
 
         cut.FindAll("tbody button.ant-btn").Single(b => b.TextContent.Contains("Buka kunci")).Click();
-        Assert.Contains("Buka kunci siti?", cut.Find("dialog h2").TextContent);
-        Assert.Empty(cut.FindAll("dialog textarea")); // konfirmasi biasa tanpa alasan
+        Assert.Contains("Buka kunci siti?", cut.Find(".ant-modal-wrap h2").TextContent);
+        Assert.Empty(cut.FindAll(".ant-modal-body textarea")); // konfirmasi biasa tanpa alasan
         DialogConfirm(cut).Click();
 
         cut.WaitForAssertion(() => Assert.DoesNotContain("Terkunci", cut.Find("tbody").TextContent));
@@ -108,8 +108,8 @@ public sealed class AccessPageTests : WebTestBase
         cut.FindAll("tbody button.ant-btn").Single(b => b.GetAttribute("aria-label") == "Nonaktifkan admin").Click();
         DialogConfirm(cut).Click();
 
-        cut.WaitForAssertion(() => Assert.Contains("tidak dapat menonaktifkan diri sendiri", cut.Find("dialog").TextContent));
-        Assert.Contains("Nonaktifkan admin?", cut.Find("dialog h2").TextContent);
+        cut.WaitForAssertion(() => Assert.Contains("tidak dapat menonaktifkan diri sendiri", cut.Find(".ant-modal-wrap").TextContent));
+        Assert.Contains("Nonaktifkan admin?", cut.Find(".ant-modal-wrap h2").TextContent);
     }
 
     // ===== Form Pengguna =====
@@ -211,7 +211,7 @@ public sealed class AccessPageTests : WebTestBase
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find("aside")));
 
         cut.FindAll("aside button.ant-btn").Single(b => b.TextContent.Contains("Reset Password")).Click();
-        Assert.Contains("Reset password admin", cut.Find("dialog h2").TextContent);
+        Assert.Contains("Reset password admin", cut.Find(".ant-modal-wrap h2").TextContent);
         DialogConfirm(cut).Click();
 
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find("#temp-password")));
@@ -265,7 +265,7 @@ public sealed class AccessPageTests : WebTestBase
         WaitRows(cut, 3);
 
         cut.FindAll("tbody button.ant-btn").Single(b => b.GetAttribute("aria-label") == "Hapus Sementara").Click();
-        Assert.Contains("Hapus role Sementara?", cut.Find("dialog h2").TextContent);
+        Assert.Contains("Hapus role Sementara?", cut.Find(".ant-modal-wrap h2").TextContent);
         DialogConfirm(cut).Click();
 
         cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll("tbody tr").Count));
@@ -317,7 +317,7 @@ public sealed class AccessPageTests : WebTestBase
         var po = PermissionCatalog.All.First(p => p.Key == Permissions.CustomerPO.View).Resource;
         Box(cut, $"{po}, Lihat").Change(true);
         cut.Find("form").Submit();
-        Assert.Contains("Role baru dengan 1 permission", cut.Find("dialog").TextContent);
+        Assert.Contains("Role baru dengan 1 permission", cut.Find(".ant-modal-wrap").TextContent);
         DialogConfirm(cut).Click();
 
         cut.WaitForAssertion(() => Assert.Matches("/admin/roles/[0-9a-f-]{36}$", Nav.Uri));
@@ -347,7 +347,7 @@ public sealed class AccessPageTests : WebTestBase
         Box(cut, $"{po}, Hanya".Replace("Hanya", "Konfirmasi")).Change(true); // menambah Confirm (+View sudah ada)
         cut.Find("form").Submit();
 
-        var text = cut.Find("dialog").TextContent;
+        var text = cut.Find(".ant-modal-wrap").TextContent;
         Assert.Contains("Tambah 1, lepas 1 permission.", text);
         Assert.Contains("Berlaku untuk 3 pengguna", text);
     }

@@ -260,7 +260,7 @@ public sealed class FgPageTests : WebTestBase
 
     private static IElement Tab(IRenderedComponent<FgDetailPage> cut, string label) => cut.FindAll("[role=tab]").Single(t => t.TextContent == label);
 
-    private static IElement LastDialogButton(IRenderedComponent<FgDetailPage> cut) => cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).QuerySelectorAll("button.ant-btn").Last();
+    private static IElement LastDialogButton(IRenderedComponent<FgDetailPage> cut) => cut.FindAll(".ant-modal-wrap").Last(d => d.QuerySelector("h2") is not null).QuerySelectorAll("button.ant-btn").Last();
 
     private static void WaitReady(IRenderedComponent<FgDetailPage> cut) => cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("[role=tab]")));
 
@@ -562,12 +562,12 @@ public sealed class FgPageTests : WebTestBase
 
         cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Salin dari FG lain")).Click();
         Assert.Equal("step", cut.Find("[aria-current=step]").GetAttribute("aria-current"));
-        cut.WaitForAssertion(() => Assert.Contains("KMJ-001", cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).TextContent));
-        cut.FindAll("dialog select").Last().Change(MockFgApi.KemejaId.ToString());
-        cut.FindAll("dialog button.ant-btn").Single(b => b.TextContent.Contains("Lanjut")).Click();
+        cut.WaitForAssertion(() => Assert.Contains("KMJ-001", cut.FindAll(".ant-modal-wrap").Last(d => d.QuerySelector("h2") is not null).TextContent));
+        cut.FindAll(".ant-modal-body select").Last().Change(MockFgApi.KemejaId.ToString());
+        cut.FindAll(".ant-modal-wrap button.ant-btn").Single(b => b.TextContent.Contains("Lanjut")).Click();
         cut.WaitForAssertion(() => Assert.Contains("Routing yang akan disalin", cut.Markup));
         Assert.Contains("12 sel tarif akan disalin.", cut.Markup);
-        cut.FindAll("dialog button.ant-btn").Single(b => b.TextContent.Contains("Lanjut")).Click();
+        cut.FindAll(".ant-modal-wrap button.ant-btn").Single(b => b.TextContent.Contains("Lanjut")).Click();
         cut.WaitForAssertion(() => Assert.Contains("belum memiliki routing/tarif", cut.Markup));
         LastDialogButton(cut).Click();
 

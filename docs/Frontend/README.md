@@ -44,7 +44,7 @@ Status: **Fluent UI sudah dihapus seluruhnya (2026-11-11)**: shell, komponen ber
 |---|---|---|
 | StatusTag | `StatusTag.razor` + `StatusPresentation.cs` | Ikon AntDesign + teks; nada neutral/cyan/blue/success/closed/warning/danger sesuai 4.1 |
 | StatCard | `StatCard.razor` (+ `DashboardCard.razor` untuk state per kartu) | Tanpa penanda garis kiri; peringatan/bahaya = ikon + teks |
-| ConfirmDialog | `ConfirmDialog.razor` (+ `.razor.js`) | **Deviasi:** memakai `<dialog>` native, bukan `<Modal>`. Alasan: fokus terkurung, Esc yang dapat diblok saat memproses, dan pengembalian fokus ditangani browser; dipakai 31 halaman dan sudah teruji. Tombol memakai `AntDesign.Button` (`Loading`, `Danger`). Menunggu keputusan pemilik produk |
+| ConfirmDialog | `ConfirmDialog.razor` (+ `.razor.js`) | Di atas `AntDesign.Modal` (sesuai Design.md 8.8): footer [Batal] + aksi utama (`Loading`, `Danger`), `MaskClosable=false`, `Keyboard=false` (Esc ditangani modul JS agar dapat diblok saat memproses), nama/deskripsi aksesibel dipasang JS. **Jangan** memakai `DestroyOnClose` (render ulang tak berujung pada pembukaan kedua). Tes bUnit: `.ant-modal-wrap`, `.ant-modal-body`, `.ant-modal-footer` |
 | QtyGrid | `QtyGrid.razor` (+ `.razor.js`) | Input native bergaya token (`border-control`, radius-xs) |
 | FormField / Input / Select | `TextField.razor`, `LookupSelect.razor` | Label di atas, penanda wajib, petunjuk, **Error** terhubung (`aria-invalid`, `aria-describedby`) |
 | Alert | `ProblemBanner.razor` (Problem Details), `FormSummary.razor` | Kelas `gms-banner` bernada info/success/warning/error |
@@ -62,3 +62,5 @@ Seluruh halaman (Access, Master Data, PO, WO, Produksi, Gudang, Pengiriman, Payr
 **Belum dikerjakan:** komponen `DataTable<T>` (halaman masih menulis `<table class="gms-table">` sendiri); peninjauan visual per halaman selain yang disampel (Beranda, Pengguna, Role, PO, FG, Master Data, Input Output, Payroll).
 
 **Dokumen desain (2026-11-12):** `_Foundation-UI.md` v2.0 dan sembilan `*-UI.md` sudah selaras dengan `Design.md` (AntDesign, MegaMenu, token, StatusTag, daftar komponen/token per modul). Tes Web (433) lulus di Linux (container SDK).
+
+**ConfirmDialog (2026-11-12):** dimigrasi dari `<dialog>` native ke `AntDesign.Modal` atas keputusan pemilik produk; deviasi dihapus. Teruji di browser nyata (`DialogE2ETests`: nama aksesibel, klik latar, Esc, Batal, konfirmasi + toast).

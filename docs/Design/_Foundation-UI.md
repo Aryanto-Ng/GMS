@@ -129,7 +129,7 @@ Hanya **≥ 1280px** yang dirancang. Di bawah itu tata letak dapat menyusut sead
 | **Pratinjau dampak** (Void/Koreksi) | Tabel kecil sebelum dan sesudah (kumulatif, stok, alokasi). Bila melanggar aturan, pesan penahan ditampilkan dan tombol utama nonaktif |
 | Permanen (Tutup periode gaji) | Ringkasan angka, peringatan "Tidak dapat dibuka kembali", konfirmasi dengan mengetik kode periode |
 
-`ConfirmDialog` memakai elemen `<dialog>` native (deviasi dari `<Modal>` pada Design.md 8.8; alasan: fokus terkurung dan Esc yang dapat diblok saat memproses ditangani browser). Fokus berpindah ke dialog saat terbuka, terkurung di dalamnya, Esc menutup (kecuali saat memproses), fokus kembali ke pemicu setelah tutup.
+`ConfirmDialog` memakai `<Modal>` AntDesign (Design.md 8.8; nama aksesibel dan Esc dipasang modul JS, Esc diblok saat memproses, klik latar tidak menutup). Fokus berpindah ke dialog saat terbuka, terkurung di dalamnya, Esc menutup (kecuali saat memproses), fokus kembali ke pemicu setelah tutup.
 
 ---
 

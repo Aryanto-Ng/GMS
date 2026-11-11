@@ -169,4 +169,4 @@ Acuan: `docs/Design.md` dan `docs/Design/_Foundation-UI.md` v2.0. Nama komponen 
 - **Komponen umum:** AppShell (header + MegaMenu + CommandPalette), `PageHeader`, tabel `gms-table` + `PagerBar` (DataTable), `StatusTag`, `ProblemBanner` (Alert), `EmptyState` / `ErrorState` / `SkeletonRows`, `AntDesign.Button` (satu `Primary` per area), `IGmsToast`.
 - **Khusus modul:** `MasterList<T>` (daftar entitas) + dialog form untuk entitas sederhana; FG detail memakai tab (`gms-tabs`) dan input tarif (`gms-tariff`); `ImportWizard` untuk impor CSV; `StatusTag` `ready`/`not-ready` untuk kesiapan FG; `QtyGrid` bila ada matriks.
 - **Token yang dipakai:** `primary` (tab aktif), `border-control` (input), `warning-bg`/`danger-bg` (sel tarif bermasalah), `space-4`, `radius-md`.
-- **Deviasi:** `ConfirmDialog` memakai `<dialog>` native (lihat `_Foundation-UI.md` 4.4). Tidak ada deviasi lain pada modul ini.
+- **Deviasi:** tidak ada.

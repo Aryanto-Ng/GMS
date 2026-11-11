@@ -187,7 +187,7 @@ public sealed class DeliveryPageTests : WebTestBase
         SignIn(AllDel);
     }
 
-    private static IElement Dialog<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent => cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null);
+    private static IElement Dialog<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent => cut.FindAll(".ant-modal-wrap").Last(d => d.QuerySelector("h2") is not null);
 
     private static IElement DialogConfirm<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent => Dialog(cut).QuerySelectorAll("button.ant-btn").Last();
 
