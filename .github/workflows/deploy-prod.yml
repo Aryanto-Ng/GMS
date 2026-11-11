@@ -1,14 +1,16 @@
-name: Deploy
+name: Deploy Production
 
-# Push ke main: tes -> build & push image ke GHCR -> deploy via SSH ke VPS.
-# Secrets repository (JANGAN di-commit): VPS_HOST, VPS_USER, VPS_SSH_KEY, VPS_PORT (opsional), VPS_PATH (folder deploy di VPS).
+# Push/merge ke branch `main` (hanya setelah UAT lulus dan disetujui): tes -> build & push image ke GHCR (tag `latest`) -> deploy via SSH ke VPS Production.
+# GitHub Secrets (Environment "production"): PROD_VPS_HOST, PROD_VPS_USER, PROD_VPS_SSH_KEY, PROD_VPS_PATH, PROD_VPS_PORT (opsional).
+# Rahasia aplikasi (password DB, kunci S3, password admin) ada di file .env di server, bukan di repository.
+# Beri Environment "production" required reviewers sebagai gerbang persetujuan terakhir.
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
 concurrency:
-  group: deploy
+  group: deploy-prod
   cancel-in-progress: false
 
 jobs:
@@ -62,18 +64,21 @@ jobs:
     needs: images
     runs-on: ubuntu-latest
     environment: production
+    env:
+      SSH_PORT: ${{ secrets.PROD_VPS_PORT || 22 }}
+      TARGET: ${{ secrets.PROD_VPS_USER }}@${{ secrets.PROD_VPS_HOST }}
+      REMOTE_PATH: ${{ secrets.PROD_VPS_PATH }}
     steps:
       - uses: actions/checkout@v4
       - name: Siapkan SSH
         run: |
           install -m 700 -d ~/.ssh
-          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
-          ssh-keyscan -p "${{ secrets.VPS_PORT || 22 }}" "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
-      - name: Salin compose + skrip backup
+          printf '%s\n' "${{ secrets.PROD_VPS_SSH_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -p "$SSH_PORT" "${{ secrets.PROD_VPS_HOST }}" >> ~/.ssh/known_hosts
+      - name: Salin compose Production dan skrip backup
+        run: scp -i ~/.ssh/id_deploy -P "$SSH_PORT" -r deploy/prod deploy/backup "$TARGET:$REMOTE_PATH/"
+      - name: Tarik image dan jalankan ulang
         run: |
-          scp -i ~/.ssh/id_deploy -P "${{ secrets.VPS_PORT || 22 }}" -r deploy/docker-compose.yml deploy/backup \
-            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/"
-      - name: Tarik image & jalankan ulang
-        run: |
-          ssh -i ~/.ssh/id_deploy -p "${{ secrets.VPS_PORT || 22 }}" "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
-            "cd '${{ secrets.VPS_PATH }}' && export IMAGE_TAG=${{ needs.images.outputs.tag }} && docker compose pull api web && docker compose up -d --build --remove-orphans && docker image prune -f"
+          ssh -i ~/.ssh/id_deploy -p "$SSH_PORT" "$TARGET" \
+            "cd '$REMOTE_PATH/prod' && export IMAGE_TAG=${{ needs.images.outputs.tag }} && docker compose -f docker-compose.prod.yml pull api web && docker compose -f docker-compose.prod.yml up -d --build --remove-orphans && docker image prune -f"

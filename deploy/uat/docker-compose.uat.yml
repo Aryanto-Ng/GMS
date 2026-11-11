@@ -1,0 +1,36 @@
+# UAT (PaaS/VPS): API + Web, database eksternal lewat UAT_DB_CONNECTION. Data demo diisi otomatis.
+# Jalankan dari folder deploy/uat/:  cp .env.example .env (isi nilainya)  lalu  docker compose -f docker-compose.uat.yml up -d
+# Web membuka port 5001 di host; pasang reverse proxy/TLS di depannya (cookie login wajib HTTPS di lingkungan non-Development).
+name: gms-uat
+
+services:
+  api:
+    image: ${API_IMAGE:-ghcr.io/aryanto-ng/gms-api}:${IMAGE_TAG:-uat}
+    restart: always
+    environment:
+      ASPNETCORE_ENVIRONMENT: UAT
+      ConnectionStrings__Default: ${UAT_DB_CONNECTION}
+      Database__MigrateOnStartup: "true"
+      Database__SeedOnStartup: "true"
+      Seed__DemoData: "true"
+      Seed__AdminUserName: admin
+      Seed__AdminPassword: ${UAT_ADMIN_BOOTSTRAP_PASSWORD}
+      App__TimeZone: Asia/Jakarta
+    networks: [backend]   # tanpa port publik
+
+  web:
+    image: ${WEB_IMAGE:-ghcr.io/aryanto-ng/gms-web}:${IMAGE_TAG:-uat}
+    restart: always
+    depends_on:
+      api: { condition: service_healthy }
+    environment:
+      ASPNETCORE_ENVIRONMENT: UAT      # Api__BaseUrl dibaca dari appsettings.UAT.json
+      DataProtection__KeysPath: /keys
+    volumes:
+      - ./data/web-keys:/keys
+    ports:
+      - "5001:8080"
+    networks: [backend]
+
+networks:
+  backend: {}

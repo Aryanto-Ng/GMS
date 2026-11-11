@@ -1,0 +1,109 @@
+# Production VPS: Traefik (TLS Let's Encrypt) -> Web (Blazor Server, publik) -> API (internal, tanpa port publik) -> PostgreSQL.
+# Jalankan dari folder deploy/prod/:  cp .env.example .env (isi nilainya)  lalu  docker compose -f docker-compose.prod.yml up -d
+#
+# Database (pilih satu, lihat docs/Deployment.md):
+#   - Bare machine/eksternal : isi PROD_DB_HOST dengan IP gateway host (mis. 172.17.0.1) lalu jalankan tanpa profil.
+#   - Docker (data di host)  : PROD_DB_HOST=db lalu jalankan dengan  --profile with-db
+name: gms-prod
+
+services:
+  traefik:
+    image: traefik:v3.2
+    restart: always
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.le.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
+    ports: ["80:80", "443:443"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./data/letsencrypt:/letsencrypt
+    networks: [edge]
+
+  db:
+    profiles: ["with-db"]
+    image: postgres:17
+    restart: always
+    environment:
+      POSTGRES_DB: ${PROD_DB_NAME:-gms}
+      POSTGRES_USER: ${PROD_DB_USER:-gms}
+      POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
+      TZ: Asia/Jakarta
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data     # WAJIB di-mount ke host
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PROD_DB_USER:-gms} -d ${PROD_DB_NAME:-gms}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [backend]
+
+  api:
+    image: ${API_IMAGE:-ghcr.io/aryanto-ng/gms-api}:${IMAGE_TAG:-latest}
+    restart: always
+    depends_on:
+      db: { condition: service_healthy, required: false }
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: Host=${PROD_DB_HOST};Port=${PROD_DB_PORT:-5432};Database=${PROD_DB_NAME:-gms};Username=${PROD_DB_USER:-gms};Password=${PROD_DB_PASSWORD}
+      Database__MigrateOnStartup: "true"
+      Database__SeedOnStartup: "true"
+      Seed__AdminUserName: admin
+      Seed__AdminPassword: ${PROD_ADMIN_BOOTSTRAP_PASSWORD}
+      App__TimeZone: Asia/Jakarta
+      App__Comfi__Name: ${COMFI_NAME:-}
+      App__Comfi__Address: ${COMFI_ADDRESS:-}
+      App__Konveksi__Name: ${KONVEKSI_NAME:-}
+      App__Konveksi__Address: ${KONVEKSI_ADDRESS:-}
+    networks: [backend]   # tidak dipublikasikan: hanya Web (BFF) yang memanggil API
+
+  web:
+    image: ${WEB_IMAGE:-ghcr.io/aryanto-ng/gms-web}:${IMAGE_TAG:-latest}
+    restart: always
+    depends_on:
+      api: { condition: service_healthy }
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production      # Api__BaseUrl dibaca dari appsettings.Production.json
+      DataProtection__KeysPath: /keys
+    volumes:
+      - ./data/web-keys:/keys                   # kunci cookie login; jangan dihapus
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=gms-prod_edge
+      - traefik.http.routers.gms.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.gms.entrypoints=websecure
+      - traefik.http.routers.gms.tls.certresolver=le
+      - traefik.http.services.gms.loadbalancer.server.port=8080
+    networks: [edge, backend]
+
+  backup:
+    build: { context: ../backup }
+    restart: always
+    environment:
+      PGHOST: ${PROD_DB_HOST}
+      PGPORT: ${PROD_DB_PORT:-5432}
+      PGUSER: ${PROD_DB_USER:-gms}
+      PGDATABASE: ${PROD_DB_NAME:-gms}
+      PGPASSWORD: ${PROD_DB_PASSWORD}
+      BACKUP_SCHEDULE: ${BACKUP_SCHEDULE:-0 2 * * *}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      # Off-site (rclone, S3-kompatibel: Cloudflare R2 / AWS S3)
+      RCLONE_CONFIG_OFFSITE_TYPE: s3
+      RCLONE_CONFIG_OFFSITE_PROVIDER: ${PROD_S3_PROVIDER:-Cloudflare}
+      RCLONE_CONFIG_OFFSITE_ACCESS_KEY_ID: ${PROD_S3_ACCESS_KEY}
+      RCLONE_CONFIG_OFFSITE_SECRET_ACCESS_KEY: ${PROD_S3_SECRET_KEY}
+      RCLONE_CONFIG_OFFSITE_ENDPOINT: ${PROD_S3_ENDPOINT}
+      BACKUP_REMOTE_PATH: offsite:${PROD_S3_BUCKET}/gms
+    volumes:
+      - ./data/backups:/backups
+    networks: [backend]
+
+networks:
+  edge: {}
+  backend: {}

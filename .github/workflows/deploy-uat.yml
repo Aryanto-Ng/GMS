@@ -1,0 +1,84 @@
+name: Deploy UAT
+
+# Push ke branch `uat`: tes -> build & push image ke GHCR (tag `uat`) -> deploy via SSH ke server UAT.
+# GitHub Secrets (Environment "uat"): UAT_VPS_HOST, UAT_VPS_USER, UAT_VPS_SSH_KEY, UAT_VPS_PATH, UAT_VPS_PORT (opsional).
+# Rahasia aplikasi (connection string DB, password admin) ada di file .env di server, bukan di repository.
+# Lihat docs/Secrets-Checklist.md dan docs/Deployment.md.
+on:
+  push:
+    branches: [uat]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-uat
+  cancel-in-progress: false
+
+jobs:
+  test:
+    uses: ./.github/workflows/ci.yml
+
+  images:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: meta
+        run: |
+          echo "tag=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+          echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build & push API
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/Dockerfile.api
+          push: true
+          tags: |
+            ghcr.io/${{ steps.meta.outputs.owner }}/gms-api:${{ steps.meta.outputs.tag }}
+            ghcr.io/${{ steps.meta.outputs.owner }}/gms-api:uat
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+      - name: Build & push Web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/Dockerfile.web
+          push: true
+          tags: |
+            ghcr.io/${{ steps.meta.outputs.owner }}/gms-web:${{ steps.meta.outputs.tag }}
+            ghcr.io/${{ steps.meta.outputs.owner }}/gms-web:uat
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+  deploy:
+    needs: images
+    runs-on: ubuntu-latest
+    environment: uat
+    env:
+      SSH_PORT: ${{ secrets.UAT_VPS_PORT || 22 }}
+      TARGET: ${{ secrets.UAT_VPS_USER }}@${{ secrets.UAT_VPS_HOST }}
+      REMOTE_PATH: ${{ secrets.UAT_VPS_PATH }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Siapkan SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.UAT_VPS_SSH_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -p "$SSH_PORT" "${{ secrets.UAT_VPS_HOST }}" >> ~/.ssh/known_hosts
+      - name: Salin compose UAT
+        run: scp -i ~/.ssh/id_deploy -P "$SSH_PORT" -r deploy/uat "$TARGET:$REMOTE_PATH/"
+      - name: Tarik image dan jalankan ulang
+        run: |
+          ssh -i ~/.ssh/id_deploy -p "$SSH_PORT" "$TARGET" \
+            "cd '$REMOTE_PATH/uat' && export IMAGE_TAG=${{ needs.images.outputs.tag }} && docker compose -f docker-compose.uat.yml pull api web && docker compose -f docker-compose.uat.yml up -d --remove-orphans && docker image prune -f"
