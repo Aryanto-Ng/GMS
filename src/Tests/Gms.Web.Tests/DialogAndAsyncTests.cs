@@ -9,16 +9,16 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Gms.Web.Tests;
 
-/// <summary>ReasonDialog (alasan wajib + pratinjau dampak), AsyncContent (state UI), penjaga perubahan, dan halaman akun.</summary>
+/// <summary>ConfirmDialog (alasan wajib + pratinjau dampak), AsyncContent (state UI), penjaga perubahan, dan halaman akun.</summary>
 public sealed class DialogAndAsyncTests : WebTestBase
 {
     private static GmsProblemDetails Problem(string type, int status, string? detail = null) =>
         new() { Type = type, Status = status, Title = "Judul", Detail = detail, TraceId = "00-t" };
 
-    private IRenderedComponent<ReasonDialog> Dialog(
+    private IRenderedComponent<ConfirmDialog> Dialog(
         Func<string, Task>? onConfirm = null, Func<CancellationToken, Task<ImpactPreview>>? preview = null, bool open = true, bool canConfirm = true,
         EventCallback<bool>? openChanged = null) =>
-        Render<ReasonDialog>(p =>
+        Render<ConfirmDialog>(p =>
         {
             p.Add(x => x.Open, open).Add(x => x.Title, "Void entri output").Add(x => x.Description, "Entri akan dibatalkan.")
              .Add(x => x.OnConfirm, onConfirm ?? (_ => Task.CompletedTask)).Add(x => x.CanConfirm, canConfirm);
@@ -33,10 +33,10 @@ public sealed class DialogAndAsyncTests : WebTestBase
             }
         });
 
-    private static AngleSharp.Dom.IElement Confirm(IRenderedComponent<ReasonDialog> cut) =>
-        cut.FindAll("fluent-button").First(b => b.TextContent.Contains("Ya, lanjutkan"));
+    private static AngleSharp.Dom.IElement Confirm(IRenderedComponent<ConfirmDialog> cut) =>
+        cut.FindAll("fluent-button, button.ant-btn").First(b => b.TextContent.Contains("Ya, lanjutkan"));
 
-    // ===== ReasonDialog =====
+    // ===== ConfirmDialog =====
 
     [Fact]
     public void Dialog_memakai_dialog_native_dengan_judul_deskripsi_dan_label_alasan_terhubung()
@@ -81,19 +81,19 @@ public sealed class DialogAndAsyncTests : WebTestBase
     public void Tombol_utama_berwarna_bahaya_untuk_aksi_destruktif_dan_biasa_bila_tidak()
     {
         var danger = Dialog();
-        var plain = Render<ReasonDialog>(p => p.Add(x => x.Open, true).Add(x => x.Title, "Lepas").Add(x => x.Danger, false).Add(x => x.OnConfirm, _ => Task.CompletedTask));
+        var plain = Render<ConfirmDialog>(p => p.Add(x => x.Open, true).Add(x => x.Title, "Lepas").Add(x => x.Danger, false).Add(x => x.OnConfirm, _ => Task.CompletedTask));
 
-        Assert.Contains("gms-danger", Confirm(danger).ClassName);
-        Assert.DoesNotContain("gms-danger", plain.FindAll("fluent-button").Last().ClassName ?? string.Empty);
+        Assert.Contains("ant-btn-dangerous", Confirm(danger).ClassName);
+        Assert.DoesNotContain("ant-btn-dangerous", plain.FindAll("fluent-button, button.ant-btn").Last().ClassName ?? string.Empty);
     }
 
     [Fact]
     public void Alasan_opsional_mengizinkan_konfirmasi_tanpa_alasan()
     {
-        var cut = Render<ReasonDialog>(p => p.Add(x => x.Open, true).Add(x => x.Title, "Tutup").Add(x => x.ReasonRequired, false).Add(x => x.OnConfirm, _ => Task.CompletedTask));
+        var cut = Render<ConfirmDialog>(p => p.Add(x => x.Open, true).Add(x => x.Title, "Tutup").Add(x => x.ReasonRequired, false).Add(x => x.OnConfirm, _ => Task.CompletedTask));
 
         Assert.Contains("opsional", cut.Find("label").TextContent);
-        Assert.False(cut.FindAll("fluent-button").Last().HasAttribute("disabled"));
+        Assert.False(cut.FindAll("fluent-button, button.ant-btn").Last().HasAttribute("disabled"));
     }
 
     [Fact]
@@ -268,7 +268,7 @@ public sealed class DialogAndAsyncTests : WebTestBase
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find(".gms-state.error")));
         Assert.Contains("00-t", cut.Find("code").TextContent);
 
-        cut.Find("fluent-button").Click();
+        cut.Find("fluent-button, button.ant-btn").Click();
         cut.WaitForAssertion(() => Assert.Equal("pulih", cut.Find("#isi").TextContent));
         Assert.Equal(2, calls);
     }
@@ -281,8 +281,8 @@ public sealed class DialogAndAsyncTests : WebTestBase
 
         notFound.WaitForAssertion(() => Assert.NotNull(notFound.Find(".gms-state.error")));
         forbidden.WaitForAssertion(() => Assert.NotNull(forbidden.Find(".gms-state.error")));
-        Assert.Empty(notFound.FindAll("fluent-button"));
-        Assert.Empty(forbidden.FindAll("fluent-button"));
+        Assert.Empty(notFound.FindAll("fluent-button, button.ant-btn"));
+        Assert.Empty(forbidden.FindAll("fluent-button, button.ant-btn"));
         Assert.Contains("Data tidak ditemukan", notFound.Markup);
     }
 

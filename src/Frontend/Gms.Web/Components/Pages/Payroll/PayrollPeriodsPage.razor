@@ -16,7 +16,7 @@
 
 <AsyncContent T="IReadOnlyList<PayrollPeriodListItem>" Key="_defaults?.HasOpenPeriod" Loader="LoadAsync" IsEmpty="r => r.Count == 0">
     <EmptyContent>
-        <EmptyState Icon="@(new Icons.Regular.Size48.Box())" Title="Belum ada periode gaji" ActionText="@(_user.HasPermission(Permissions.Payroll.CreatePeriod) ? "Buat Periode" : null)" OnAction="OpenCreate" />
+        <EmptyState Title="Belum ada periode gaji" ActionText="@(_user.HasPermission(Permissions.Payroll.CreatePeriod) ? "Buat Periode" : null)" OnAction="OpenCreate" />
     </EmptyContent>
     <ChildContent Context="periods">
         @if (_defaults is { HasOpenPeriod: false, StartDate: { } next } && _user.HasPermission(Permissions.Payroll.CreatePeriod))
@@ -33,7 +33,7 @@
                     <tr>
                         <th scope="row"><a href="/payroll/@p.Id">@p.Code</a></th>
                         <td>@IdFormat.Date(p.StartDate) – @IdFormat.Date(p.EndDate)</td>
-                        <td><StatusChip Value="@p.Status" /> @if (p.IsProvisional) { <span class="gms-warn">Belum final</span> }</td>
+                        <td><StatusTag Value="@p.Status" /> @if (p.IsProvisional) { <span class="gms-warn">Belum final</span> }</td>
                         <td class="num">@p.WorkerCount</td>
                         <td class="num">@IdFormat.Number(p.TotalPaid)@(p.IsProvisional ? " *" : string.Empty)</td>
                         <td>@(p.ClosedAt is null ? "–" : $"{IdFormat.DateTime(p.ClosedAt)} oleh {p.ClosedByName}")</td>
@@ -45,7 +45,7 @@
     </ChildContent>
 </AsyncContent>
 
-<ReasonDialog Open="_creating" OpenChanged="o => _creating = o" ShowReason="false" Danger="false" ConfirmText="Buat Periode" Title="Buat Periode Gaji"
+<ConfirmDialog Open="_creating" OpenChanged="o => _creating = o" ShowReason="false" Danger="false" ConfirmText="Buat Periode" Title="Buat Periode Gaji"
               CanConfirm="@(DateOnly.TryParseExact(_end, "yyyy-MM-dd", out _) && (_defaults?.StartLocked == true || DateOnly.TryParseExact(_start, "yyyy-MM-dd", out _)))" OnConfirm="CreateAsync">
     <div class="gms-form">
         <TextField Label="Tanggal Mulai" Type="date" Value="@_start" ValueChanged="v => _start = v" Disabled="@(_defaults?.StartLocked == true)"
@@ -58,7 +58,7 @@
         </div>
         <TextField Label="Catatan" Value="@_notes" ValueChanged="v => _notes = v" MaxLength="250" />
     </div>
-</ReasonDialog>
+</ConfirmDialog>
 
 @code {
     private NextPeriodDefaultsDto? _defaults;

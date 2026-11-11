@@ -1,9 +1,9 @@
-@* Chip status (_Foundation-UI.md 5.2). SELALU ikon + teks (tidak hanya warna). *@
+@* StatusTag (Design.md 8.2): SELALU ikon + teks (tidak hanya warna); nada dari StatusPresentation. *@
 @{
     var p = StatusPresentation.For(Value);
 }
-<span class="gms-chip @p.Tone @(p.Strike ? "strike" : string.Empty)" title="@(Tooltip ?? p.Tooltip)">
-    <FluentIcon Value="@p.Icon" Color="Color.Neutral" />
+<span class="gms-tag @p.Tone @(p.Strike ? "strike" : string.Empty)" title="@(Tooltip ?? p.Tooltip)">
+    <AntDesign.Icon Type="@p.Icon" />
     <span>@p.Label</span>
 </span>
 

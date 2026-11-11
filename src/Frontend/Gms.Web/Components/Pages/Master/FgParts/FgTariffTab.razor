@@ -6,7 +6,7 @@
 
 <AsyncContent T="FgTariffGridDto" Key="@($"{Fg.Id}|{_reload}")" Loader="LoadAsync" IsEmpty="g => g.Sizes.Count == 0 || (g.InternalSteps.Count == 0 && g.VendorSteps.Count == 0)">
     <EmptyContent>
-        <EmptyState Icon="@(new Icons.Regular.Size48.Box())" Title="Tarif muncul setelah routing dan Size Berlaku diisi"
+        <EmptyState Title="Tarif muncul setelah routing dan Size Berlaku diisi"
                     Description="Susun Size Berlaku dan routing FG ini lebih dulu.">
             <FluentButton Appearance="Appearance.Neutral" OnClick="() => OnGoto.InvokeAsync(FgTab.Sizes)">Ke Size Berlaku</FluentButton>
             <FluentButton Appearance="Appearance.Neutral" OnClick="() => OnGoto.InvokeAsync(FgTab.Routing)">Ke Routing</FluentButton>
@@ -99,7 +99,7 @@
     </ChildContent>
 </AsyncContent>
 
-<ReasonDialog Open="_fill is not null" OpenChanged="o => { if (!o) _fill = null; }" ShowReason="false" Danger="false" ConfirmText="Timpa isian"
+<ConfirmDialog Open="_fill is not null" OpenChanged="o => { if (!o) _fill = null; }" ShowReason="false" Danger="false" ConfirmText="Timpa isian"
               Title="Timpa isian baris ini?" Description="@($"Sel lain pada baris {_fill?.Step.ProcessName} yang sudah terisi akan diganti dengan {TariffLogic.FormatCell(_fill?.Value)}.")"
               OnConfirm="_ => { ApplyFill(); return Task.CompletedTask; }" />
 

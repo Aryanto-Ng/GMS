@@ -23,7 +23,7 @@ else
 {
     <PageHeader Title="@_doc.Item.Code" Subtitle="@($"{_doc.Item.PoCode} · {_doc.Item.CustomerName} ({_doc.Item.CustomerPoNumber ?? "tanpa No. PO"}) · Tgl Kirim {IdFormat.Date(_doc.Item.DeliveryDate)}")"
                 Breadcrumbs="@(new[] { new PageHeader.Crumb("Pengiriman", "/deliveries"), new PageHeader.Crumb(_doc.Item.Code) })">
-        <Chips><StatusChip Value="@_doc.Item.Status" /></Chips>
+        <Chips><StatusTag Value="@_doc.Item.Status" /></Chips>
         <Actions>
             @if (Can(DeliveryActions.Print, Permissions.Pengiriman.Print)) { <FluentButton Appearance="Appearance.Neutral" OnClick="PrintAsync">Cetak PDF</FluentButton> }
             @if (Can(DeliveryActions.EditInfo, Permissions.Pengiriman.Edit)) { <FluentButton Appearance="Appearance.Neutral" OnClick="StartEdit">Edit Info</FluentButton> }
@@ -46,10 +46,10 @@ else
     @if (_doc.ReplacedById is not null) { <p class="gms-note">Digantikan oleh <a href="/deliveries/@_doc.ReplacedById">surat jalan koreksi</a>.</p> }
 }
 
-<ReasonDialog Open="_voiding" OpenChanged="o => _voiding = o" Danger="true" ConfirmText="Void surat jalan" Title="@($"Void {_doc?.Item.Code} ({IdFormat.Qty(_doc?.Item.TotalQty ?? 0)} pcs)")"
+<ConfirmDialog Open="_voiding" OpenChanged="o => _voiding = o" Danger="true" ConfirmText="Void surat jalan" Title="@($"Void {_doc?.Item.Code} ({IdFormat.Qty(_doc?.Item.TotalQty ?? 0)} pcs)")"
               LoadPreview="ct => Deliveries.PreviewVoidAsync(Id, ct)" OnConfirm="VoidAsync" />
 
-<ReasonDialog Open="_editing" OpenChanged="o => _editing = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="Edit informasi" OnConfirm="SaveInfoAsync">
+<ConfirmDialog Open="_editing" OpenChanged="o => _editing = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="Edit informasi" OnConfirm="SaveInfoAsync">
     <div class="gms-form">
         <TextField Label="Tanggal Kirim" Type="date" @bind-Value="_eDate" Required="true" />
         <TextField Label="Penerima" @bind-Value="_eRecipient" MaxLength="100" />
@@ -57,9 +57,9 @@ else
         <TextField Label="Sopir" @bind-Value="_eDriver" MaxLength="100" />
         <TextField Label="Catatan" @bind-Value="_eNotes" MaxLength="250" Multiline="true" />
     </div>
-</ReasonDialog>
+</ConfirmDialog>
 
-<ReasonDialog Open="_correcting" OpenChanged="o => _correcting = o" Danger="false" ConfirmText="Simpan koreksi" Title="Koreksi surat jalan"
+<ConfirmDialog Open="_correcting" OpenChanged="o => _correcting = o" Danger="false" ConfirmText="Simpan koreksi" Title="Koreksi surat jalan"
               CanConfirm="@(_correctPreview?.CanProceed == true)" OnConfirm="CorrectAsync">
     @if (_doc is not null)
     {
@@ -73,7 +73,7 @@ else
         <FluentButton Appearance="Appearance.Neutral" OnClick="CheckAsync">Periksa dampak</FluentButton>
         @if (_correctPreview is not null) { <ImpactPreviewTable Preview="_correctPreview" /> }
     }
-</ReasonDialog>
+</ConfirmDialog>
 
 @code {
     [Parameter] public Guid Id { get; set; }

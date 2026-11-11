@@ -4,7 +4,7 @@
     <ChildContent Context="r">
         <section class="gms-card" aria-labelledby="ready-title">
             <h2 id="ready-title">Kesiapan produksi</h2>
-            <p><StatusChip Value="@(r.IsReady ? "ready" : "not-ready")" /></p>
+            <p><StatusTag Value="@(r.IsReady ? "ready" : "not-ready")" /></p>
             <ul class="gms-readiness">
                 @foreach (var item in r.Items)
                 {

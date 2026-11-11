@@ -15,14 +15,14 @@
     <Row Context="d"><th scope="row">@d.Code</th><td>@d.Name</td><td>@(d.MainProcessName ?? "—")</td><td>@IdFormat.Date(d.JoinDate)</td></Row>
 </MasterList>
 
-<ReasonDialog Open="_open" OpenChanged="o => _open = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="@(_editing is null ? "Tambah pekerja" : $"Ubah {_editing.Code}")"
+<ConfirmDialog Open="_open" OpenChanged="o => _open = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="@(_editing is null ? "Tambah pekerja" : $"Ubah {_editing.Code}")"
               CanConfirm="@(!string.IsNullOrWhiteSpace(_name))" OnConfirm="SaveAsync">
     <p class="gms-note">Kode: @(_editing?.Code ?? "Otomatis saat disimpan")</p>
     <TextField Label="Nama" @bind-Value="_name" Required="true" MaxLength="100" />
     <TextField Label="Tanggal masuk" @bind-Value="_join" Type="date" />
     <LookupSelect Label="Proses utama (opsional)" Items="_processes" @bind-Value="_process" Placeholder="Tidak ditentukan" />
     <TextField Label="Keterangan" @bind-Value="_notes" MaxLength="250" Multiline="true" />
-</ReasonDialog>
+</ConfirmDialog>
 
 @code {
     private MasterList<WorkerDto>? _list;

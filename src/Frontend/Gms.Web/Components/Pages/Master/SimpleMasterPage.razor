@@ -15,11 +15,11 @@
     </Row>
 </MasterList>
 
-<ReasonDialog Open="_open" OpenChanged="o => _open = o" ShowReason="false" Danger="false" ConfirmText="Simpan"
+<ConfirmDialog Open="_open" OpenChanged="o => _open = o" ShowReason="false" Danger="false" ConfirmText="Simpan"
               Title="@(_editing is null ? $"Tambah {Noun}" : $"Ubah {Noun}")" CanConfirm="@(!string.IsNullOrWhiteSpace(_code) && !string.IsNullOrWhiteSpace(_name))" OnConfirm="SaveAsync">
     <TextField Label="Kode" @bind-Value="_code" Required="true" MaxLength="30" />
     <TextField Label="Nama" @bind-Value="_name" Required="true" MaxLength="100" />
-</ReasonDialog>
+</ConfirmDialog>
 
 @code {
     private MasterList<SimpleMasterDto>? _list;

@@ -20,7 +20,7 @@ else if (_wo is null)
 else
 {
     <PageHeader Title="@_wo.Code" Subtitle="@($"{_wo.PoCode} · {_wo.CustomerName} · {_wo.FgCode}")" Breadcrumbs="@(new[] { new PageHeader.Crumb("Work Order", "/work-orders"), new PageHeader.Crumb(_wo.Code) })">
-        <Chips><StatusChip Value="@_wo.Status" /></Chips>
+        <Chips><StatusTag Value="@_wo.Status" /></Chips>
         <Actions>
             @if (Can(WoActions.Edit, Permissions.WorkOrder.Edit)) { <FluentAnchor Href="@($"/work-orders/{_wo.Id}/edit")" Appearance="Appearance.Neutral">Ubah</FluentAnchor> }
             @if (Can(WoActions.EditQuantities, Permissions.WorkOrder.Edit)) { <FluentButton Appearance="Appearance.Neutral" OnClick="OpenQty">Ubah Qty</FluentButton> }
@@ -39,11 +39,11 @@ else
     }
 
     <div class="gms-welcome" aria-label="Ringkasan">
-        <MetricCard Label="Qty WO" Value="@IdFormat.Qty(_wo.TotalQty)" />
-        <MetricCard Label="Progres" Value="@($"{IdFormat.Number(_wo.ProgressPercent, 1)}%")" />
-        <MetricCard Label="Diserahterimakan" Value="@IdFormat.Qty(_wo.HandedOverQty)" />
-        <MetricCard Label="Belum diserahterimakan" Value="@IdFormat.Qty(_wo.UnhandedQty)" />
-        <MetricCard Label="Sisa di vendor" Value="@IdFormat.Qty(_wo.OutstandingAtVendorQty)" />
+        <StatCard Label="Qty WO" Value="@IdFormat.Qty(_wo.TotalQty)" />
+        <StatCard Label="Progres" Value="@($"{IdFormat.Number(_wo.ProgressPercent, 1)}%")" />
+        <StatCard Label="Diserahterimakan" Value="@IdFormat.Qty(_wo.HandedOverQty)" />
+        <StatCard Label="Belum diserahterimakan" Value="@IdFormat.Qty(_wo.UnhandedQty)" />
+        <StatCard Label="Sisa di vendor" Value="@IdFormat.Qty(_wo.OutstandingAtVendorQty)" />
     </div>
     <p class="gms-note">Mulai @IdFormat.Date(_wo.StartDate) · Target @IdFormat.Date(_wo.TargetDate)@(string.IsNullOrEmpty(_wo.Notes) ? string.Empty : $" · {_wo.Notes}")</p>
 
@@ -111,7 +111,7 @@ else
             break;
     }
 
-    <ReasonDialog Open="_act == Act.Release" OpenChanged="Closed" ShowReason="false" Danger="false" ConfirmText="Rilis WO" Title="Rilis WO?"
+    <ConfirmDialog Open="_act == Act.Release" OpenChanged="Closed" ShowReason="false" Danger="false" ConfirmText="Rilis WO" Title="Rilis WO?"
                   CanConfirm="@(_release?.CanRelease == true)" OnConfirm="DoRelease">
         @if (_release is not null)
         {
@@ -125,16 +125,16 @@ else
             </ul>
             <p>Snapshot: @_release.RoutingStepCount langkah routing dan @_release.TariffCellCount sel tarif. <strong>Routing dan tarif dibekukan dan tidak dapat diubah.</strong></p>
         }
-    </ReasonDialog>
+    </ConfirmDialog>
 
-    <ReasonDialog Open="_act == Act.Complete" OpenChanged="Closed" ShowReason="false" Danger="false" ConfirmText="Tandai Selesai" Title="Tandai Selesai?"
+    <ConfirmDialog Open="_act == Act.Complete" OpenChanged="Closed" ShowReason="false" Danger="false" ConfirmText="Tandai Selesai" Title="Tandai Selesai?"
                   Description="@(_wo.OutstandingAtVendorQty > 0 ? $"Masih ada {IdFormat.Qty(_wo.OutstandingAtVendorQty)} pcs di vendor. Input output akan diblokir." : "Input output akan diblokir.")"
                   OnConfirm="DoComplete" />
 
-    <ReasonDialog Open="_act == Act.Resume" OpenChanged="Closed" Danger="false" ConfirmText="Buka Kembali" Title="Buka kembali ke In Progress?"
+    <ConfirmDialog Open="_act == Act.Resume" OpenChanged="Closed" Danger="false" ConfirmText="Buka Kembali" Title="Buka kembali ke In Progress?"
                   OnConfirm="DoResume" />
 
-    <ReasonDialog Open="_act == Act.Close" OpenChanged="Closed" ShowReason="false" Danger="true" ConfirmText="Close WO" Title="Close WO?"
+    <ConfirmDialog Open="_act == Act.Close" OpenChanged="Closed" ShowReason="false" Danger="true" ConfirmText="Close WO" Title="Close WO?"
                   OnConfirm="DoClose">
         @if (_close is not null)
         {
@@ -145,15 +145,15 @@ else
                     @string.Join(", ", _close.UnhandedCells.Select(c => $"{c.ColorSize.ColorName} {c.ColorSize.SizeCode} {IdFormat.Qty(c.Qty)}"))</p>
             }
         }
-    </ReasonDialog>
+    </ConfirmDialog>
 
-    <ReasonDialog Open="_act == Act.Reopen" OpenChanged="Closed" Danger="false" ConfirmText="Reopen WO" Title="Reopen WO?"
+    <ConfirmDialog Open="_act == Act.Reopen" OpenChanged="Closed" Danger="false" ConfirmText="Reopen WO" Title="Reopen WO?"
                   OnConfirm="DoReopen" />
 
-    <ReasonDialog Open="_act == Act.Cancel" OpenChanged="Closed" Danger="true" ConfirmText="Batalkan WO" Title="Batalkan WO?"
+    <ConfirmDialog Open="_act == Act.Cancel" OpenChanged="Closed" Danger="true" ConfirmText="Batalkan WO" Title="Batalkan WO?"
                   Description="Hanya dapat dibatalkan bila belum ada aktivitas." OnConfirm="DoCancel" />
 
-    <ReasonDialog Open="_act == Act.Qty" OpenChanged="Closed" ShowReason="false" Danger="false" ConfirmText="Simpan Qty" Title="Ubah Qty WO"
+    <ConfirmDialog Open="_act == Act.Qty" OpenChanged="Closed" ShowReason="false" Danger="false" ConfirmText="Simpan Qty" Title="Ubah Qty WO"
                   Description="Batas minimum = output proses pertama; maksimum = Qty sekarang + Sisa Rencana PO (diperiksa server)."
                   CanConfirm="@(_qty.Values.All(v => int.TryParse(v, out var n) && n >= 0))"
                   OnConfirm="DoQty">
@@ -162,7 +162,7 @@ else
             <TextField Label="@($"{l.ColorSize.ColorName} · {l.ColorSize.SizeCode} (sisa rencana PO {IdFormat.Qty(l.PoRemainingPlanQty)})")" InputMode="numeric" MaxLength="7"
                        Value="@_qty[l.PoLineId]" ValueChanged="v => _qty[l.PoLineId] = v ?? string.Empty" />
         }
-    </ReasonDialog>
+    </ConfirmDialog>
 }
 
 @code {

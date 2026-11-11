@@ -260,7 +260,7 @@ public sealed class FgPageTests : WebTestBase
 
     private static IElement Tab(IRenderedComponent<FgDetailPage> cut, string label) => cut.FindAll("[role=tab]").Single(t => t.TextContent == label);
 
-    private static IElement LastDialogButton(IRenderedComponent<FgDetailPage> cut) => cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).QuerySelectorAll("fluent-button").Last();
+    private static IElement LastDialogButton(IRenderedComponent<FgDetailPage> cut) => cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).QuerySelectorAll("fluent-button, button.ant-btn").Last();
 
     private static void WaitReady(IRenderedComponent<FgDetailPage> cut) => cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("[role=tab]")));
 
@@ -287,7 +287,7 @@ public sealed class FgPageTests : WebTestBase
         cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll("tbody tr").Count));
 
         Assert.Contains(cut.FindAll("tbody a"), a => a.GetAttribute("href")!.EndsWith($"/master/fgs/{MockFgApi.KemejaId}"));
-        cut.FindAll("fluent-button").Single(b => b.TextContent.Contains("Tambah FG")).Click();
+        cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent.Contains("Tambah FG")).Click();
 
         Assert.EndsWith("/master/fgs/new", Nav.Uri);
     }
@@ -373,7 +373,7 @@ public sealed class FgPageTests : WebTestBase
         cut.WaitForAssertion(() => Assert.Equal(4, cut.FindAll(".gms-checklist input").Count));
 
         cut.FindAll(".gms-checklist input").Last().Change(false); // XL
-        cut.FindAll("fieldset fluent-button").Single(b => b.TextContent.Contains("Simpan Size")).Click();
+        cut.FindAll("fieldset fluent-button, fieldset button.ant-btn").Single(b => b.TextContent.Contains("Simpan Size")).Click();
 
         cut.WaitForAssertion(() => Assert.Contains("Hapus size bertarif?", cut.Markup));
         Assert.Contains("Tarif size XL (3 proses) akan dihapus.", cut.Markup);
@@ -391,7 +391,7 @@ public sealed class FgPageTests : WebTestBase
 
         Assert.Contains("Minimal satu Size Berlaku", cut.Find("fieldset").TextContent);
         cut.FindAll(".gms-checklist input")[0].Change(true);
-        Assert.False(cut.FindAll("fieldset fluent-button").Single(b => b.TextContent.Contains("Simpan Size")).HasAttribute("disabled"));
+        Assert.False(cut.FindAll("fieldset fluent-button, fieldset button.ant-btn").Single(b => b.TextContent.Contains("Simpan Size")).HasAttribute("disabled"));
     }
 
     [Fact]
@@ -408,7 +408,7 @@ public sealed class FgPageTests : WebTestBase
         cut.Find("[aria-label='Turunkan Cutting']").Click();
 
         Assert.Equal(["Bordir", "Cutting", "Sewing", "QC"], cut.FindAll(".gms-step-name").Select(e => e.FirstChild!.TextContent.Trim()));
-        cut.FindAll("fluent-button").Single(b => b.TextContent.Contains("Simpan routing")).Click();
+        cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent.Contains("Simpan routing")).Click();
         cut.WaitForAssertion(() => Assert.Equal(MockProcessApi.BordirId, Sync(_fgs.GetRoutingAsync(MockFgApi.KemejaId)).Steps[0].ProcessId));
     }
 
@@ -423,7 +423,7 @@ public sealed class FgPageTests : WebTestBase
         Assert.Single(cut.FindAll("#add-process option")); // semua proses sudah ada: hanya placeholder
         cut.Find("[aria-label='Hapus langkah Sewing']").Click();
         Assert.Contains("Cutting", cut.Find("#add-process").TextContent.Replace("Pilih proses…", "").Length > 0 ? "Cutting" : "");
-        cut.FindAll("fluent-button").Single(b => b.TextContent.Contains("Simpan routing")).Click();
+        cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent.Contains("Simpan routing")).Click();
 
         cut.WaitForAssertion(() => Assert.Contains("Hapus langkah bertarif?", cut.Markup));
         Assert.Contains("Tarif langkah Sewing (4 size) akan dihapus.", cut.Markup);
@@ -460,7 +460,7 @@ public sealed class FgPageTests : WebTestBase
         cut.Find("input[aria-label='Sewing, size M, tarif']").Change("1.5");
         Assert.Contains("Gunakan koma untuk desimal", cut.Markup);
         var versionBefore = Sync(_fgs.GetAsync(MockFgApi.KemejaId)).RowVersion;
-        cut.FindAll("fluent-button").Single(b => b.TextContent.Contains("Simpan tarif")).Click();
+        cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent.Contains("Simpan tarif")).Click();
 
         Assert.Equal(versionBefore, Sync(_fgs.GetAsync(MockFgApi.KemejaId)).RowVersion);
     }
@@ -478,7 +478,7 @@ public sealed class FgPageTests : WebTestBase
         Assert.Contains("Ada perubahan belum disimpan", cut.Markup);
         cut.Find("input[aria-label='Sewing, size XL, tarif']").Change("");
         Assert.Contains("1 sel belum diisi (Sewing · XL)", cut.Find(".gms-warn").TextContent);
-        cut.FindAll("fluent-button").Single(b => b.TextContent.Contains("Simpan tarif")).Click();
+        cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent.Contains("Simpan tarif")).Click();
 
         cut.WaitForAssertion(() => Assert.DoesNotContain("Ada perubahan belum disimpan", cut.Markup));
         var grid = Sync(_fgs.GetTariffsAsync(MockFgApi.KemejaId));
@@ -529,7 +529,7 @@ public sealed class FgPageTests : WebTestBase
         Tab(cut, "Tarif").Click();
 
         cut.WaitForAssertion(() => Assert.Contains("Tarif muncul setelah routing dan Size Berlaku diisi", cut.Markup));
-        cut.FindAll("fluent-button").Single(b => b.TextContent.Contains("Ke Routing")).Click();
+        cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent.Contains("Ke Routing")).Click();
 
         Assert.Equal("true", Tab(cut, "Routing").GetAttribute("aria-selected"));
     }
@@ -546,7 +546,7 @@ public sealed class FgPageTests : WebTestBase
         Assert.Contains("Terpenuhi:", items[0].TextContent);
         Assert.Contains("Belum terpenuhi:", items[1].TextContent);
         Assert.Contains("Belum ada Size Berlaku.", items[1].TextContent);
-        items[2].QuerySelector("fluent-button")!.Click();
+        items[2].QuerySelector("fluent-button, button.ant-btn")!.Click();
 
         Assert.Equal("true", Tab(cut, "Routing").GetAttribute("aria-selected"));
     }
@@ -560,14 +560,14 @@ public sealed class FgPageTests : WebTestBase
         var cut = Detail(MockFgApi.CelanaId);
         WaitReady(cut);
 
-        cut.FindAll("fluent-button").Single(b => b.TextContent.Contains("Salin dari FG lain")).Click();
+        cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent.Contains("Salin dari FG lain")).Click();
         Assert.Equal("step", cut.Find("[aria-current=step]").GetAttribute("aria-current"));
         cut.WaitForAssertion(() => Assert.Contains("KMJ-001", cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).TextContent));
         cut.FindAll("dialog select").Last().Change(MockFgApi.KemejaId.ToString());
-        cut.FindAll("dialog fluent-button").Single(b => b.TextContent.Contains("Lanjut")).Click();
+        cut.FindAll("dialog fluent-button, dialog button.ant-btn").Single(b => b.TextContent.Contains("Lanjut")).Click();
         cut.WaitForAssertion(() => Assert.Contains("Routing yang akan disalin", cut.Markup));
         Assert.Contains("12 sel tarif akan disalin.", cut.Markup);
-        cut.FindAll("dialog fluent-button").Single(b => b.TextContent.Contains("Lanjut")).Click();
+        cut.FindAll("dialog fluent-button, dialog button.ant-btn").Single(b => b.TextContent.Contains("Lanjut")).Click();
         cut.WaitForAssertion(() => Assert.Contains("belum memiliki routing/tarif", cut.Markup));
         LastDialogButton(cut).Click();
 

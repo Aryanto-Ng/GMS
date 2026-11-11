@@ -15,7 +15,7 @@
     </Row>
 </MasterList>
 
-<ReasonDialog Open="_open" OpenChanged="o => _open = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="@(_editing is null ? "Tambah color" : "Ubah color")"
+<ConfirmDialog Open="_open" OpenChanged="o => _open = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="@(_editing is null ? "Tambah color" : "Ubah color")"
               CanConfirm="@(!string.IsNullOrWhiteSpace(_code) && !string.IsNullOrWhiteSpace(_name))" OnConfirm="SaveAsync">
     <TextField Label="Kode" @bind-Value="_code" Required="true" MaxLength="20" />
     <TextField Label="Nama" @bind-Value="_name" Required="true" MaxLength="50" />
@@ -24,7 +24,7 @@
     {
         <p><span class="gms-swatch" style="background:@_hex" aria-hidden="true"></span> Pratinjau @_name (@_hex?.ToUpperInvariant())</p>
     }
-</ReasonDialog>
+</ConfirmDialog>
 
 @code {
     private MasterList<ColorDto>? _list;

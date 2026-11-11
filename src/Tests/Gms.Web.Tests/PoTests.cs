@@ -274,7 +274,7 @@ public sealed class PoPageTests : WebTestBase
     }
 
     private static IElement DialogConfirm<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent =>
-        cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).QuerySelectorAll("fluent-button").Last();
+        cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).QuerySelectorAll("fluent-button, button.ant-btn").Last();
 
     // ===== Daftar =====
 
@@ -289,7 +289,7 @@ public sealed class PoPageTests : WebTestBase
         var seed = cut.FindAll("tbody tr").Single(r => r.TextContent.Contains("PO-202611-0001"));
         Assert.Contains("PO/25/118", seed.TextContent);
         Assert.Contains("Confirmed", seed.TextContent);
-        Assert.Equal("Kirim 0, Alok 0, Prod 0 dari 500", seed.QuerySelector("[role=img]")!.GetAttribute("aria-label"));
+        Assert.Equal("Kirim 0, Alok 0, Prod 0 dari 500", seed.QuerySelector("[role=img][aria-label]")!.GetAttribute("aria-label"));
     }
 
     [Fact]
@@ -316,7 +316,7 @@ public sealed class PoPageTests : WebTestBase
         cut.Find("#po-status").Change("Cancelled");
 
         cut.WaitForAssertion(() => Assert.Contains("Tidak ada PO untuk filter ini", cut.Markup));
-        cut.FindAll("fluent-button").Single(b => b.TextContent.Contains("Reset filter")).Click();
+        cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent.Contains("Reset filter")).Click();
         cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll("tbody tr").Count));
     }
 
@@ -334,7 +334,7 @@ public sealed class PoPageTests : WebTestBase
         selects[1].Change(MockFgApi.KemejaId.ToString());                          // FG
         selects[2].Change(Sync(_colors.LookupAsync(null))[1].Id.ToString());      // Color
         cut.Find(".gms-toolbar input[type=date]").Input("2026-12-20");           // tanggal kirim blok
-        cut.FindAll("fluent-button").Single(b => b.TextContent.Contains("Tambah blok FG")).Click();
+        cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent.Contains("Tambah blok FG")).Click();
 
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".gms-block")));
         Assert.Equal(["S", "M", "L", "XL"], cut.FindAll(".gms-block thead th").Skip(1).Take(4).Select(t => t.TextContent));
@@ -410,7 +410,7 @@ public sealed class PoPageTests : WebTestBase
             selects[1].Change(MockFgApi.KemejaId.ToString());
             selects[2].Change(Sync(_colors.LookupAsync(null))[0].Id.ToString());
             cut.Find(".gms-toolbar input[type=date]").Input("2020-01-01");
-            cut.FindAll("fluent-button").Single(b => b.TextContent.Contains("Tambah blok FG")).Click();
+            cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent.Contains("Tambah blok FG")).Click();
         }
 
         AddBlock();
@@ -437,7 +437,7 @@ public sealed class PoPageTests : WebTestBase
         Assert.Contains("Ubah", cut.Find(".gms-pageheader-actions").TextContent);
         Assert.Contains("Buat WO", cut.Find(".gms-pageheader-actions").TextContent);
         Assert.DoesNotContain("Konfirmasi", cut.Find(".gms-pageheader-actions").TextContent); // bukan Draft
-        Assert.Equal("Confirmed", cut.Find(".gms-pageheader .gms-chip").TextContent.Trim());
+        Assert.Equal("Confirmed", cut.Find(".gms-pageheader .gms-tag").TextContent.Trim());
     }
 
     [Fact]
@@ -447,11 +447,11 @@ public sealed class PoPageTests : WebTestBase
         var cut = Render<PoDetailPage>(p => p.Add(x => x.Id, draftId));
         cut.WaitForAssertion(() => Assert.Contains("Draft", cut.Markup));
 
-        cut.FindAll(".gms-pageheader-actions fluent-button").Single(b => b.TextContent.Contains("Konfirmasi")).Click();
+        cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn").Single(b => b.TextContent.Contains("Konfirmasi")).Click();
         Assert.Contains("1 baris, total 80 pcs", cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).TextContent);
         DialogConfirm(cut).Click();
 
-        cut.WaitForAssertion(() => Assert.Equal("Confirmed", cut.Find(".gms-pageheader .gms-chip").TextContent.Trim()));
+        cut.WaitForAssertion(() => Assert.Equal("Confirmed", cut.Find(".gms-pageheader .gms-tag").TextContent.Trim()));
     }
 
     [Fact]
@@ -464,11 +464,11 @@ public sealed class PoPageTests : WebTestBase
 
         cut.Find("[aria-label='Ubah No. PO Customer']").Click();
         cut.Find("#po-number").Input("PO/99");
-        cut.FindAll("fluent-button").Single(b => b.TextContent == "Simpan").Click();
+        cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent == "Simpan").Click();
         cut.WaitForAssertion(() => Assert.Contains($"sudah dipakai {other.Code}", cut.Markup));
 
         cut.Find("#po-number").Input("PO/25/120");
-        cut.FindAll("fluent-button").Single(b => b.TextContent == "Simpan").Click();
+        cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent == "Simpan").Click();
         cut.WaitForAssertion(() => Assert.Contains("PO/25/120", cut.Find(".gms-customerpo").TextContent));
     }
 
@@ -478,7 +478,7 @@ public sealed class PoPageTests : WebTestBase
         var cut = Render<PoDetailPage>(p => p.Add(x => x.Id, MockPoApi.SeedPoId));
         cut.WaitForAssertion(() => Assert.Equal(4, cut.FindAll("tbody tr").Count));
 
-        cut.FindAll("tbody fluent-button").First(b => b.GetAttribute("aria-label")!.StartsWith("Alokasi KMJ-001")).Click();
+        cut.FindAll("tbody fluent-button, tbody button.ant-btn").First(b => b.GetAttribute("aria-label")!.StartsWith("Alokasi KMJ-001")).Click();
         cut.WaitForAssertion(() => Assert.Contains("Tersedia 120", cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).TextContent));
         var dialog = () => cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null);
         Assert.Contains("Maks 100", dialog().TextContent);
@@ -489,7 +489,7 @@ public sealed class PoPageTests : WebTestBase
         DialogConfirm(cut).Click();
 
         cut.WaitForAssertion(() => Assert.Equal("40", cut.FindAll("tbody tr")[0].QuerySelectorAll("td")[5].TextContent));
-        Assert.Equal("In Progress", cut.Find(".gms-pageheader .gms-chip").TextContent.Trim());
+        Assert.Equal("In Progress", cut.Find(".gms-pageheader .gms-tag").TextContent.Trim());
     }
 
     [Fact]
@@ -497,7 +497,7 @@ public sealed class PoPageTests : WebTestBase
     {
         var cut = Render<PoDetailPage>(p => p.Add(x => x.Id, MockPoApi.SeedPoId));
         cut.WaitForAssertion(() => Assert.Equal(4, cut.FindAll("tbody tr").Count));
-        cut.FindAll("tbody fluent-button").First(b => b.GetAttribute("aria-label")!.StartsWith("Alokasi KMJ-001")).Click();
+        cut.FindAll("tbody fluent-button, tbody button.ant-btn").First(b => b.GetAttribute("aria-label")!.StartsWith("Alokasi KMJ-001")).Click();
         cut.WaitForAssertion(() => Assert.Contains("Maks 100", cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).TextContent));
         var line = Sync(_pos.GetAsync(MockPoApi.SeedPoId)).Lines[0];
         cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).QuerySelector("input")!.Input("90");
@@ -515,13 +515,13 @@ public sealed class PoPageTests : WebTestBase
         var cut = Render<PoDetailPage>(p => p.Add(x => x.Id, MockPoApi.SeedPoId));
         cut.WaitForAssertion(() => Assert.Contains("Batalkan", cut.Find(".gms-pageheader-actions").TextContent));
 
-        cut.FindAll(".gms-pageheader-actions fluent-button").Single(b => b.TextContent.Contains("Batalkan")).Click();
+        cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn").Single(b => b.TextContent.Contains("Batalkan")).Click();
         Assert.True(DialogConfirm(cut).HasAttribute("disabled"));
         cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).QuerySelector("textarea")!.Input("customer batal");
         DialogConfirm(cut).Click();
 
         cut.WaitForAssertion(() => Assert.Contains("Dibatalkan: customer batal", cut.Markup));
-        Assert.Empty(cut.FindAll(".gms-pageheader-actions fluent-button"));
+        Assert.Empty(cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn"));
     }
 
     [Fact]
@@ -550,7 +550,7 @@ public sealed class PoPageTests : WebTestBase
 
         cut.WaitForAssertion(() => Assert.Equal(4, cut.FindAll("tbody tr").Count));
         Assert.Empty(cut.FindAll(".gms-pageheader-actions *"));
-        Assert.Empty(cut.FindAll("tbody fluent-button"));
+        Assert.Empty(cut.FindAll("tbody fluent-button, tbody button.ant-btn"));
         Assert.Empty(cut.FindAll("[aria-label='Ubah No. PO Customer']"));
     }
 }

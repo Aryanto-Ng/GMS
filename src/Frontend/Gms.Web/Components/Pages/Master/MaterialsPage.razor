@@ -16,14 +16,14 @@
     <Row Context="d"><th scope="row">@d.Code</th><td>@d.Name</td><td>@d.CategoryName</td><td>@d.UomCode</td></Row>
 </MasterList>
 
-<ReasonDialog Open="_open" OpenChanged="o => _open = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="@(_editing is null ? "Tambah material" : "Ubah material")"
+<ConfirmDialog Open="_open" OpenChanged="o => _open = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="@(_editing is null ? "Tambah material" : "Ubah material")"
               CanConfirm="@(!string.IsNullOrWhiteSpace(_code) && !string.IsNullOrWhiteSpace(_name) && _category is not null && _uom is not null)" OnConfirm="SaveAsync">
     <TextField Label="Kode" @bind-Value="_code" Required="true" MaxLength="30" />
     <TextField Label="Nama" @bind-Value="_name" Required="true" MaxLength="100" />
     <LookupSelect Label="Kategori" Items="_categories" @bind-Value="_category" Required="true" />
     <LookupSelect Label="Satuan" Items="_uoms" @bind-Value="_uom" Required="true" ShowCode="true" />
     <TextField Label="Spesifikasi" @bind-Value="_description" MaxLength="250" Multiline="true" />
-</ReasonDialog>
+</ConfirmDialog>
 
 @code {
     private MasterList<MaterialDto>? _list;

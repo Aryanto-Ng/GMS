@@ -27,7 +27,7 @@
 </div>
 
 <AsyncContent T="PagedResult<DeliveryListItem>" Key="@($"{_page}|{_q}|{_status}")" Loader="LoadAsync" IsEmpty="r => r.TotalCount == 0">
-    <EmptyContent><EmptyState Icon="@(new Icons.Regular.Size48.Box())" Title="Belum ada surat jalan" ActionText="@(_user.HasPermission(Permissions.Pengiriman.Create) ? "Buat Surat Jalan" : null)" ActionHref="/deliveries/new" /></EmptyContent>
+    <EmptyContent><EmptyState Title="Belum ada surat jalan" ActionText="@(_user.HasPermission(Permissions.Pengiriman.Create) ? "Buat Surat Jalan" : null)" ActionHref="/deliveries/new" /></EmptyContent>
     <ChildContent Context="result">
         <table class="gms-table">
             <caption class="gms-sr-only">Daftar surat jalan</caption>
@@ -38,7 +38,7 @@
                     <tr class="@(d.Status == DocStatus.Voided ? "gms-inactive" : null)">
                         <th scope="row"><a href="/deliveries/@d.Id">@d.Code</a></th><td>@IdFormat.Date(d.DeliveryDate)</td><td>@d.PoCode</td><td>@(d.CustomerPoNumber ?? "—")</td><td>@d.CustomerName</td>
                         <td class="num">@if (d.Status == DocStatus.Voided) { <s>@IdFormat.Qty(d.TotalQty)</s> } else { @IdFormat.Qty(d.TotalQty) }</td>
-                        <td><StatusChip Value="@d.Status" /></td>
+                        <td><StatusTag Value="@d.Status" /></td>
                     </tr>
                 }
             </tbody>

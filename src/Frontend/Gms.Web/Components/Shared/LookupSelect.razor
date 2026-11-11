@@ -1,13 +1,17 @@
 @* Pilihan dari daftar lookup (hanya master aktif). Satu opsi kosong bila tidak wajib. *@
-<div class="gms-form">
+<div class="gms-form @(HasError ? "has-error" : null)">
     <label for="@_id">@Label @if (Required) { <span class="gms-required">wajib</span> }</label>
-    <select id="@_id" disabled="@Disabled" @onchange="OnChange">
+    <select id="@_id" disabled="@Disabled" aria-describedby="@(HasError ? _id + "-error" : null)" aria-invalid="@(HasError ? "true" : null)" @onchange="OnChange">
         <option value="">@Placeholder</option>
         @foreach (var item in Items)
         {
             <option value="@item.Id" selected="@(Value == item.Id)">@(ShowCode ? $"{item.Code} · {item.Name}" : item.Name)</option>
         }
     </select>
+    @if (HasError)
+    {
+        <small id="@(_id + "-error")" class="gms-field-error" role="alert">@Error</small>
+    }
 </div>
 
 @code {
@@ -29,6 +33,11 @@
     [Parameter] public bool ShowCode { get; set; }
 
     [Parameter] public string Placeholder { get; set; } = "Pilih…";
+
+    /// <summary>Pesan galat validasi; menandai pilihan tidak valid.</summary>
+    [Parameter] public string? Error { get; set; }
+
+    private bool HasError => !string.IsNullOrEmpty(Error);
 
     private Task OnChange(ChangeEventArgs e) =>
         ValueChanged.InvokeAsync(Guid.TryParse(e.Value?.ToString(), out var id) ? id : null);

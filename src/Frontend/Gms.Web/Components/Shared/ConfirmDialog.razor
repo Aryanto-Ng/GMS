@@ -47,11 +47,10 @@
         </div>
 
         <div class="gms-dialog-actions">
-            <FluentButton Appearance="Appearance.Neutral" Disabled="_busy" OnClick="CancelAsync">Batal</FluentButton>
-            <FluentButton Appearance="Appearance.Accent" Class="@(Danger ? "gms-danger" : string.Empty)" Disabled="@(!CanSubmit)" OnClick="SubmitAsync">
-                @if (_busy) { <FluentProgressRing Width="16px" Style="margin-inline-end:6px" /> }
+            <AntDesign.Button Type="@AntDesign.ButtonType.Default" Disabled="_busy" OnClick="CancelAsync">Batal</AntDesign.Button>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Primary" Danger="@Danger" Loading="_busy" Disabled="@(!CanSubmit)" OnClick="SubmitAsync">
                 @ConfirmText
-            </FluentButton>
+            </AntDesign.Button>
         </div>
     }
 </dialog>
@@ -64,7 +63,7 @@
 
     private ElementReference _dialog;
     private IJSObjectReference? _module;
-    private DotNetObjectReference<ReasonDialog>? _self;
+    private DotNetObjectReference<ConfirmDialog>? _self;
     private bool _wasOpen;
     private bool _busy;
     private string _reason = string.Empty;
@@ -147,7 +146,7 @@
         }
 
         _wasOpen = Open;
-        _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Shared/ReasonDialog.razor.js");
+        _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Shared/ConfirmDialog.razor.js");
         if (Open)
         {
             _self ??= DotNetObjectReference.Create(this);

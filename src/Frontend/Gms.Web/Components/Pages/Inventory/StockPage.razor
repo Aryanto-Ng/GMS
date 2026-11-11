@@ -28,7 +28,7 @@
 </div>
 
 <AsyncContent T="StockListResult" Key="@($"{_version}|{_page}|{_q}|{_onlyStock}")" Loader="LoadAsync" IsEmpty="r => r.Rows.TotalCount == 0">
-    <EmptyContent><EmptyState Icon="@(new Icons.Regular.Size48.Box())" Title="Tidak ada stok" Description="Ubah kata kunci atau matikan filter 'Hanya yang ada stok'." /></EmptyContent>
+    <EmptyContent><EmptyState Title="Tidak ada stok" Description="Ubah kata kunci atau matikan filter 'Hanya yang ada stok'." /></EmptyContent>
     <ChildContent Context="result">
         <p role="status" class="gms-note">Ringkasan: Fisik <strong>@IdFormat.Qty(result.OnHandTotal)</strong> · Teralokasi <strong>@IdFormat.Qty(result.AllocatedTotal)</strong> · Tersedia <strong>@IdFormat.Qty(result.AvailableTotal)</strong> (stok bebas)</p>
         <table class="gms-table compact">
@@ -50,7 +50,7 @@
     </ChildContent>
 </AsyncContent>
 
-<ReasonDialog Open="_adjusting" OpenChanged="o => _adjusting = o" Danger="false" ConfirmText="Simpan" Title="Penyesuaian stok"
+<ConfirmDialog Open="_adjusting" OpenChanged="o => _adjusting = o" Danger="false" ConfirmText="Simpan" Title="Penyesuaian stok"
               CanConfirm="@(_adjPreview?.CanProceed == true)" OnConfirm="AdjustAsync">
     <div class="gms-form">
         <LookupSelect Label="FG" Items="_fgItems" Value="_aFg" ValueChanged="v => { _aFg = v; _adjPreview = null; }" Required="true" ShowCode="true" />
@@ -61,7 +61,7 @@
     </div>
     <FluentButton Appearance="Appearance.Neutral" Disabled="@(!CanCheck)" OnClick="CheckAdjustAsync">Periksa hasil</FluentButton>
     @if (_adjPreview is not null) { <ImpactPreviewTable Preview="_adjPreview" /> }
-</ReasonDialog>
+</ConfirmDialog>
 
 @code {
     private IReadOnlyList<LookupItem> _fgItems = [], _colorItems = [], _sizeItems = [];

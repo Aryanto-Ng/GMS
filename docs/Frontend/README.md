@@ -38,3 +38,18 @@ Status: **fondasi dan shell selesai (2026-11-11)**; halaman dan komponen bersama
 
 **Catatan:** AntDesign Blazor 1.x bergaya Ant Design 4 (bukan v5). Master Data memuat 13 entri katalog (batas Design.md: ±12).
 
+### Komponen bersama (langkah 2, 2026-11-11)
+
+| Nama Design.md | Implementasi (`Components/Shared/`) | Catatan |
+|---|---|---|
+| StatusTag | `StatusTag.razor` + `StatusPresentation.cs` | Ikon AntDesign + teks; nada neutral/cyan/blue/success/closed/warning/danger sesuai 4.1 |
+| StatCard | `StatCard.razor` (+ `DashboardCard.razor` untuk state per kartu) | Tanpa penanda garis kiri; peringatan/bahaya = ikon + teks |
+| ConfirmDialog | `ConfirmDialog.razor` (+ `.razor.js`) | **Deviasi:** memakai `<dialog>` native, bukan `<Modal>`. Alasan: fokus terkurung, Esc yang dapat diblok saat memproses, dan pengembalian fokus ditangani browser; dipakai 31 halaman dan sudah teruji. Tombol memakai `AntDesign.Button` (`Loading`, `Danger`). Menunggu keputusan pemilik produk |
+| QtyGrid | `QtyGrid.razor` (+ `.razor.js`) | Input native bergaya token (`border-control`, radius-xs) |
+| FormField / Input / Select | `TextField.razor`, `LookupSelect.razor` | Label di atas, penanda wajib, petunjuk, **Error** terhubung (`aria-invalid`, `aria-describedby`) |
+| Alert | `ProblemBanner.razor` (Problem Details), `FormSummary.razor` | Kelas `gms-banner` bernada info/success/warning/error |
+| Empty / Error state | `EmptyState.razor` (ikon `inbox`), `ErrorState.razor` | |
+| DataTable | kelas `gms-table` + `PagerBar.razor` | Komponen `DataTable<T>` dibuat saat halaman dimigrasi (tiap halaman masih menulis tabelnya sendiri) |
+
+Tombol di komponen bersama = `AntDesign.Button` (atribut `aria-label` lewat parameter `AriaLabel`); tautan bergaya tombol = `<a class="ant-btn ant-btn-*">`. Halaman yang belum dimigrasi masih memakai `FluentButton`; `app.css` menyelaraskan token Fluent (aksen, radius) dengan token GMS sebagai jembatan sementara. Pemilih tes: gunakan `button.ant-btn` bersama `fluent-button` selama masa transisi.
+

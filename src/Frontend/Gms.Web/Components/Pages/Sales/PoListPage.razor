@@ -53,11 +53,11 @@
     <EmptyContent>
         @if (_q is null && _status is null && _customer is null && _quick.Count == 0)
         {
-            <EmptyState Icon="@(new Icons.Regular.Size48.DocumentText())" Title="Belum ada PO" ActionText="@(_user.HasPermission(Permissions.CustomerPO.Create) ? "Buat PO" : null)" ActionHref="/purchase-orders/new" />
+            <EmptyState Title="Belum ada PO" ActionText="@(_user.HasPermission(Permissions.CustomerPO.Create) ? "Buat PO" : null)" ActionHref="/purchase-orders/new" />
         }
         else
         {
-            <EmptyState Icon="@(new Icons.Regular.Size48.Search())" Title="Tidak ada PO untuk filter ini" ActionText="Reset filter" OnAction="Reset" />
+            <EmptyState Title="Tidak ada PO untuk filter ini" ActionText="Reset filter" OnAction="Reset" />
         }
     </EmptyContent>
     <ChildContent Context="result">
@@ -78,7 +78,7 @@
                         </td>
                         <td>@po.CustomerName</td>
                         <td>@IdFormat.Date(po.PoDate)</td>
-                        <td><StatusChip Value="@po.Status" /> @if (po.HasLateLines) { <span class="gms-bad"><FluentIcon Value="@(new Icons.Regular.Size16.Clock())" Color="Color.Neutral" /> Terlambat</span> }</td>
+                        <td><StatusTag Value="@po.Status" /> @if (po.HasLateLines) { <span class="gms-bad"><FluentIcon Value="@(new Icons.Regular.Size16.Clock())" Color="Color.Neutral" /> Terlambat</span> }</td>
                         <td>
                             <StackedProgress Total="po.TotalQty" Segments="@(new StackedProgress.Segment[] { new("Kirim", po.DeliveredQty, "success"), new("Alok", po.AllocatedQty, "info"), new("Prod", po.InProductionQty, "warning") })" />
                         </td>

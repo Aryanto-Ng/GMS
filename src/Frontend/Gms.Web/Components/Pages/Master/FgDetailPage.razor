@@ -15,8 +15,8 @@
     <Chips>
         @if (_fg is not null)
         {
-            <StatusChip Value="@(_fg.IsReady ? "ready" : "not-ready")" />
-            <StatusChip Value="@(_fg.IsActive ? "active" : "inactive")" />
+            <StatusTag Value="@(_fg.IsReady ? "ready" : "not-ready")" />
+            <StatusTag Value="@(_fg.IsActive ? "active" : "inactive")" />
         }
     </Chips>
     <Actions>
@@ -79,7 +79,7 @@ else
 {
     <FgCopyDialog Fg="_fg" Open="_copyOpen" OpenChanged="o => _copyOpen = o" OnCopied="ReloadAsync" />
 
-    <ReasonDialog Open="_toggleOpen" OpenChanged="o => _toggleOpen = o" ShowReason="false" Danger="@_fg.IsActive"
+    <ConfirmDialog Open="_toggleOpen" OpenChanged="o => _toggleOpen = o" ShowReason="false" Danger="@_fg.IsActive"
                   Title="@($"{(_fg.IsActive ? "Nonaktifkan" : "Aktifkan")} {_fg.Code}?")"
                   Description="@(_fg.IsActive ? "FG nonaktif tidak dapat dipilih untuk PO/WO baru dan tidak lagi berstatus Siap Produksi." : "FG dapat dipilih kembali untuk PO/WO baru.")"
                   ConfirmText="@(_fg.IsActive ? "Nonaktifkan" : "Aktifkan")" OnConfirm="ToggleAsync" />

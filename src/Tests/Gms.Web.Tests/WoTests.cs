@@ -202,7 +202,7 @@ public sealed class WoPageTests : WebTestBase
     }
 
     private static IElement DialogConfirm<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent =>
-        cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).QuerySelectorAll("fluent-button").Last();
+        cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).QuerySelectorAll("fluent-button, button.ant-btn").Last();
 
     [Fact]
     public void Daftar_menampilkan_WO_status_progres_dan_chip_filter()
@@ -265,7 +265,7 @@ public sealed class WoPageTests : WebTestBase
         var cut = Render<WoDetailPage>(p => p.Add(x => x.Id, MockWoApi.SeedWoId));
         cut.WaitForAssertion(() => Assert.Contains("Ubah Qty", cut.Find(".gms-pageheader-actions").TextContent));
 
-        cut.FindAll(".gms-pageheader-actions fluent-button").Single(b => b.TextContent.Contains("Ubah Qty")).Click();
+        cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn").Single(b => b.TextContent.Contains("Ubah Qty")).Click();
         cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).QuerySelectorAll("input")[0].Input("20");
         DialogConfirm(cut).Click();
         cut.WaitForAssertion(() => Assert.Contains("Qty minimal 30", cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).TextContent));
@@ -284,15 +284,15 @@ public sealed class WoPageTests : WebTestBase
         var cut = Render<WoDetailPage>(p => p.Add(x => x.Id, MockWoApi.SeedWoId));
         cut.WaitForAssertion(() => Assert.Contains("Tandai Selesai", cut.Find(".gms-pageheader-actions").TextContent));
 
-        cut.FindAll(".gms-pageheader-actions fluent-button").Single(b => b.TextContent.Contains("Tandai Selesai")).Click();
+        cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn").Single(b => b.TextContent.Contains("Tandai Selesai")).Click();
         DialogConfirm(cut).Click();
-        cut.WaitForAssertion(() => Assert.Equal("Completed", cut.Find(".gms-pageheader .gms-chip").TextContent.Trim()));
+        cut.WaitForAssertion(() => Assert.Equal("Completed", cut.Find(".gms-pageheader .gms-tag").TextContent.Trim()));
 
-        cut.FindAll(".gms-pageheader-actions fluent-button").Single(b => b.TextContent.Contains("Buka Kembali")).Click();
+        cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn").Single(b => b.TextContent.Contains("Buka Kembali")).Click();
         Assert.True(DialogConfirm(cut).HasAttribute("disabled"));
         cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).QuerySelector("textarea")!.Input("masih ada sisa");
         DialogConfirm(cut).Click();
-        cut.WaitForAssertion(() => Assert.Equal("In Progress", cut.Find(".gms-pageheader .gms-chip").TextContent.Trim()));
+        cut.WaitForAssertion(() => Assert.Equal("In Progress", cut.Find(".gms-pageheader .gms-tag").TextContent.Trim()));
     }
 
     [Fact]
@@ -304,13 +304,13 @@ public sealed class WoPageTests : WebTestBase
         var cut = Render<WoDetailPage>(p => p.Add(x => x.Id, MockWoApi.SeedWoId));
         cut.WaitForAssertion(() => Assert.Contains("Close", cut.Find(".gms-pageheader-actions").TextContent));
 
-        cut.FindAll(".gms-pageheader-actions fluent-button").Single(b => b.TextContent == "Close").Click();
+        cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn").Single(b => b.TextContent == "Close").Click();
 
         var dialog = cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null).TextContent;
         Assert.Contains("kembali ke Sisa Rencana PO", dialog);
         Assert.Contains("Output belum diserahterimakan", dialog);
         DialogConfirm(cut).Click();
-        cut.WaitForAssertion(() => Assert.Equal("Closed", cut.Find(".gms-pageheader .gms-chip").TextContent.Trim()));
+        cut.WaitForAssertion(() => Assert.Equal("Closed", cut.Find(".gms-pageheader .gms-tag").TextContent.Trim()));
     }
 
     [Fact]
@@ -321,14 +321,14 @@ public sealed class WoPageTests : WebTestBase
         var cut = Render<WoDetailPage>(p => p.Add(x => x.Id, draft.Id));
         cut.WaitForAssertion(() => Assert.Contains("Rilis", cut.Find(".gms-pageheader-actions").TextContent));
 
-        cut.FindAll(".gms-pageheader-actions fluent-button").Single(b => b.TextContent == "Rilis").Click();
+        cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn").Single(b => b.TextContent == "Rilis").Click();
 
         var dialog = cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null);
         Assert.Contains("Terpenuhi:", dialog.TextContent);
         Assert.Contains("4 langkah routing dan 12 sel tarif", dialog.TextContent);
         Assert.Contains("dibekukan", dialog.TextContent);
         DialogConfirm(cut).Click();
-        cut.WaitForAssertion(() => Assert.Equal("Released", cut.Find(".gms-pageheader .gms-chip").TextContent.Trim()));
+        cut.WaitForAssertion(() => Assert.Equal("Released", cut.Find(".gms-pageheader .gms-tag").TextContent.Trim()));
     }
 
     [Fact]

@@ -129,7 +129,7 @@ else
     </form>
 }
 
-<ReasonDialog Open="_summaryOpen" OpenChanged="o => _summaryOpen = o" ShowReason="false" Danger="false" ConfirmText="Simpan"
+<ConfirmDialog Open="_summaryOpen" OpenChanged="o => _summaryOpen = o" ShowReason="false" Danger="false" ConfirmText="Simpan"
               Title="Simpan perubahan role?" Description="@SummaryText" OnConfirm="SaveAsync" />
 
 @code {

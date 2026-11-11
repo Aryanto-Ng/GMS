@@ -13,7 +13,7 @@
 </PageHeader>
 
 <AsyncContent T="PagedResult<MaterialHandoverListItem>" Key="@($"{_version}|{_page}")" Loader="ct => Inventory.ListMaterialHandoversAsync(new MaterialHandoverListQuery { Page = _page }, ct)" IsEmpty="r => r.TotalCount == 0">
-    <EmptyContent><EmptyState Icon="@(new Icons.Regular.Size48.Box())" Title="Belum ada serah terima material" ActionText="@(_user.HasPermission(Permissions.SerahTerimaMaterial.Create) ? "Buat Serah Terima Material" : null)" ActionHref="/handovers/material/new" /></EmptyContent>
+    <EmptyContent><EmptyState Title="Belum ada serah terima material" ActionText="@(_user.HasPermission(Permissions.SerahTerimaMaterial.Create) ? "Buat Serah Terima Material" : null)" ActionHref="/handovers/material/new" /></EmptyContent>
     <ChildContent Context="result">
         <table class="gms-table compact">
             <caption class="gms-sr-only">Daftar serah terima material</caption>
@@ -23,7 +23,7 @@
                 {
                     <tr class="@(d.Status == DocStatus.Voided ? "gms-inactive" : null)">
                         <td>@IdFormat.Date(d.Date)</td><th scope="row">@(d.DocNo ?? "—")</th><td>@d.WoCode</td><td class="num">@d.ItemCount</td>
-                        <td><StatusChip Value="@d.Status" /></td>
+                        <td><StatusTag Value="@d.Status" /></td>
                         <td class="gms-rowactions">
                             <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Detail {d.DocNo ?? d.WoCode}")" OnClick="() => ShowAsync(d)">Detail</FluentButton>
                             @if (d.Status == DocStatus.Active && _user.HasPermission(Permissions.SerahTerimaMaterial.Void))
@@ -52,7 +52,7 @@
     </section>
 }
 
-<ReasonDialog Open="_voiding is not null" OpenChanged="o => { if (!o) _voiding = null; }" Danger="true" ConfirmText="Void" Title="@($"Void serah terima {_voiding?.DocNo ?? _voiding?.WoCode}?")" OnConfirm="VoidAsync" />
+<ConfirmDialog Open="_voiding is not null" OpenChanged="o => { if (!o) _voiding = null; }" Danger="true" ConfirmText="Void" Title="@($"Void serah terima {_voiding?.DocNo ?? _voiding?.WoCode}?")" OnConfirm="VoidAsync" />
 
 @code {
     private int _page = 1, _version;

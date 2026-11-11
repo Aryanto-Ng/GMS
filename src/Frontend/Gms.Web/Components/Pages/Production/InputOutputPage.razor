@@ -19,7 +19,7 @@
 
 @if (_ctx is null && _loadProblem is null)
 {
-    <EmptyState Icon="@(new Icons.Regular.Size48.Box())" Title="Pilih WO dan proses untuk mulai" />
+    <EmptyState Title="Pilih WO dan proses untuk mulai" />
 }
 else if (_loadProblem is not null)
 {
@@ -52,7 +52,7 @@ else if (_ctx is not null)
     }
     else
     {
-        <SizeMatrixGrid Caption="Output per pekerja" RowHeader="Pekerja" Rows="_rows" Columns="_columns" Values="_values" CellInfo="CellInfo" ShowMax="true" Compact="true" OnChanged="() => _dirty = true" />
+        <QtyGrid Caption="Output per pekerja" RowHeader="Pekerja" Rows="_rows" Columns="_columns" Values="_values" CellInfo="CellInfo" ShowMax="true" Compact="true" OnChanged="() => _dirty = true" />
         <ul class="gms-chips" aria-label="Pekerja pada tabel">
             @foreach (var row in _rows)
             {
@@ -67,7 +67,7 @@ else if (_ctx is not null)
     }
 }
 
-<ReasonDialog Open="_confirmExceed" OpenChanged="o => _confirmExceed = o" ShowReason="false" Danger="false" ConfirmText="Ya, simpan" Title="Melebihi Qty WO"
+<ConfirmDialog Open="_confirmExceed" OpenChanged="o => _confirmExceed = o" ShowReason="false" Danger="false" ConfirmText="Ya, simpan" Title="Melebihi Qty WO"
               Description="@_exceedText" OnConfirm="_ => SaveCoreAsync(true)" />
 
 @code {

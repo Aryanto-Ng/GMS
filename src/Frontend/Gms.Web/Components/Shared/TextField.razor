@@ -1,19 +1,23 @@
 @* Isian teks berlabel (label terhubung, penanda wajib berupa teks, petunjuk terhubung lewat aria-describedby). *@
-<div class="gms-form">
+<div class="gms-form @(HasError ? "has-error" : null)">
     <label for="@_id">@Label @if (Required) { <span class="gms-required">wajib</span> }</label>
     @if (Multiline)
     {
-        <textarea id="@_id" class="gms-reason" rows="3" maxlength="@MaxLength" disabled="@Disabled" aria-describedby="@HintId"
+        <textarea id="@_id" class="gms-reason" rows="3" maxlength="@MaxLength" disabled="@Disabled" aria-describedby="@DescribedBy" aria-invalid="@(HasError ? "true" : null)"
                   value="@Value" @oninput="OnInput"></textarea>
     }
     else
     {
-        <input id="@_id" type="@Type" maxlength="@MaxLength" disabled="@Disabled" autocomplete="off" aria-describedby="@HintId" inputmode="@InputMode"
+        <input id="@_id" type="@Type" maxlength="@MaxLength" disabled="@Disabled" autocomplete="off" aria-describedby="@DescribedBy" aria-invalid="@(HasError ? "true" : null)" inputmode="@InputMode"
                value="@Value" @oninput="OnInput" />
     }
-    @if (!string.IsNullOrEmpty(Hint))
+    @if (HasError)
     {
-        <small id="@HintId">@Hint</small>
+        <small id="@ErrorId" class="gms-field-error" role="alert">@Error</small>
+    }
+    else if (!string.IsNullOrEmpty(Hint))
+    {
+        <small id="@HintId" class="gms-field-help">@Hint</small>
     }
 </div>
 
@@ -21,6 +25,9 @@
     private static int _counter;
     private readonly string _id = $"gms-tf-{Interlocked.Increment(ref _counter)}";
     private string? HintId => string.IsNullOrEmpty(Hint) ? null : _id + "-hint";
+    private string ErrorId => _id + "-error";
+    private bool HasError => !string.IsNullOrEmpty(Error);
+    private string? DescribedBy => HasError ? ErrorId : HintId;
 
     [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
 
@@ -41,6 +48,9 @@
     [Parameter] public string? InputMode { get; set; }
 
     [Parameter] public string? Hint { get; set; }
+
+    /// <summary>Pesan galat validasi (menyebut penyebab dan letaknya); menggantikan petunjuk dan menandai isian tidak valid.</summary>
+    [Parameter] public string? Error { get; set; }
 
     private Task OnInput(ChangeEventArgs e) => ValueChanged.InvokeAsync(e.Value?.ToString());
 }

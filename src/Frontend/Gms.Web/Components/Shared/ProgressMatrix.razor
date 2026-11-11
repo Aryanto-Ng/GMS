@@ -1,7 +1,7 @@
 @* Matriks Progres WO (WorkOrder-UI.md 2.3): baris = langkah routing, kolom = Color → Size. Nilai dari server; tidak dihitung ulang di klien kecuali tampilan. *@
 @if (Data.Steps.All(s => s.TotalOutput == 0 && s.SentTotal == 0))
 {
-    <p class="gms-note"><FluentIcon Value="@(new Icons.Regular.Size16.Info())" Color="Color.Neutral" /> Belum ada output.</p>
+    <p class="gms-note"><AntDesign.Icon Type="info-circle" /> Belum ada output.</p>
 }
 
 <div class="gms-matrix-wrap">

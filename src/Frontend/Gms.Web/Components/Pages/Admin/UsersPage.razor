@@ -48,7 +48,7 @@
 
 <AsyncContent T="PagedResult<UserListItem>" Key="@($"{_version}|{_page}|{_q}|{_role}|{_status}")" Loader="LoadAsync" IsEmpty="r => r.TotalCount == 0">
     <EmptyContent>
-        <EmptyState Icon="@(new Icons.Regular.Size48.People())" Title="Tidak ada pengguna yang cocok" Description="Ubah kata kunci atau filter." />
+        <EmptyState Title="Tidak ada pengguna yang cocok" Description="Ubah kata kunci atau filter." />
     </EmptyContent>
     <ChildContent Context="result">
         <table class="gms-table">
@@ -63,7 +63,7 @@
                         <th scope="row"><a href="/admin/users/@user.Id">@user.UserName</a></th>
                         <td>@user.FullName</td>
                         <td>@user.RoleName</td>
-                        <td><StatusChip Value="@user.Status" /></td>
+                        <td><StatusTag Value="@user.Status" /></td>
                         <td>@IdFormat.DateTime(user.LastLoginAt)</td>
                         <td class="gms-rowactions">
                             @if (_can(Permissions.AccessManagement.User.Edit))
@@ -91,7 +91,7 @@
     </ChildContent>
 </AsyncContent>
 
-<ReasonDialog Open="_pending is not null" OpenChanged="o => { if (!o) _pending = null; }"
+<ConfirmDialog Open="_pending is not null" OpenChanged="o => { if (!o) _pending = null; }"
               Title="@PendingTitle" Description="@PendingDescription" ConfirmText="@PendingConfirm" ShowReason="false"
               Danger="@(_pending is Pending.Deactivate)" OnConfirm="RunPendingAsync" />
 

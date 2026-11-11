@@ -32,7 +32,7 @@
 
 <AsyncContent T="PagedResult<WoListItem>" Key="@($"{_page}|{_q}|{_status}|{_late}|{_waitClose}")" Loader="LoadAsync" IsEmpty="r => r.TotalCount == 0">
     <EmptyContent>
-        <EmptyState Icon="@(new Icons.Regular.Size48.Box())" Title="@(HasFilter ? "Tidak ada WO untuk filter ini" : "Belum ada Work Order")"
+        <EmptyState Title="@(HasFilter ? "Tidak ada WO untuk filter ini" : "Belum ada Work Order")"
                     ActionText="@(HasFilter ? "Reset filter" : _user.HasPermission(Permissions.WorkOrder.Create) ? "Buat WO" : null)" ActionHref="@(HasFilter ? null : "/work-orders/new")" OnAction="Reset" />
     </EmptyContent>
     <ChildContent Context="result">
@@ -45,7 +45,7 @@
                     <tr>
                         <th scope="row"><a href="/work-orders/@wo.Id">@wo.Code</a></th>
                         <td><a href="/purchase-orders/@wo.PoId">@wo.PoCode</a></td><td>@wo.CustomerName</td><td>@wo.FgCode</td>
-                        <td><StatusChip Value="@wo.Status" /></td>
+                        <td><StatusTag Value="@wo.Status" /></td>
                         <td class="num">@IdFormat.Qty(wo.TotalQty)</td>
                         <td><div class="gms-stack-bar" aria-hidden="true"><span class="gms-seg success" style="width:@Math.Min(100m, wo.ProgressPercent)%"></span></div> @IdFormat.Number(wo.ProgressPercent, 1)%@(wo.ProgressPercent > 100 ? " (kelebihan)" : string.Empty)</td>
                         <td>@IdFormat.Date(wo.TargetDate) @if (wo.IsLate) { <span class="gms-bad"><FluentIcon Value="@(new Icons.Regular.Size16.Clock())" Color="Color.Neutral" /> Terlambat</span> }</td>

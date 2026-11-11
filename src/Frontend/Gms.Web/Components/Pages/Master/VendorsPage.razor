@@ -12,7 +12,7 @@
     <Row Context="d"><th scope="row">@d.Code</th><td>@d.Name</td><td>@(d.ServiceType ?? "—")</td><td>@(d.Phone ?? "—")</td></Row>
 </MasterList>
 
-<ReasonDialog Open="_open" OpenChanged="o => _open = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="@(_editing is null ? "Tambah vendor" : $"Ubah {_editing.Code}")"
+<ConfirmDialog Open="_open" OpenChanged="o => _open = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="@(_editing is null ? "Tambah vendor" : $"Ubah {_editing.Code}")"
               CanConfirm="@(!string.IsNullOrWhiteSpace(_name))" OnConfirm="SaveAsync">
     <p class="gms-note">Kode: @(_editing?.Code ?? "Otomatis saat disimpan")</p>
     <TextField Label="Nama" @bind-Value="_name" Required="true" MaxLength="100" />
@@ -21,7 +21,7 @@
     <TextField Label="Telepon" @bind-Value="_phone" MaxLength="30" Type="tel" />
     <TextField Label="Alamat" @bind-Value="_address" MaxLength="250" Multiline="true" />
     <TextField Label="Keterangan" @bind-Value="_notes" MaxLength="250" Multiline="true" />
-</ReasonDialog>
+</ConfirmDialog>
 
 @code {
     private MasterList<VendorDto>? _list;

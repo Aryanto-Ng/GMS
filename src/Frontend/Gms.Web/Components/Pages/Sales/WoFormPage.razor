@@ -46,7 +46,7 @@ else
 
             @if (_fg is not null)
             {
-                <p>Status FG: <StatusChip Value="@(_fg.IsReady ? "ready" : "not-ready")" /></p>
+                <p>Status FG: <StatusTag Value="@(_fg.IsReady ? "ready" : "not-ready")" /></p>
                 @if (!_fg.IsReady)
                 {
                     <ul class="gms-readiness">
@@ -64,7 +64,7 @@ else
         {
             <section class="gms-card" aria-labelledby="wo-qty">
                 <h2 id="wo-qty">Qty WO per Color × Size</h2>
-                <SizeMatrixGrid Caption="Qty WO" RowHeader="Color" Rows="_rows" Columns="_columns" Values="_values" CellInfo="CellInfo" ShowMax="true" OnChanged="() => _dirty = true" />
+                <QtyGrid Caption="Qty WO" RowHeader="Color" Rows="_rows" Columns="_columns" Values="_values" CellInfo="CellInfo" ShowMax="true" OnChanged="() => _dirty = true" />
                 <p><strong>Total: @IdFormat.Qty(_values.All.Sum(v => v.Qty)) pcs</strong></p>
             </section>
 

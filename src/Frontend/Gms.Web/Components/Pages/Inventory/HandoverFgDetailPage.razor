@@ -21,7 +21,7 @@ else
 {
     <PageHeader Title="@(_doc.Item.DocNo ?? "Serah Terima FG")" Subtitle="@($"{_doc.Item.WoCode} · {_doc.Item.PoCode} · {_doc.Item.FgCode} · {IdFormat.Date(_doc.Item.Date)}")"
                 Breadcrumbs="@(new[] { new PageHeader.Crumb("Serah Terima FG", "/handovers/fg"), new PageHeader.Crumb(_doc.Item.DocNo ?? "Detail") })">
-        <Chips><StatusChip Value="@_doc.Item.Status" /></Chips>
+        <Chips><StatusTag Value="@_doc.Item.Status" /></Chips>
         <Actions>
             @if (_doc.Item.Status == DocStatus.Active && _user.HasPermission(Permissions.SerahTerimaFG.Void))
             {
@@ -50,7 +50,7 @@ else
     @if (_doc.ReplacedById is not null) { <p class="gms-note">Digantikan oleh <a href="/handovers/fg/@_doc.ReplacedById">dokumen koreksi</a>.</p> }
 }
 
-<ReasonDialog Open="_voiding" OpenChanged="o => _voiding = o" Danger="true" ConfirmText="Void" Title="@($"Void serah terima {_doc?.Item.DocNo}?")"
+<ConfirmDialog Open="_voiding" OpenChanged="o => _voiding = o" Danger="true" ConfirmText="Void" Title="@($"Void serah terima {_doc?.Item.DocNo}?")"
               Description="@($"{IdFormat.Qty(_doc?.Item.TotalQty ?? 0)} pcs. Alokasi otomatis ke PO akan dilepas dan stok dikurangi.")"
               LoadPreview="ct => Inventory.PreviewVoidHandoverFgAsync(Id, ct)" OnConfirm="VoidAsync" />
 

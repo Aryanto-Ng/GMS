@@ -59,7 +59,7 @@
                             @if (issue is not null)
                             {
                                 <div class="gms-cellmsg @(issue.IsError ? "error" : "warning")" id="@messageId">
-                                    <FluentIcon Value="@(issue.IsError ? (Icon)new Icons.Regular.Size12.DismissCircle() : new Icons.Regular.Size12.Warning())" Color="Color.Neutral" />
+                                    <AntDesign.Icon Type="@(issue.IsError ? "close-circle" : "warning")" />
                                     @(issue.IsError ? "melebihi batas" : "melebihi Qty WO")
                                 </div>
                             }
@@ -88,7 +88,7 @@
     private readonly string _id = $"gms-matrix-{Interlocked.Increment(ref _counter)}";
     private ElementReference _root;
     private IJSObjectReference? _module;
-    private DotNetObjectReference<SizeMatrixGrid>? _self;
+    private DotNetObjectReference<QtyGrid>? _self;
     private IReadOnlyList<MatrixIssue> _issues = [];
     private string _pasteNote = string.Empty;
 
@@ -150,7 +150,7 @@
     {
         if (firstRender && !ReadOnly)
         {
-            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Shared/SizeMatrixGrid.razor.js");
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Shared/QtyGrid.razor.js");
             _self = DotNetObjectReference.Create(this);
             await _module.InvokeVoidAsync("init", _root, _self);
         }

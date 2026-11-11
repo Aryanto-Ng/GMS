@@ -28,7 +28,7 @@
         @if (_ctx.BlockedReason is not null) { <div class="gms-banner warning" role="alert"><div class="gms-banner-body"><p>@_ctx.BlockedReason</p></div></div> }
         <section class="gms-card" aria-labelledby="hf-qty">
             <h2 id="hf-qty">Qty diserahterimakan (@_ctx.FgCode · @_ctx.PoCode)</h2>
-            <SizeMatrixGrid Caption="Qty serah terima" RowHeader="" Rows="_row" Columns="_columns" Values="_values" CellInfo="CellInfo" ShowMax="true" OnChanged="() => { _dirty = true; _preview = null; }" />
+            <QtyGrid Caption="Qty serah terima" RowHeader="" Rows="_row" Columns="_columns" Values="_values" CellInfo="CellInfo" ShowMax="true" OnChanged="() => { _dirty = true; _preview = null; }" />
             <FluentButton Appearance="Appearance.Neutral" OnClick="PreviewAsync">Perkiraan alokasi</FluentButton>
             @if (_preview is not null)
             {

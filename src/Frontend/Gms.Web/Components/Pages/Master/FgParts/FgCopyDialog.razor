@@ -3,7 +3,7 @@
 @inject IToastService Toasts
 
 @* Salin routing dan tarif dari FG lain (MasterData-UI.md 2.6): 1 Pilih sumber → 2 Pratinjau → 3 Konfirmasi. *@
-<ReasonDialog Open="Open" OpenChanged="OnOpenChanged" ShowReason="false" Danger="false" ConfirmText="Salin dan simpan"
+<ConfirmDialog Open="Open" OpenChanged="OnOpenChanged" ShowReason="false" Danger="false" ConfirmText="Salin dan simpan"
               Title="Salin dari FG lain" CanConfirm="@(_step == 3 && (_preview?.WillOverwriteExisting != true || _overwrite))" OnConfirm="CopyAsync">
     <ol class="gms-stepper" aria-label="Langkah">
         @foreach (var (n, label) in new[] { (1, "Pilih FG sumber"), (2, "Pratinjau"), (3, "Konfirmasi") })
@@ -60,7 +60,7 @@
             <FluentButton Appearance="Appearance.Neutral" OnClick="() => _step = 2">Kembali</FluentButton>
         </div>
     }
-</ReasonDialog>
+</ConfirmDialog>
 
 @code {
     private int _step = 1;

@@ -12,7 +12,7 @@
     <Row Context="d"><th scope="row">@d.Code</th><td>@d.Name</td><td>@(d.Type == ProcessType.Internal ? "Internal" : "Vendor")</td></Row>
 </MasterList>
 
-<ReasonDialog Open="_open" OpenChanged="o => _open = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="@(_editing is null ? "Tambah process" : "Ubah process")"
+<ConfirmDialog Open="_open" OpenChanged="o => _open = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="@(_editing is null ? "Tambah process" : "Ubah process")"
               CanConfirm="@(!string.IsNullOrWhiteSpace(_code) && !string.IsNullOrWhiteSpace(_name))" OnConfirm="SaveAsync">
     <TextField Label="Kode" @bind-Value="_code" Required="true" MaxLength="20" />
     <TextField Label="Nama" @bind-Value="_name" Required="true" MaxLength="50" />
@@ -24,7 +24,7 @@
         </select>
         <small id="proc-type-hint">@(_editing?.IsUsedInRouting == true ? "Tipe terkunci karena process dipakai di routing." : "Internal = dikerjakan Konveksi (bertarif); Vendor = dikirim ke vendor.")</small>
     </div>
-</ReasonDialog>
+</ConfirmDialog>
 
 @code {
     private MasterList<ProcessDto>? _list;

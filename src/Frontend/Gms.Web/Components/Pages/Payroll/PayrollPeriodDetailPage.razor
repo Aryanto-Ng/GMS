@@ -22,7 +22,7 @@ else
 {
     <PageHeader Title="@_period.Code" Subtitle="@($"{IdFormat.Date(_period.StartDate)} – {IdFormat.Date(_period.EndDate)} · {_period.WorkerCount} pekerja · Total Rp {IdFormat.Number(_period.TotalPaid)}{(_period.IsProvisional ? "*" : string.Empty)}")"
                 Breadcrumbs="@(new[] { new PageHeader.Crumb("Periode Gaji", "/payroll"), new PageHeader.Crumb(_period.Code) })">
-        <Chips><StatusChip Value="@_period.Status" /> @if (_period.IsProvisional) { <span class="gms-warn"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" /> BELUM FINAL</span> }</Chips>
+        <Chips><StatusTag Value="@_period.Status" /> @if (_period.IsProvisional) { <span class="gms-warn"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" /> BELUM FINAL</span> }</Chips>
         <Actions>
             <FluentButton Appearance="Appearance.Neutral" OnClick="RefreshAsync">Segarkan</FluentButton>
             @if (_user.HasPermission(Permissions.Payroll.Export))
@@ -170,14 +170,14 @@ else
     }
 }
 
-<ReasonDialog Open="_editing" OpenChanged="o => _editing = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="Ubah periode" OnConfirm="SaveEditAsync">
+<ConfirmDialog Open="_editing" OpenChanged="o => _editing = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="Ubah periode" OnConfirm="SaveEditAsync">
     <div class="gms-form">
         <TextField Label="Tanggal Selesai" Type="date" @bind-Value="_eEnd" Required="true" />
         <TextField Label="Catatan" @bind-Value="_eNotes" MaxLength="250" />
     </div>
-</ReasonDialog>
+</ConfirmDialog>
 
-<ReasonDialog Open="_closing" OpenChanged="o => _closing = o" ShowReason="false" Danger="true" ConfirmText="Tutup Periode" Title="@($"Tutup periode {_period?.Code}?")"
+<ConfirmDialog Open="_closing" OpenChanged="o => _closing = o" ShowReason="false" Danger="true" ConfirmText="Tutup Periode" Title="@($"Tutup periode {_period?.Code}?")"
               CanConfirm="@(_closePreview is not null && string.Equals(_confirm?.Trim(), _closePreview.ConfirmationCode, StringComparison.Ordinal))" OnConfirm="CloseAsync">
     @if (_closePreview is not null)
     {
@@ -187,16 +187,16 @@ else
         <p class="gms-note"><FluentIcon Value="@(new Icons.Regular.Size16.Info())" Color="Color.Neutral" /> Penutupan PERMANEN. Input produksi pada tanggal ini akan terkunci; koreksi dilakukan lewat Penyesuaian pada periode berikutnya.</p>
         <TextField Label="Ketik kode periode untuk konfirmasi" Value="@_confirm" ValueChanged="v => _confirm = v" MaxLength="40" Hint="@_closePreview.ConfirmationCode" />
     }
-</ReasonDialog>
+</ConfirmDialog>
 
-<ReasonDialog Open="_slipOpen" OpenChanged="o => _slipOpen = o" ShowReason="false" Danger="false" ConfirmText="Buat PDF" Title="Slip Gaji PDF" OnConfirm="SlipAsync">
+<ConfirmDialog Open="_slipOpen" OpenChanged="o => _slipOpen = o" ShowReason="false" Danger="false" ConfirmText="Buat PDF" Title="Slip Gaji PDF" OnConfirm="SlipAsync">
     <div class="gms-form">
         <label><input type="radio" name="slip-scope" checked="@(!_slipOne)" @onchange="() => _slipOne = false" /> Semua pekerja (1 berkas)</label>
         <label><input type="radio" name="slip-scope" checked="@_slipOne" @onchange="() => _slipOne = true" /> Satu pekerja</label>
         @if (_slipOne) { <LookupSelect Label="Pekerja" Items="_slipWorkers" @bind-Value="_slipWorker" ShowCode="true" /> }
         <label><input type="checkbox" checked="@_slipDaily" @onchange="e => _slipDaily = (bool)e.Value!" /> Sertakan rincian harian</label>
     </div>
-</ReasonDialog>
+</ConfirmDialog>
 
 @code {
     private enum Tab { Summary, Detail, Daily, Matrix, Adjust }

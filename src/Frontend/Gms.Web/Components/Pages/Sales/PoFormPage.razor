@@ -79,7 +79,7 @@ else
                     </div>
                     @if (dup) { <p class="gms-bad" role="alert"><FluentIcon Value="@(new Icons.Regular.Size16.DismissCircle())" Color="Color.Neutral" /> Kombinasi FG, Color, Size, dan Tanggal Kirim ganda.</p> }
                     @if (early) { <p class="gms-warn" role="status"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" /> Tanggal Kirim lebih awal dari Tanggal PO.</p> }
-                    <SizeMatrixGrid Caption="@($"{block.FgLabel} {block.ColorLabel}")" RowHeader="" Rows="_qtyRow" Columns="@Columns(block)" Values="block.Values"
+                    <QtyGrid Caption="@($"{block.FgLabel} {block.ColorLabel}")" RowHeader="" Rows="_qtyRow" Columns="@Columns(block)" Values="block.Values"
                                     CellInfo="PoFormLogic.CellInfo" OnChanged="Changed" Compact="true" />
                     @foreach (var size in block.Sizes.Where(s => block.Existing.TryGetValue(s.Id, out var e) && e.Min > 0))
                     {
@@ -110,7 +110,7 @@ else
     </form>
 }
 
-<ReasonDialog Open="_bigConfirm" OpenChanged="o => _bigConfirm = o" ShowReason="false" Danger="false" ConfirmText="Ya, lanjutkan"
+<ConfirmDialog Open="_bigConfirm" OpenChanged="o => _bigConfirm = o" ShowReason="false" Danger="false" ConfirmText="Ya, lanjutkan"
               Title="Qty sangat besar" Description="Ada Qty di atas 100.000 pcs. Pastikan angkanya benar sebelum menyimpan." OnConfirm="_ => SaveCoreAsync(_pendingConfirm)" />
 
 @code {

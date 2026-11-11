@@ -12,12 +12,12 @@
     <Row Context="d"><td class="num">@d.SortOrder</td><th scope="row">@d.Code</th><td>@d.Name</td></Row>
 </MasterList>
 
-<ReasonDialog Open="_open" OpenChanged="o => _open = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="@(_editing is null ? "Tambah size" : "Ubah size")"
+<ConfirmDialog Open="_open" OpenChanged="o => _open = o" ShowReason="false" Danger="false" ConfirmText="Simpan" Title="@(_editing is null ? "Tambah size" : "Ubah size")"
               CanConfirm="@(!string.IsNullOrWhiteSpace(_code) && !string.IsNullOrWhiteSpace(_name) && int.TryParse(_order, out var o) && o >= 1)" OnConfirm="SaveAsync">
     <TextField Label="Kode" @bind-Value="_code" Required="true" MaxLength="10" />
     <TextField Label="Nama" @bind-Value="_name" Required="true" MaxLength="50" />
     <TextField Label="Urutan tampil" @bind-Value="_order" Required="true" MaxLength="4" InputMode="numeric" Hint="Menentukan urutan kolom Size pada semua grid (kecil ke besar)." />
-</ReasonDialog>
+</ConfirmDialog>
 
 @code {
     private MasterList<SizeDto>? _list;

@@ -132,14 +132,14 @@ public sealed class SizeMatrixLogicTests
     }
 }
 
-public sealed class SizeMatrixGridTests : WebTestBase
+public sealed class QtyGridTests : WebTestBase
 {
     private static readonly IReadOnlyList<MatrixRow> Rows = [new("navy", "Navy", "Kain A"), new("red", "Merah")];
     private static readonly IReadOnlyList<MatrixColumn> Cols = [new("s", "S"), new("m", "M")];
 
-    private IRenderedComponent<SizeMatrixGrid> Grid(
+    private IRenderedComponent<QtyGrid> Grid(
         MatrixValues? values = null, Func<string, string, MatrixCellInfo>? info = null, bool readOnly = false, bool showMax = false, Action? changed = null) =>
-        Render<SizeMatrixGrid>(p =>
+        Render<QtyGrid>(p =>
         {
             p.Add(x => x.Caption, "Matriks PO").Add(x => x.Rows, Rows).Add(x => x.Columns, Cols).Add(x => x.Values, values ?? new MatrixValues())
              .Add(x => x.ReadOnly, readOnly).Add(x => x.ShowMax, showMax);

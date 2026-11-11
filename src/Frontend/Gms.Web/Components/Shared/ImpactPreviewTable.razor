@@ -28,11 +28,11 @@
                             <td>
                                 @if (row.Ok)
                                 {
-                                    <span class="gms-ok"><FluentIcon Value="@(new Icons.Regular.Size16.CheckmarkCircle())" Color="Color.Neutral" /> Aman</span>
+                                    <span class="gms-ok"><AntDesign.Icon Type="check-circle" /> Aman</span>
                                 }
                                 else
                                 {
-                                    <span class="gms-bad"><FluentIcon Value="@(new Icons.Regular.Size16.DismissCircle())" Color="Color.Neutral" /> Melanggar</span>
+                                    <span class="gms-bad"><AntDesign.Icon Type="close-circle" /> Melanggar</span>
                                     @if (!string.IsNullOrEmpty(row.Message))
                                     {
                                         <div class="gms-cell-msg">@row.Message</div>
@@ -48,7 +48,7 @@
         @if (!Preview.CanProceed)
         {
             <div class="gms-banner error" role="alert">
-                <FluentIcon Value="@(new Icons.Regular.Size20.ErrorCircle())" Color="Color.Neutral" />
+                <AntDesign.Icon Type="close-circle" />
                 <div class="gms-banner-body">
                     <strong>Aksi tidak dapat dilanjutkan.</strong>
                     <ul class="gms-violations">
@@ -63,7 +63,7 @@
 
         @foreach (var note in Preview.Notes)
         {
-            <p class="gms-note"><FluentIcon Value="@(new Icons.Regular.Size16.Info())" Color="Color.Neutral" /> @note</p>
+            <p class="gms-note"><AntDesign.Icon Type="info-circle" /> @note</p>
         }
     </div>
 }

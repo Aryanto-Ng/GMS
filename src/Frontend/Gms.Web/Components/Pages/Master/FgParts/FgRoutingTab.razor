@@ -76,7 +76,7 @@
     </ChildContent>
 </AsyncContent>
 
-<ReasonDialog Open="_confirm is not null" OpenChanged="o => { if (!o) _confirm = null; }" ShowReason="false" Danger="true" ConfirmText="Hapus langkah dan tarif"
+<ConfirmDialog Open="_confirm is not null" OpenChanged="o => { if (!o) _confirm = null; }" ShowReason="false" Danger="true" ConfirmText="Hapus langkah dan tarif"
               Title="Hapus langkah bertarif?" Description="Tarif langkah berikut akan dihapus. Nilai lama tetap tercatat di audit log." OnConfirm="_ => SaveAsync(true)">
     <ul>
         @foreach (var v in _confirm?.Violations ?? [])
@@ -84,7 +84,7 @@
             <li>@v.Message</li>
         }
     </ul>
-</ReasonDialog>
+</ConfirmDialog>
 
 @code {
     private List<ProcessDto> _steps = [];

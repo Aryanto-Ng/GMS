@@ -33,7 +33,7 @@
 
 <AsyncContent T="PagedResult<EntryListItem>" Key="@($"{_version}|{_page}|{_wo}|{_kind}|{_voided}")" Loader="LoadAsync" IsEmpty="r => r.TotalCount == 0">
     <EmptyContent>
-        <EmptyState Icon="@(new Icons.Regular.Size48.Box())" Title="@(_wo is null && _kind is null && !_voided ? "Belum ada catatan produksi" : "Tidak ada hasil")" ActionText="@(_wo is null && _kind is null && !_voided ? null : "Reset filter")" OnAction="Reset" />
+        <EmptyState Title="@(_wo is null && _kind is null && !_voided ? "Belum ada catatan produksi" : "Tidak ada hasil")" ActionText="@(_wo is null && _kind is null && !_voided ? null : "Reset filter")" OnAction="Reset" />
     </EmptyContent>
     <ChildContent Context="result">
         <table class="gms-table compact">
@@ -51,7 +51,7 @@
                         <td>@KindLabel(e.Kind)</td>
                         <td class="num">@if (e.Status == DocStatus.Voided) { <s>@IdFormat.Qty(e.TotalQty)</s> } else { @IdFormat.Qty(e.TotalQty) }</td>
                         <td>
-                            <StatusChip Value="@e.Status" Tooltip="@e.VoidReason" />
+                            <StatusTag Value="@e.Status" Tooltip="@e.VoidReason" />
                             @if (e.ReplacedById is not null) { <small class="gms-muted">digantikan</small> }
                             @if (e.ReplacesId is not null) { <small class="gms-muted">menggantikan</small> }
                         </td>
@@ -87,11 +87,11 @@
     </section>
 }
 
-<ReasonDialog Open="_voiding is not null" OpenChanged="o => { if (!o) _voiding = null; }" Danger="true" ConfirmText="Void entri"
+<ConfirmDialog Open="_voiding is not null" OpenChanged="o => { if (!o) _voiding = null; }" Danger="true" ConfirmText="Void entri"
               Title="@(_voiding is null ? string.Empty : $"Batalkan entri ini? {_voiding.ProcessName} · {_voiding.WorkerName ?? _voiding.VendorName} · {IdFormat.Date(_voiding.WorkDate)} · {IdFormat.Qty(_voiding.TotalQty)} pcs")"
               LoadPreview="PreviewVoidAsync" OnConfirm="VoidAsync" />
 
-<ReasonDialog Open="_correcting is not null" OpenChanged="o => { if (!o) _correcting = null; }" Danger="false" ConfirmText="Simpan koreksi" Title="Koreksi output"
+<ConfirmDialog Open="_correcting is not null" OpenChanged="o => { if (!o) _correcting = null; }" Danger="false" ConfirmText="Simpan koreksi" Title="Koreksi output"
               CanConfirm="@(_correctPreview?.CanProceed == true)" OnConfirm="CorrectAsync">
     @if (_correcting is not null && _correctDetail is not null)
     {
@@ -106,7 +106,7 @@
         <FluentButton Appearance="Appearance.Neutral" OnClick="CheckCorrectionAsync">Periksa dampak</FluentButton>
         @if (_correctPreview is not null) { <ImpactPreviewTable Preview="_correctPreview" /> }
     }
-</ReasonDialog>
+</ConfirmDialog>
 
 @code {
     private IReadOnlyList<LookupItem> _woItems = [], _workerItems = [];

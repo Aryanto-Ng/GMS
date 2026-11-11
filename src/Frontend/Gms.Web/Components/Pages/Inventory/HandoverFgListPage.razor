@@ -32,7 +32,7 @@
 
 <AsyncContent T="PagedResult<HandoverFgListItem>" Key="@($"{_page}|{_wo}|{_status}")" Loader="LoadAsync" IsEmpty="r => r.TotalCount == 0">
     <EmptyContent>
-        <EmptyState Icon="@(new Icons.Regular.Size48.Box())" Title="Belum ada serah terima FG" ActionText="@(_user.HasPermission(Permissions.SerahTerimaFG.Create) ? "Buat Serah Terima" : null)" ActionHref="/handovers/fg/new" />
+        <EmptyState Title="Belum ada serah terima FG" ActionText="@(_user.HasPermission(Permissions.SerahTerimaFG.Create) ? "Buat Serah Terima" : null)" ActionHref="/handovers/fg/new" />
     </EmptyContent>
     <ChildContent Context="result">
         <table class="gms-table">
@@ -45,7 +45,7 @@
                         <td>@IdFormat.Date(h.Date)</td>
                         <th scope="row"><a href="/handovers/fg/@h.Id">@(h.DocNo ?? "—")</a></th>
                         <td>@h.WoCode</td><td>@h.PoCode</td><td>@h.FgCode</td><td class="num">@IdFormat.Qty(h.TotalQty)</td>
-                        <td><StatusChip Value="@h.Status" /></td><td>@(h.CreatedByName ?? "—")</td>
+                        <td><StatusTag Value="@h.Status" /></td><td>@(h.CreatedByName ?? "—")</td>
                     </tr>
                 }
             </tbody>

@@ -299,9 +299,11 @@ public sealed class FormatAndLogicTests
     [Fact]
     public void Status_dipetakan_ke_label_nada_dan_ikon_dan_Voided_dicoret()
     {
-        Assert.Equal(("In Progress", "brand"), (StatusPresentation.For(Gms.Shared.Enums.PoStatus.InProgress).Label, StatusPresentation.For(Gms.Shared.Enums.PoStatus.InProgress).Tone));
-        Assert.Equal("danger-soft", StatusPresentation.For(Gms.Shared.Enums.WoStatus.Cancelled).Tone);
-        Assert.Equal("dark", StatusPresentation.For(Gms.Shared.Enums.WoStatus.Closed).Tone);
+        Assert.Equal(("In Progress", "blue"), (StatusPresentation.For(Gms.Shared.Enums.PoStatus.InProgress).Label, StatusPresentation.For(Gms.Shared.Enums.PoStatus.InProgress).Tone));
+        Assert.Equal("danger", StatusPresentation.For(Gms.Shared.Enums.WoStatus.Cancelled).Tone);
+        Assert.Equal("cyan", StatusPresentation.For(Gms.Shared.Enums.PoStatus.Confirmed).Tone);
+        Assert.Equal("cyan", StatusPresentation.For(Gms.Shared.Enums.WoStatus.Released).Tone);
+        Assert.Equal("closed", StatusPresentation.For(Gms.Shared.Enums.WoStatus.Closed).Tone);
         var voided = StatusPresentation.For(Gms.Shared.Enums.DocStatus.Voided);
         Assert.True(voided.Strike);
         Assert.Equal("Terlambat", StatusPresentation.For("late").Label);

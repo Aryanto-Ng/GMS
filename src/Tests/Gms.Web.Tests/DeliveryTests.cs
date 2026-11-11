@@ -189,7 +189,7 @@ public sealed class DeliveryPageTests : WebTestBase
 
     private static IElement Dialog<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent => cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null);
 
-    private static IElement DialogConfirm<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent => Dialog(cut).QuerySelectorAll("fluent-button").Last();
+    private static IElement DialogConfirm<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent => Dialog(cut).QuerySelectorAll("fluent-button, button.ant-btn").Last();
 
     private async Task<DeliveryDto> SeedDeliveryAsync(int allocate = 40, int ship = 30)
     {
@@ -239,7 +239,7 @@ public sealed class DeliveryPageTests : WebTestBase
         cut.FindAll("select")[0].Change(MockPoApi.SeedPoId.ToString());
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("tbody tr")));
 
-        cut.FindAll("tbody fluent-button").First(b => b.TextContent == "Alokasikan stok").Click();
+        cut.FindAll("tbody fluent-button, tbody button.ant-btn").First(b => b.TextContent == "Alokasikan stok").Click();
         cut.WaitForAssertion(() => Assert.Contains("Tersedia 120", Dialog(cut).TextContent));
         Dialog(cut).QuerySelector("input")!.Input("25");
         DialogConfirm(cut).Click();
@@ -270,7 +270,7 @@ public sealed class DeliveryPageTests : WebTestBase
         cut.WaitForAssertion(() => Assert.Contains(doc.Item.Code, cut.Find("h1").TextContent));
 
         Assert.Contains("Dicetak 0 kali", cut.Markup);
-        cut.FindAll(".gms-pageheader-actions fluent-button").Single(b => b.TextContent == "Cetak PDF").Click();
+        cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn").Single(b => b.TextContent == "Cetak PDF").Click();
 
         cut.WaitForAssertion(() => Assert.Contains("Dicetak 1 kali", cut.Markup));
         Assert.Contains(JSInterop.Invocations, i => i.Identifier == "save" && ((string)i.Arguments[0]!).EndsWith(".pdf"));
@@ -283,13 +283,13 @@ public sealed class DeliveryPageTests : WebTestBase
         var cut = Render<DeliveryDetailPage>(p => p.Add(x => x.Id, doc.Item.Id));
         cut.WaitForAssertion(() => Assert.Contains(doc.Item.Code, cut.Find("h1").TextContent));
 
-        cut.FindAll(".gms-pageheader-actions fluent-button").Single(b => b.TextContent == "Void").Click();
+        cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn").Single(b => b.TextContent == "Void").Click();
         cut.WaitForAssertion(() => Assert.NotEmpty(Dialog(cut).QuerySelectorAll(".gms-impact")));
         Dialog(cut).QuerySelector("textarea")!.Input("salah kirim");
         DialogConfirm(cut).Click();
 
         cut.WaitForAssertion(() => Assert.Contains("Di-void: salah kirim", cut.Markup));
-        Assert.DoesNotContain(cut.FindAll(".gms-pageheader-actions fluent-button"), b => b.TextContent is "Void" or "Koreksi" or "Edit Info");
+        Assert.DoesNotContain(cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn"), b => b.TextContent is "Void" or "Koreksi" or "Edit Info");
     }
 
     [Fact]
@@ -299,15 +299,15 @@ public sealed class DeliveryPageTests : WebTestBase
         var cut = Render<DeliveryDetailPage>(p => p.Add(x => x.Id, doc.Item.Id));
         cut.WaitForAssertion(() => Assert.Contains(doc.Item.Code, cut.Find("h1").TextContent));
 
-        cut.FindAll(".gms-pageheader-actions fluent-button").Single(b => b.TextContent == "Koreksi").Click();
+        cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn").Single(b => b.TextContent == "Koreksi").Click();
         Dialog(cut).QuerySelector("input[inputmode=numeric]")!.Input("41");
-        Dialog(cut).QuerySelectorAll("fluent-button").Single(b => b.TextContent == "Periksa dampak").Click();
+        Dialog(cut).QuerySelectorAll("fluent-button, button.ant-btn").Single(b => b.TextContent == "Periksa dampak").Click();
         cut.WaitForAssertion(() => Assert.Contains("Maksimal 40", Dialog(cut).TextContent));
         Dialog(cut).QuerySelector("textarea")!.Input("salah");
         Assert.True(DialogConfirm(cut).HasAttribute("disabled"));
 
         Dialog(cut).QuerySelector("input[inputmode=numeric]")!.Input("35");
-        Dialog(cut).QuerySelectorAll("fluent-button").Single(b => b.TextContent == "Periksa dampak").Click();
+        Dialog(cut).QuerySelectorAll("fluent-button, button.ant-btn").Single(b => b.TextContent == "Periksa dampak").Click();
         cut.WaitForAssertion(() => Assert.False(DialogConfirm(cut).HasAttribute("disabled")));
         DialogConfirm(cut).Click();
 
@@ -321,7 +321,7 @@ public sealed class DeliveryPageTests : WebTestBase
         var doc = await SeedDeliveryAsync();
         var cut = Render<DeliveryDetailPage>(p => p.Add(x => x.Id, doc.Item.Id));
         cut.WaitForAssertion(() => Assert.Contains(doc.Item.Code, cut.Find("h1").TextContent));
-        cut.FindAll(".gms-pageheader-actions fluent-button").Single(b => b.TextContent == "Edit Info").Click();
+        cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn").Single(b => b.TextContent == "Edit Info").Click();
         Dialog(cut).QuerySelectorAll("input")[1].Input("Citra");
         DialogConfirm(cut).Click();
 

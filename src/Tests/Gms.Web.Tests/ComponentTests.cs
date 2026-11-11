@@ -44,10 +44,10 @@ public sealed class ComponentTests : WebTestBase
     }
 
     [Fact]
-    public void MetricCard_menampilkan_angka_label_tautan_dan_penanda_ikon_untuk_nada_peringatan()
+    public void StatCard_menampilkan_angka_label_tautan_dan_penanda_ikon_untuk_nada_peringatan()
     {
-        var plain = Render<MetricCard>(p => p.Add(x => x.Label, "PO Terlambat").Add(x => x.Value, "7").Add(x => x.Description, "Perlu tindak lanjut").Add(x => x.Href, "/purchase-orders?terlambat=true"));
-        var danger = Render<MetricCard>(p => p.Add(x => x.Label, "WO Terlambat").Add(x => x.Value, "2").Add(x => x.Tone, MetricCard.MetricTone.Danger));
+        var plain = Render<StatCard>(p => p.Add(x => x.Label, "PO Terlambat").Add(x => x.Value, "7").Add(x => x.Description, "Perlu tindak lanjut").Add(x => x.Href, "/purchase-orders?terlambat=true"));
+        var danger = Render<StatCard>(p => p.Add(x => x.Label, "WO Terlambat").Add(x => x.Value, "2").Add(x => x.Tone, StatCard.MetricTone.Danger));
 
         Assert.Equal("7", plain.Find(".gms-metric-value").TextContent);
         Assert.Equal("Lihat PO Terlambat", plain.Find("a").GetAttribute("aria-label"));
@@ -64,8 +64,8 @@ public sealed class ComponentTests : WebTestBase
         var none = Render<EmptyState>(p => p.Add(x => x.Title, "Tidak ada hasil untuk filter ini"));
 
         Assert.Equal("/purchase-orders/new", link.Find("a").GetAttribute("href"));
-        Assert.Contains("fluent-button", button.Markup);
-        Assert.Empty(none.FindAll("a, fluent-button"));
+        Assert.NotEmpty(button.FindAll("button.ant-btn"));
+        Assert.Empty(none.FindAll("a, button"));
         Assert.Equal("status", none.Find(".gms-state").GetAttribute("role"));
     }
 
@@ -81,7 +81,7 @@ public sealed class ComponentTests : WebTestBase
 
         Assert.Equal("alert", cut.Find(".gms-state").GetAttribute("role"));
         Assert.Contains("00-abc-123", cut.Find("code").TextContent);
-        cut.Find("fluent-button").Click();
+        cut.Find("fluent-button, button.ant-btn").Click();
         Assert.Equal(1, retried);
     }
 
@@ -90,7 +90,7 @@ public sealed class ComponentTests : WebTestBase
     {
         var cut = Render<ErrorState>(p => p.Add(x => x.Title, "Tidak ditemukan"));
 
-        Assert.Empty(cut.FindAll("fluent-button"));
+        Assert.Empty(cut.FindAll("fluent-button, button.ant-btn"));
     }
 
     [Fact]
@@ -107,29 +107,29 @@ public sealed class ComponentTests : WebTestBase
 
     [Theory]
     [InlineData(PoStatus.Draft, "Draft", "neutral")]
-    [InlineData(PoStatus.Confirmed, "Confirmed", "info")]
-    [InlineData(PoStatus.InProgress, "In Progress", "brand")]
+    [InlineData(PoStatus.Confirmed, "Confirmed", "cyan")]
+    [InlineData(PoStatus.InProgress, "In Progress", "blue")]
     [InlineData(PoStatus.Completed, "Completed", "success")]
-    [InlineData(PoStatus.Cancelled, "Cancelled", "danger-soft")]
-    public void StatusChip_PO_selalu_memuat_ikon_dan_teks(PoStatus status, string label, string tone)
+    [InlineData(PoStatus.Cancelled, "Cancelled", "danger")]
+    public void StatusTag_PO_selalu_memuat_ikon_dan_teks(PoStatus status, string label, string tone)
     {
-        var cut = Render<StatusChip>(p => p.Add(x => x.Value, status));
+        var cut = Render<StatusTag>(p => p.Add(x => x.Value, status));
 
-        var chip = cut.Find(".gms-chip");
+        var chip = cut.Find(".gms-tag");
         Assert.Contains(tone, chip.ClassName);
-        Assert.Equal(label, chip.QuerySelector("span")!.TextContent.Trim());
-        Assert.NotNull(chip.QuerySelector("svg, fluent-icon"));
+        Assert.Equal(label, chip.QuerySelector(":scope > span:last-child")!.TextContent.Trim());
+        Assert.NotNull(chip.QuerySelector("svg")); // ikon AntDesign
     }
 
     [Fact]
-    public void StatusChip_Voided_dicoret_dan_kunci_teks_dan_tooltip_dapat_diganti()
+    public void StatusTag_Voided_dicoret_dan_kunci_teks_dan_tooltip_dapat_diganti()
     {
-        var voided = Render<StatusChip>(p => p.Add(x => x.Value, DocStatus.Voided));
-        var late = Render<StatusChip>(p => p.Add(x => x.Value, "late").Add(x => x.Tooltip, "Lewat 3 hari"));
+        var voided = Render<StatusTag>(p => p.Add(x => x.Value, DocStatus.Voided));
+        var late = Render<StatusTag>(p => p.Add(x => x.Value, "late").Add(x => x.Tooltip, "Lewat 3 hari"));
 
-        Assert.Contains("strike", voided.Find(".gms-chip").ClassName);
-        Assert.Equal("Terlambat", late.Find(".gms-chip span").TextContent.Trim());
-        Assert.Equal("Lewat 3 hari", late.Find(".gms-chip").GetAttribute("title"));
+        Assert.Contains("strike", voided.Find(".gms-tag").ClassName);
+        Assert.Equal("Terlambat", late.Find(".gms-tag > span:last-child").TextContent.Trim());
+        Assert.Equal("Lewat 3 hari", late.Find(".gms-tag").GetAttribute("title"));
     }
 
     [Theory]
@@ -152,7 +152,7 @@ public sealed class ComponentTests : WebTestBase
     {
         var target = 0;
         var first = Render<PagerBar>(p => p.Add(x => x.Page, 1).Add(x => x.PageSize, 10).Add(x => x.TotalCount, 35).Add(x => x.PageChanged, EventCallback.Factory.Create<int>(this, v => target = v)));
-        var buttons = first.FindAll("fluent-button");
+        var buttons = first.FindAll("fluent-button, button.ant-btn");
 
         Assert.True(buttons[0].HasAttribute("disabled"));
         Assert.False(buttons[1].HasAttribute("disabled"));
@@ -160,10 +160,10 @@ public sealed class ComponentTests : WebTestBase
         Assert.Equal(2, target);
 
         var last = Render<PagerBar>(p => p.Add(x => x.Page, 4).Add(x => x.PageSize, 10).Add(x => x.TotalCount, 35));
-        Assert.True(last.FindAll("fluent-button")[1].HasAttribute("disabled"));
+        Assert.True(last.FindAll("fluent-button, button.ant-btn")[1].HasAttribute("disabled"));
 
         var busy = Render<PagerBar>(p => p.Add(x => x.Page, 2).Add(x => x.PageSize, 10).Add(x => x.TotalCount, 35).Add(x => x.Busy, true));
-        Assert.All(busy.FindAll("fluent-button"), b => Assert.True(b.HasAttribute("disabled")));
+        Assert.All(busy.FindAll("fluent-button, button.ant-btn"), b => Assert.True(b.HasAttribute("disabled")));
     }
 
     [Fact]
@@ -182,7 +182,7 @@ public sealed class ComponentTests : WebTestBase
         Assert.Contains("Navy / M", cut.Find(".gms-violations li").TextContent);
         Assert.Contains("melebihi batas 20", cut.Find(".gms-violations li").TextContent);
         Assert.Contains("00-xyz", cut.Find("code").TextContent);
-        Assert.Empty(cut.FindAll("fluent-button")); // aturan bisnis: tidak ada "coba lagi"
+        Assert.Empty(cut.FindAll("fluent-button, button.ant-btn")); // aturan bisnis: tidak ada "coba lagi"
     }
 
     [Fact]
@@ -197,10 +197,10 @@ public sealed class ComponentTests : WebTestBase
             .Add(x => x.OnReload, EventCallback.Factory.Create(this, () => reloads++)));
 
         Assert.Contains("Data telah diubah pengguna lain", concurrency.Markup);
-        Assert.Contains("Muat ulang", concurrency.Find("fluent-button").TextContent);
-        Assert.Contains("Coba lagi", server.Find("fluent-button").TextContent);
-        concurrency.Find("fluent-button").Click();
-        server.Find("fluent-button").Click();
+        Assert.Contains("Muat ulang", concurrency.Find("fluent-button, button.ant-btn").TextContent);
+        Assert.Contains("Coba lagi", server.Find("fluent-button, button.ant-btn").TextContent);
+        concurrency.Find("fluent-button, button.ant-btn").Click();
+        server.Find("fluent-button, button.ant-btn").Click();
         Assert.Equal(2, reloads);
         Assert.Empty(Render<ProblemBanner>().FindAll(".gms-banner")); // tanpa galat: tidak ada banner
     }
@@ -360,5 +360,27 @@ public sealed class ComponentTests : WebTestBase
         var form = cut.Find("form[action='/account/logout']");
         Assert.Equal("post", form.GetAttribute("method"));
         Assert.Contains("Ganti Password", cut.Markup);
+    }
+
+    [Fact]
+    public void TextField_dan_LookupSelect_menampilkan_galat_terhubung_ke_field_dan_menggantikan_petunjuk()
+    {
+        var text = Render<TextField>(p => p.Add(x => x.Label, "Kode").Add(x => x.Hint, "Huruf besar").Add(x => x.Error, "Kode sudah dipakai"));
+        var input = text.Find("input");
+
+        Assert.Equal("true", input.GetAttribute("aria-invalid"));
+        var error = text.Find("small.gms-field-error");
+        Assert.Equal("alert", error.GetAttribute("role"));
+        Assert.Equal(error.Id, input.GetAttribute("aria-describedby"));
+        Assert.Contains("has-error", text.Find(".gms-form").ClassName);
+        Assert.DoesNotContain("Huruf besar", text.Markup); // galat menggantikan petunjuk
+
+        var clean = Render<TextField>(p => p.Add(x => x.Label, "Kode").Add(x => x.Hint, "Huruf besar"));
+        Assert.Null(clean.Find("input").GetAttribute("aria-invalid"));
+        Assert.Contains("Huruf besar", clean.Markup);
+
+        var select = Render<LookupSelect>(p => p.Add(x => x.Label, "Satuan").Add(x => x.Error, "Pilih satuan"));
+        Assert.Equal("true", select.Find("select").GetAttribute("aria-invalid"));
+        Assert.Equal("Pilih satuan", select.Find("small.gms-field-error").TextContent.Trim());
     }
 }

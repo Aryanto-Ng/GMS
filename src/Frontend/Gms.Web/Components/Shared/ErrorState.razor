@@ -1,6 +1,6 @@
 @* State galat (_Foundation-UI.md 7): judul, penjelasan manusiawi, ID rujukan (traceId), tombol "Coba lagi". Detail teknis tidak ditampilkan. *@
 <div class="gms-state error" role="alert">
-    <FluentIcon Value="@(new Icons.Regular.Size48.ErrorCircle())" Color="Color.Neutral" />
+    <AntDesign.Icon Type="close-circle" />
     <h2>@Title</h2>
     @if (!string.IsNullOrEmpty(Detail))
     {
@@ -12,7 +12,7 @@
     }
     @if (OnRetry.HasDelegate)
     {
-        <FluentButton Appearance="Appearance.Accent" OnClick="OnRetry">@RetryText</FluentButton>
+        <AntDesign.Button Type="@AntDesign.ButtonType.Primary" OnClick="OnRetry">@RetryText</AntDesign.Button>
     }
 </div>
 

@@ -44,7 +44,7 @@
     </ChildContent>
 </AsyncContent>
 
-<ReasonDialog Open="_confirm is not null" OpenChanged="o => { if (!o) _confirm = null; }" ShowReason="false" Danger="true" ConfirmText="Hapus size dan tarif"
+<ConfirmDialog Open="_confirm is not null" OpenChanged="o => { if (!o) _confirm = null; }" ShowReason="false" Danger="true" ConfirmText="Hapus size dan tarif"
               Title="Hapus size bertarif?" Description="Tarif berikut akan dihapus. Nilai lama tetap tercatat di audit log." OnConfirm="_ => SaveAsync(true)">
     <ul>
         @foreach (var v in _confirm?.Violations ?? [])
@@ -52,7 +52,7 @@
             <li>@v.Message</li>
         }
     </ul>
-</ReasonDialog>
+</ConfirmDialog>
 
 @code {
     private IReadOnlyList<SizeDto> _all = [];

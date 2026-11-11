@@ -7,11 +7,11 @@
     <Actions>
         @if (CanCreate)
         {
-            <FluentButton Appearance="Appearance.Accent" OnClick="OnCreate">Tambah @Noun</FluentButton>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Primary" OnClick="OnCreate">Tambah @Noun</AntDesign.Button>
         }
         @if (ImportHref is not null && Can(ImportPermission))
         {
-            <FluentAnchor Href="@ImportHref" Appearance="Appearance.Neutral">Impor CSV</FluentAnchor>
+            <a class="ant-btn ant-btn-default" href="@ImportHref">Impor CSV</a>
         }
     </Actions>
 </PageHeader>
@@ -36,11 +36,11 @@
     <EmptyContent>
         @if (string.IsNullOrWhiteSpace(_q) && _status == ActiveFilter.Active && ExtraKey is null)
         {
-            <EmptyState Icon="@(new Icons.Regular.Size48.Box())" Title="@($"Belum ada {Noun}")" ActionText="@(CanCreate ? $"Tambah {Noun}" : null)" OnAction="OnCreate" />
+            <EmptyState Title="@($"Belum ada {Noun}")" ActionText="@(CanCreate ? $"Tambah {Noun}" : null)" OnAction="OnCreate" />
         }
         else
         {
-            <EmptyState Icon="@(new Icons.Regular.Size48.Search())" Title="Tidak ada hasil" Description="Ubah kata kunci atau filter." ActionText="Reset filter" OnAction="Reset" />
+            <EmptyState Title="Tidak ada hasil" Description="Ubah kata kunci atau filter." ActionText="Reset filter" OnAction="Reset" />
         }
     </EmptyContent>
     <ChildContent Context="result">
@@ -59,20 +59,20 @@
                     var active = IsActive(item);
                     <tr class="@(active ? null : "gms-inactive")">
                         @Row(item)
-                        <td><StatusChip Value="@(active ? "active" : "inactive")" /></td>
+                        <td><StatusTag Value="@(active ? "active" : "inactive")" /></td>
                         <td class="gms-rowactions">
                             @if (CanEdit)
                             {
-                                <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Ubah {Label(item)}")" OnClick="() => OnEdit.InvokeAsync(item)">Ubah</FluentButton>
+                                <AntDesign.Button Type="@AntDesign.ButtonType.Text" AriaLabel="@($"Ubah {Label(item)}")" OnClick="() => OnEdit.InvokeAsync(item)">Ubah</AntDesign.Button>
                             }
                             @if (RowLink is not null)
                             {
-                                <FluentAnchor Href="@RowLink(item)" Appearance="Appearance.Lightweight" aria-label="@($"Buka {Label(item)}")">Buka</FluentAnchor>
+                                <a class="ant-btn ant-btn-text" href="@RowLink(item)" aria-label="@($"Buka {Label(item)}")">Buka</a>
                             }
                             @if (CanDeactivate)
                             {
-                                <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"{(active ? "Nonaktifkan" : "Aktifkan")} {Label(item)}")"
-                                              OnClick="() => _target = item">@(active ? "Nonaktifkan" : "Aktifkan")</FluentButton>
+                                <AntDesign.Button Type="@AntDesign.ButtonType.Text" AriaLabel="@($"{(active ? "Nonaktifkan" : "Aktifkan")} {Label(item)}")"
+                                              OnClick="() => _target = item">@(active ? "Nonaktifkan" : "Aktifkan")</AntDesign.Button>
                             }
                         </td>
                     </tr>
@@ -83,7 +83,7 @@
     </ChildContent>
 </AsyncContent>
 
-<ReasonDialog Open="_target is not null" OpenChanged="o => { if (!o) _target = null; }" ShowReason="false" Danger="@(_target is not null && IsActive(_target))"
+<ConfirmDialog Open="_target is not null" OpenChanged="o => { if (!o) _target = null; }" ShowReason="false" Danger="@(_target is not null && IsActive(_target))"
               Title="@(_target is null ? string.Empty : $"{(IsActive(_target) ? "Nonaktifkan" : "Aktifkan")} {Label(_target)}?")"
               Description="@(_target is not null && IsActive(_target) ? "Data tidak dihapus dan tetap muncul di dokumen lama, tetapi tidak dapat dipilih untuk dokumen baru." : "Data dapat dipilih kembali untuk dokumen baru.")"
               ConfirmText="@(_target is not null && IsActive(_target) ? "Nonaktifkan" : "Aktifkan")" OnConfirm="ToggleAsync" />

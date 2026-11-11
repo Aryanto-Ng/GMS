@@ -18,7 +18,7 @@
 <PageHeader Title="@(IsNew ? "Tambah Pengguna" : _detail?.UserName ?? "Pengguna")"
             Breadcrumbs="@(new[] { new PageHeader.Crumb("Pengguna", "/admin/users"), new PageHeader.Crumb(IsNew ? "Baru" : _detail?.UserName ?? "…") })">
     <Chips>
-        @if (_detail is not null) { <StatusChip Value="@_detail.Status" /> }
+        @if (_detail is not null) { <StatusTag Value="@_detail.Status" /> }
     </Chips>
 </PageHeader>
 
@@ -143,18 +143,18 @@ else
     </div>
 }
 
-<ReasonDialog Open="_confirm is not null" OpenChanged="o => { if (!o) _confirm = null; }" ShowReason="false"
+<ConfirmDialog Open="_confirm is not null" OpenChanged="o => { if (!o) _confirm = null; }" ShowReason="false"
               Title="@ConfirmTitle" Description="@ConfirmDescription" ConfirmText="@ConfirmText" Danger="@(_confirm is Confirm.Deactivate or Confirm.EndSession)"
               OnConfirm="RunConfirmAsync" />
 
-<ReasonDialog Open="_resetOpen" OpenChanged="o => { if (!o) { _resetOpen = false; _resetManual = string.Empty; } }" ShowReason="false"
+<ConfirmDialog Open="_resetOpen" OpenChanged="o => { if (!o) { _resetOpen = false; _resetManual = string.Empty; } }" ShowReason="false"
               Title="@($"Reset password {_detail?.UserName}")" Description="Pengguna wajib mengganti password saat login berikutnya." ConfirmText="Reset" Danger="false"
               CanConfirm="@(_resetManual.Length == 0 || _resetManual.Length >= 8)" OnConfirm="ResetAsync">
     <div class="gms-form">
         <label for="reset-pass">Password baru (kosongkan untuk dibuat otomatis)</label>
         <input id="reset-pass" type="text" autocomplete="off" value="@_resetManual" @oninput="e => _resetManual = e.Value?.ToString() ?? string.Empty" />
     </div>
-</ReasonDialog>
+</ConfirmDialog>
 
 @code {
     private enum Confirm { Unlock, EndSession, Deactivate, Activate }

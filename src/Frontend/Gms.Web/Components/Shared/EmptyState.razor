@@ -1,9 +1,6 @@
 @* State kosong (_Foundation-UI.md 7): ikon sederhana, judul, penjelasan, dan tombol aksi bila pengguna berhak. *@
 <div class="gms-state empty" role="status">
-    @if (Icon is not null)
-    {
-        <FluentIcon Value="@Icon" Color="Color.Neutral" />
-    }
+    <AntDesign.Icon Type="inbox" />
     <h2>@Title</h2>
     @if (!string.IsNullOrEmpty(Description))
     {
@@ -17,15 +14,13 @@
         }
         else
         {
-            <FluentButton Appearance="Appearance.Accent" OnClick="OnAction">@ActionText</FluentButton>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Primary" OnClick="OnAction">@ActionText</AntDesign.Button>
         }
     }
     @ChildContent
 </div>
 
 @code {
-    [Parameter] public Icon? Icon { get; set; }
-
     [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
 
     [Parameter] public string? Description { get; set; }

@@ -21,7 +21,7 @@ else
 {
     <PageHeader Title="@_po.Code" Subtitle="@($"{_po.CustomerName} · Tgl PO {IdFormat.Date(_po.PoDate)}")"
                 Breadcrumbs="@(new[] { new PageHeader.Crumb("Customer PO", "/purchase-orders"), new PageHeader.Crumb(_po.Code) })">
-        <Chips><StatusChip Value="@_po.Status" /></Chips>
+        <Chips><StatusTag Value="@_po.Status" /></Chips>
         <Actions>
             @if (Can(PoActions.Edit, Permissions.CustomerPO.Edit)) { <FluentAnchor Href="@($"/purchase-orders/{_po.Id}/edit")" Appearance="Appearance.Neutral">Ubah</FluentAnchor> }
             @if (Can(PoActions.Confirm, Permissions.CustomerPO.Confirm)) { <FluentButton Appearance="Appearance.Accent" OnClick="() => _dialog = Dialog.Confirm">Konfirmasi</FluentButton> }
@@ -62,11 +62,11 @@ else
     </div>
 
     <div class="gms-welcome" aria-label="Ringkasan">
-        <MetricCard Label="Total" Value="@IdFormat.Qty(_po.TotalQty)" />
-        <MetricCard Label="Terkirim" Value="@IdFormat.Qty(_po.DeliveredQty)" />
-        <MetricCard Label="Dialokasikan" Value="@IdFormat.Qty(_po.AllocatedQty)" />
-        <MetricCard Label="Dalam Produksi" Value="@IdFormat.Qty(_po.InProductionQty)" />
-        <MetricCard Label="Sisa Rencana" Value="@IdFormat.Qty(_po.RemainingPlanQty)" />
+        <StatCard Label="Total" Value="@IdFormat.Qty(_po.TotalQty)" />
+        <StatCard Label="Terkirim" Value="@IdFormat.Qty(_po.DeliveredQty)" />
+        <StatCard Label="Dialokasikan" Value="@IdFormat.Qty(_po.AllocatedQty)" />
+        <StatCard Label="Dalam Produksi" Value="@IdFormat.Qty(_po.InProductionQty)" />
+        <StatCard Label="Sisa Rencana" Value="@IdFormat.Qty(_po.RemainingPlanQty)" />
     </div>
 
     <div role="tablist" aria-label="Bagian PO" class="gms-tabs">
@@ -132,10 +132,10 @@ else
         </AsyncContent>
     }
 
-    <ReasonDialog Open="_dialog == Dialog.Confirm" OpenChanged="o => { if (!o) _dialog = Dialog.None; }" ShowReason="false" Danger="false" ConfirmText="Konfirmasi PO"
+    <ConfirmDialog Open="_dialog == Dialog.Confirm" OpenChanged="o => { if (!o) _dialog = Dialog.None; }" ShowReason="false" Danger="false" ConfirmText="Konfirmasi PO"
                   Title="Konfirmasi PO?" Description="@($"{_po.Lines.Count} baris, total {IdFormat.Qty(_po.TotalQty)} pcs. Nomor PO customer boleh menyusul.")" OnConfirm="ConfirmAsync" />
 
-    <ReasonDialog Open="_dialog == Dialog.Cancel" OpenChanged="o => { if (!o) _dialog = Dialog.None; }" Danger="true" ConfirmText="Batalkan PO"
+    <ConfirmDialog Open="_dialog == Dialog.Cancel" OpenChanged="o => { if (!o) _dialog = Dialog.None; }" Danger="true" ConfirmText="Batalkan PO"
                   Title="Batalkan PO?" Description="@(_po.AllocatedQty > 0 ? $"Alokasi {IdFormat.Qty(_po.AllocatedQty)} pcs akan dilepas." : "PO dibatalkan dan tidak dapat diubah lagi.")" OnConfirm="CancelAsync" />
 
     <AllocationDialog Line="_line" Allocate="_allocate" PoCode="@_po.Code" OnClose="() => _line = null" OnDone="AfterAllocationAsync" />

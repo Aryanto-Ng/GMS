@@ -3,7 +3,7 @@
 @inject IToastService Toasts
 
 @* Dialog Alokasi Stok / Lepas Alokasi (CustomerPO-UI.md 2.4). Batas alokasi = min(Tersedia, Sisa Rencana) = hasil server; dimuat saat dibuka. *@
-<ReasonDialog Open="Line is not null" OpenChanged="o => { if (!o) OnClose.InvokeAsync(); }" ShowReason="false" Danger="@(!Allocate)"
+<ConfirmDialog Open="Line is not null" OpenChanged="o => { if (!o) OnClose.InvokeAsync(); }" ShowReason="false" Danger="@(!Allocate)"
               Title="@Title" ConfirmText="@(Allocate ? "Alokasikan" : "Lepas alokasi")"
               CanConfirm="@(Parsed is > 0 && Parsed <= Max && (!Allocate || _availability is not null))" OnConfirm="SubmitAsync">
     @if (Line is not null)
@@ -32,7 +32,7 @@
             <p class="gms-bad" role="alert">Qty melebihi batas (maks @IdFormat.Qty(Max)).</p>
         }
     }
-</ReasonDialog>
+</ConfirmDialog>
 
 @code {
     private StockAvailabilityDto? _availability;
