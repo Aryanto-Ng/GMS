@@ -127,3 +127,14 @@ Aturan visual:
 - Satu endpoint ringkasan per widget (dapat dimuat independen, permission dicek per widget).
 - Parameter query filter harus sama dengan yang dipakai chip cepat di modul tujuan (`terlambat`, `jatuhTempo7`, `poCustomerKosong`, `sisaRencana`, `hariIni`).
 - Zona waktu aplikasi (WIB) untuk perhitungan "hari ini".
+
+---
+
+## Komponen dan Token (Design.md)
+
+Acuan: `docs/Design.md` dan `docs/Design/_Foundation-UI.md` v2.0. Nama komponen mengikuti kontrak Design.md; implementasi di `docs/Frontend/README.md`.
+
+- **Komponen umum:** AppShell (header + MegaMenu + CommandPalette), `PageHeader`, tabel `gms-table` + `PagerBar` (DataTable), `StatusTag`, `ProblemBanner` (Alert), `EmptyState` / `ErrorState` / `SkeletonRows`, `AntDesign.Button` (satu `Primary` per area), `IGmsToast`.
+- **Khusus modul:** `DashboardCard` + `StatCard` (state per kartu: skeleton, galat dengan Coba lagi, kosong), kelompok area (judul `gms-area`), kartu **Aksi Cepat** (tombol per izin), `EmptyState` bila peran tanpa widget.
+- **Token yang dipakai:** `stat-value` (angka), `bg-container` + `shadow-card` (kartu), `link` (angka dapat diklik), `text-tertiary` (satuan), `space-4`/`space-6`.
+- **Deviasi:** `ConfirmDialog` memakai `<dialog>` native (lihat `_Foundation-UI.md` 4.4). Tidak ada deviasi lain pada modul ini.

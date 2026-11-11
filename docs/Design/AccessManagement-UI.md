@@ -4,7 +4,7 @@
 |---|---|
 | FSD | `docs/FSD/AccessManagement.md` v1.0 |
 | Fondasi | `docs/Design/_Foundation-UI.md` (pola daftar/form/detail/dialog, state, a11y berlaku) |
-| Platform | Web, Fluent UI 2. Mobile N/A. |
+| Platform | Web, AntDesign Blazor (Design.md). Mobile N/A. |
 | Render Mode | Login, Logout, Ganti Password, 403 = **Static SSR**. Lainnya = **Interactive Server**. |
 
 ---
@@ -164,3 +164,14 @@ Judul "Anda tidak memiliki akses ke halaman ini", penjelasan singkat, tombol [Ke
 - Halaman Static SSR memakai layout terpisah tanpa shell. Anti-forgery wajib.
 - Matriks permission dibangun dari katalog permission yang dikirim server (jangan hardcode), dikelompokkan per `Module`.
 - Seluruh visibilitas tombol berasal dari permission, tetapi penegakan tetap di server.
+
+---
+
+## Komponen dan Token (Design.md)
+
+Acuan: `docs/Design.md` dan `docs/Design/_Foundation-UI.md` v2.0. Nama komponen mengikuti kontrak Design.md; implementasi di `docs/Frontend/README.md`.
+
+- **Komponen umum:** AppShell (header + MegaMenu + CommandPalette), `PageHeader`, tabel `gms-table` + `PagerBar` (DataTable), `StatusTag`, `ProblemBanner` (Alert), `EmptyState` / `ErrorState` / `SkeletonRows`, `AntDesign.Button` (satu `Primary` per area), `IGmsToast`.
+- **Khusus modul:** `TextField`/`LookupSelect` (FormField) untuk form pengguna dan role; `ConfirmDialog` untuk reset password, nonaktifkan/aktifkan, buka kunci, dan hapus role; matriks izin berupa tabel `gms-perm` dengan checkbox; daftar aturan password dengan ikon centang/silang.
+- **Token yang dipakai:** `bg-container`, `fill-alter` (header tabel), `border-secondary`, `success-text`/`danger-text` (aturan password), `space-4`/`space-6`, `radius-lg`.
+- **Deviasi:** `ConfirmDialog` memakai `<dialog>` native (lihat `_Foundation-UI.md` 4.4). Tidak ada deviasi lain pada modul ini.

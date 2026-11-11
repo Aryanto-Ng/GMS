@@ -188,3 +188,14 @@ Slip Gaji PDF
 - Tarif/rupiah tidak boleh dikirim ke klien tanpa `Payroll.View` (penegakan server, termasuk ekspor dan PDF).
 - Rincian dibuka per kelompok dengan paging di server untuk periode besar.
 - Gunakan komponen pembuat PDF bersama (dengan Surat Jalan).
+
+---
+
+## Komponen dan Token (Design.md)
+
+Acuan: `docs/Design.md` dan `docs/Design/_Foundation-UI.md` v2.0. Nama komponen mengikuti kontrak Design.md; implementasi di `docs/Frontend/README.md`.
+
+- **Komponen umum:** AppShell (header + MegaMenu + CommandPalette), `PageHeader`, tabel `gms-table` + `PagerBar` (DataTable), `StatusTag`, `ProblemBanner` (Alert), `EmptyState` / `ErrorState` / `SkeletonRows`, `AntDesign.Button` (satu `Primary` per area), `IGmsToast`.
+- **Khusus modul:** Tab (Rincian, Harian, Matriks) dengan tabel `gms-table` rapat (`compact`), `ConfirmDialog` dengan konfirmasi ketik kode periode (Tutup Periode, permanen), `StatusTag` `provisional`/Open/Closed, ekspor dan unduh slip lewat tombol `Default`.
+- **Token yang dipakai:** `warning-*` (Belum final), `primary-bg` (Open), `border-secondary` (Closed), `danger-text` (total negatif), `fill-alter` (baris total), `space-3`.
+- **Deviasi:** `ConfirmDialog` memakai `<dialog>` native (lihat `_Foundation-UI.md` 4.4). Tidak ada deviasi lain pada modul ini.

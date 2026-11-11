@@ -152,3 +152,14 @@ Grid yang sama dengan Input Output (satu baris), terisi nilai entri asal; boleh 
 - Komponen **Grid Matriks Ukuran** harus mendukung: kolom bertingkat (Color → Size), baris "batas", baris pekerja dinamis, tempel blok, virtualisasi bila kolom banyak.
 - Batas tersedia dan pratinjau dampak berasal dari server (aturan kumulatif tidak diimplementasikan ulang di klien).
 - Kunci keputusan: penyimpanan tunggal semua-atau-tidak-sama-sekali, dan state input dipertahankan saat penolakan.
+
+---
+
+## Komponen dan Token (Design.md)
+
+Acuan: `docs/Design.md` dan `docs/Design/_Foundation-UI.md` v2.0. Nama komponen mengikuti kontrak Design.md; implementasi di `docs/Frontend/README.md`.
+
+- **Komponen umum:** AppShell (header + MegaMenu + CommandPalette), `PageHeader`, tabel `gms-table` + `PagerBar` (DataTable), `StatusTag`, `ProblemBanner` (Alert), `EmptyState` / `ErrorState` / `SkeletonRows`, `AntDesign.Button` (satu `Primary` per area), `IGmsToast`.
+- **Khusus modul:** `QtyGrid` (grid output per Color × Size dengan hint "maks N" dan galat per sel), `ConfirmDialog` + `ImpactPreviewTable` (Void, Koreksi, Penyesuaian), tab Kirim/Terima Vendor, `ProblemBanner` untuk penahan server, `StatusTag` `voided`.
+- **Token yang dipakai:** `danger-bg` + `danger-text` (sel melebihi batas), `warning-bg` (melebihi Qty WO), `border-control`, `radius-xs` (sel grid), `space-2`.
+- **Deviasi:** `ConfirmDialog` memakai `<dialog>` native (lihat `_Foundation-UI.md` 4.4). Tidak ada deviasi lain pada modul ini.

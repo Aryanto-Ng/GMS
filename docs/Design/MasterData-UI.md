@@ -159,3 +159,14 @@ Import FG: kolom Size Berlaku memakai pemisah `|` (contoh `S|M|L|XL`), ditampilk
 - Satu komponen **Daftar Master Generik** (kolom dikonfigurasi) dan satu **Dialog Form Master** untuk entitas sederhana.
 - Komponen **Grid Matriks** dari Fondasi dipakai ulang dengan mode input desimal untuk Tarif.
 - Tab Tarif dan tombol Edit disembunyikan menurut permission; penegakan di server.
+
+---
+
+## Komponen dan Token (Design.md)
+
+Acuan: `docs/Design.md` dan `docs/Design/_Foundation-UI.md` v2.0. Nama komponen mengikuti kontrak Design.md; implementasi di `docs/Frontend/README.md`.
+
+- **Komponen umum:** AppShell (header + MegaMenu + CommandPalette), `PageHeader`, tabel `gms-table` + `PagerBar` (DataTable), `StatusTag`, `ProblemBanner` (Alert), `EmptyState` / `ErrorState` / `SkeletonRows`, `AntDesign.Button` (satu `Primary` per area), `IGmsToast`.
+- **Khusus modul:** `MasterList<T>` (daftar entitas) + dialog form untuk entitas sederhana; FG detail memakai tab (`gms-tabs`) dan input tarif (`gms-tariff`); `ImportWizard` untuk impor CSV; `StatusTag` `ready`/`not-ready` untuk kesiapan FG; `QtyGrid` bila ada matriks.
+- **Token yang dipakai:** `primary` (tab aktif), `border-control` (input), `warning-bg`/`danger-bg` (sel tarif bermasalah), `space-4`, `radius-md`.
+- **Deviasi:** `ConfirmDialog` memakai `<dialog>` native (lihat `_Foundation-UI.md` 4.4). Tidak ada deviasi lain pada modul ini.

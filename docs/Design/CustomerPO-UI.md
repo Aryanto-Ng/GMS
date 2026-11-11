@@ -139,3 +139,14 @@ Bila batas 0 karena Sisa Rencana habis atau stok tidak tersedia, pesan menjelask
 - Komponen **Kartu Ringkasan Metrik** dan **Bar Progres Bertumpuk** dipakai ulang di Beranda dan Detail WO.
 - Seluruh angka metrik berasal dari server (jangan dihitung ulang di klien).
 - Filter chip cepat memakai parameter query bersama dengan Beranda: `terlambat`, `jatuhTempo7`, `poCustomerKosong`, `sisaRencana`.
+
+---
+
+## Komponen dan Token (Design.md)
+
+Acuan: `docs/Design.md` dan `docs/Design/_Foundation-UI.md` v2.0. Nama komponen mengikuti kontrak Design.md; implementasi di `docs/Frontend/README.md`.
+
+- **Komponen umum:** AppShell (header + MegaMenu + CommandPalette), `PageHeader`, tabel `gms-table` + `PagerBar` (DataTable), `StatusTag`, `ProblemBanner` (Alert), `EmptyState` / `ErrorState` / `SkeletonRows`, `AntDesign.Button` (satu `Primary` per area), `IGmsToast`.
+- **Khusus modul:** `QtyGrid`/tabel baris PO pada form, `StackedProgress` (progres kirim/alokasi/produksi), chip cepat (`gms-chipbtn`, filter toggle dengan `aria-pressed`), tab detail, `ConfirmDialog` untuk Cancel/Reopen/Confirm, `StatusTag` PO (Draft/Confirmed/In Progress/Completed/Cancelled) dan `late`/`dueSoon`.
+- **Token yang dipakai:** `cyan-*` (Confirmed), `primary-bg` (In Progress), `success-*`, `danger-*`, `warning-*` (Belum ada No. PO), `fill-alter`, `space-6`.
+- **Deviasi:** `ConfirmDialog` memakai `<dialog>` native (lihat `_Foundation-UI.md` 4.4). Tidak ada deviasi lain pada modul ini.

@@ -59,5 +59,6 @@ Seluruh halaman (Access, Master Data, PO, WO, Produksi, Gudang, Pengiriman, Payr
 - Notifikasi sukses: `IGmsToast` (`Services/GmsToast.cs`, membungkus `IMessageService` AntDesign); menggantikan `IToastService` Fluent.
 - Di tes bUnit, teks tombol Ant memuat spasi/indentasi: bandingkan dengan `.TextContent.Trim()`; ikon Ant berperan `img` (gunakan `[role=img][aria-label]` untuk menemukan bar progres).
 
-**Belum dikerjakan:** komponen `DataTable<T>` (halaman masih menulis `<table class="gms-table">` sendiri); pembaruan `docs/Design/_Foundation-UI.md` dan sembilan `*-UI.md` agar menyebut komponen AntDesign; peninjauan visual per halaman selain yang disampel (Beranda, Pengguna, Role, PO, FG, Master Data, Input Output, Payroll).
+**Belum dikerjakan:** komponen `DataTable<T>` (halaman masih menulis `<table class="gms-table">` sendiri); peninjauan visual per halaman selain yang disampel (Beranda, Pengguna, Role, PO, FG, Master Data, Input Output, Payroll).
 
+**Dokumen desain (2026-11-12):** `_Foundation-UI.md` v2.0 dan sembilan `*-UI.md` sudah selaras dengan `Design.md` (AntDesign, MegaMenu, token, StatusTag, daftar komponen/token per modul). Tes Web (433) lulus di Linux (container SDK).
