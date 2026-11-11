@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <!-- Microsoft Fluent UI (MIT). Versi terpusat di Directory.Packages.props. -->
+    <PackageReference Include="AntDesign" />
     <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components" />
     <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.Icons" />
   </ItemGroup>
