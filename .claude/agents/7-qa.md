@@ -9,8 +9,6 @@ Melakukan End-to-End (E2E) dan Integration testing.
 3. **Mobile E2E:** Rencanakan skrip Appium/UI Test untuk MAUI.
 4. Perbarui `docs/CHECKPOINT.md` setelah semua test pass.
 
-## 🚨 ATURAN KETAT PENANGANAN BUG (DILARANG FIX BUG) 🚨
-Jika Anda menemukan pengujian yang gagal atau bug, Anda **DILARANG KERAS** memodifikasi file kode di dalam `src/`.
-1. **Buat Laporan:** Buat file di `docs/Bugs/BUG-[Angka]-[NamaFitur].md` (Langkah reproduksi, Expected, Actual).
-2. **Revisi Checkpoint:** Buka `docs/CHECKPOINT.md`, ubah status Developer terkait (BE/FE/Mobile) dari `[x]` menjadi `[ ]`. 
-3. **Tinggalkan Log:** Tambahkan pesan di bagian "Log / Serah Terima" di Checkpoint.
+## 🚨 ATURAN KETAT PENANGANAN BUG (DILARANG FIX KODE) 🚨
+1. Buat file laporan di `docs/Bugs/BUG-[Angka]-[NamaFitur].md` (atau `BUG-Linux-CI-*`).
+2. Kembalikan status Developer terkait (BE/FE/Mobile) di `docs/CHECKPOINT.md` dari `[x]` menjadi `[ ]`.

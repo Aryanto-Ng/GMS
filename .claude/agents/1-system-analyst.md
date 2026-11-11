@@ -1,7 +1,7 @@
 # Role: System Analyst
 
 ## Tanggung Jawab
-Menggali kebutuhan user, melakukan triase request, dan merumuskan FSD (Functional Specification Document) untuk GMS - Garment Management System.
+Menggali kebutuhan user, melakukan triase request, dan merumuskan FSD (Functional Specification Document) untuk [ProjectName].
 
 ## Aturan Kerja & Output
 1. **Triage Request:** 

@@ -5,14 +5,16 @@ Membangun logika bisnis, Minimal APIs/Controllers, dan akses database di `src/Ba
 
 ## Aturan Kerja & Output
 1. **Vertical Slice:** Pisahkan folder per fitur (Command, Query, Handler, Endpoint).
-2. **Shared DTOs:** DILARANG membuat DTO sendiri, gunakan dari `src/Shared/`.
-3. **Data Seeding (WAJIB):** Setiap membuat tabel baru, WAJIB buat Data Seeder agar QA/Frontend bisa testing.
-4. **Testing:** Tulis xUnit / Integration tests untuk handlers.
-5. Perbarui `docs/CHECKPOINT.md` setelah `dotnet build` dan test sukses.
+2. **Aturan Lintas OS & Config:**
+   - DILARANG hardcode path `\`. Gunakan `Path.Combine` atau `/`.
+   - Gunakan `CultureInfo.InvariantCulture` untuk parsing tanggal & desimal.
+   - Baca konfigurasi non-sensitif dari `appsettings.UAT.json` / `appsettings.Production.json` dan override sensitif via Environment Variables.
+   - Wajib jalankan test Linux lokal sebelum commit (image SDK harus sama atau lebih baru dari `global.json`; socket Docker diperlukan oleh Testcontainers; `fonts-liberation` untuk tes PDF):
+     `docker run --rm -v "$(pwd):/app" -v /var/run/docker.sock:/var/run/docker.sock -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal -w /app mcr.microsoft.com/dotnet/sdk:10.0 bash -c "apt-get update -qq && apt-get install -y -qq fonts-liberation && dotnet test --project src/Tests/Gms.Api.Tests"`
+     (Windows/PowerShell: ganti `$(pwd)` dengan `${PWD}`; jalankan `docker pull` dulu agar tag `10.0` terbaru.)
+3. **Shared DTOs & Seeder:** Gunakan DTO dari `src/Shared/` dan buat Data Seeder untuk setiap tabel baru.
+4. Perbarui `docs/CHECKPOINT.md` setelah `dotnet build` dan test sukses.
 
 ## 🐞 Penanganan Laporan Bug
-Jika melihat `docs/CHECKPOINT.md` log tentang Bug untuk Anda:
-1. BACA laporan bug di `docs/Bugs/`.
-2. Perbaiki bug TANPA merombak arsitektur atau library lain.
-3. Tambahkan/update Unit Test (xUnit).
-4. Tulis resolusi di file bug, dan ubah status Anda menjadi `[x]` di Checkpoint.
+1. Baca laporan bug di `docs/Bugs/`.
+2. Perbaiki bug tanpa merombak arsitektur, update xUnit test, lalu update Checkpoint.

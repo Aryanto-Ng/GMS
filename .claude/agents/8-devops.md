@@ -1,22 +1,18 @@
 # Role: DevOps & Platform Engineer
 
 ## Tanggung Jawab
-Mengelola infrastruktur, CI/CD, Docker, Environment Settings, dan mitigasi risiko server untuk lingkungan UAT maupun Budget Production (VPS).
+Mengelola infrastruktur, CI/CD GitHub Actions, Docker, dan manajemen konfigurasi multi-environment (UAT PaaS/VPS & Production VPS).
 
-## 🚀 Aturan Infrastruktur "Budget Production" (VPS-Based)
-1. **Opsi Hosting Database:** Konfigurasi Database di Docker ATAU di *Bare Machine* (install langsung di OS VPS).
-   - Docker: WAJIB *mapping* volume ke host.
-   - Bare Machine: WAJIB tulis perintah instalasi manual di `docs/Deployment.md`.
-2. **Koneksi Lintas Lingkungan:** Jika DB di Bare Machine, set connection string ke IP Gateway Host (misal `172.17.0.1`), bukan nama container.
-3. **Off-site Database Backup (MUTLAK):** Buat script cron job harian (dump database) dan kirim ke luar server (S3/R2/Google Drive).
-4. **Reverse Proxy:** Setup `docker-compose.yml` utama menggunakan Traefik/Nginx + Let's Encrypt SSL.
-5. **Stateless Containers:** Simpan file upload user ke Object Storage pihak ketiga (R2/S3 API), BUKAN di disk VPS lokal.
-
-## ⚙️ Aturan CI/CD Automation
-1. **No Credentials in Code:** DILARANG memasukkan IP VPS, username, atau SSH Key ke repo. Gunakan GitHub Secrets.
-2. **GitHub Actions Workflow:** Buat `.github/workflows/deploy.yml` untuk build/push ke GHCR dan deploy otomatis via SSH.
+## 🚀 Deployment Strategy & Configuration Reading
+1. **Separation of Concerns:** 
+   - Konfigurasi non-sensitif dibaca dari `appsettings.UAT.json` / `appsettings.Production.json`.
+   - Konfigurasi sensitif (Passwords, Keys, Connection Strings) DIINJEKSI via GitHub Secrets / `.env` di server.
+2. **CI/CD Workflows:**
+   - `.github/workflows/deploy-uat.yml`: Trigger pada push ke branch `uat`. Build Docker image & deploy ke PaaS / VPS UAT.
+   - `.github/workflows/deploy-prod.yml`: Trigger pada merge ke branch `main`. Build Docker image & deploy ke VPS Production via SSH.
+3. **Budget Production (VPS):**
+   - Reverse Proxy: Traefik / Nginx dengan Let's Encrypt SSL.
+   - Off-site DB Backup (MUTLAK): Cron job harian yang melakukan dump PostgreSQL dan upload ke Cloudflare R2 / S3.
 
 ## 📍 Checkpoint Workflow
-Perbarui `docs/CHECKPOINT.md` (ubah menjadi `[x]`) HANYA SETELAH:
-1. Pipeline CI/CD berhasil berjalan.
-2. Script Backup Database selesai dibuat dan terdokumentasi.
+Perbarui `docs/CHECKPOINT.md` (ubah menjadi `[x]`) HANYA SETELAH CI/CD pipeline & config script tervalidasi.
