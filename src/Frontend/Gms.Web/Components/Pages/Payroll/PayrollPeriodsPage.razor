@@ -4,13 +4,13 @@
 @inject ApiErrorHandler Errors
 @inject AuthenticationStateProvider Auth
 @inject NavigationManager Nav
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <PageTitle>Periode Gaji · GMS</PageTitle>
 
 <PageHeader Title="Periode Gaji">
     <Actions>
-        @if (_user.HasPermission(Permissions.Payroll.CreatePeriod)) { <FluentButton Appearance="Appearance.Accent" Disabled="@(_defaults?.HasOpenPeriod == true)" Title="@(_defaults?.HasOpenPeriod == true ? "Sudah ada periode Open. Tutup lebih dulu." : null)" OnClick="OpenCreate">Buat Periode</FluentButton> }
+        @if (_user.HasPermission(Permissions.Payroll.CreatePeriod)) { <span title="@(_defaults?.HasOpenPeriod == true ? "Sudah ada periode Open. Tutup lebih dulu." : null)"><AntDesign.Button Type="@AntDesign.ButtonType.Primary" Disabled="@(_defaults?.HasOpenPeriod == true)" OnClick="OpenCreate">Buat Periode</AntDesign.Button></span> }
     </Actions>
 </PageHeader>
 
@@ -52,9 +52,9 @@
                    Hint="@(_defaults?.StartLocked == true ? "Terkunci — hari setelah periode sebelumnya." : _defaults?.OldestOutputDate is { } oldest ? $"Output tertua: {IdFormat.Date(oldest)}" : null)" />
         <TextField Label="Tanggal Selesai" Type="date" Value="@_end" ValueChanged="v => _end = v" Required="true" />
         <div class="gms-inline">
-            <FluentButton Appearance="Appearance.Lightweight" OnClick="() => Shortcut(7)">7 hari</FluentButton>
-            <FluentButton Appearance="Appearance.Lightweight" OnClick="() => Shortcut(14)">14 hari</FluentButton>
-            <FluentButton Appearance="Appearance.Lightweight" OnClick="MonthEnd">Akhir bulan</FluentButton>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Link" OnClick="() => Shortcut(7)">7 hari</AntDesign.Button>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Link" OnClick="() => Shortcut(14)">14 hari</AntDesign.Button>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Link" OnClick="MonthEnd">Akhir bulan</AntDesign.Button>
         </div>
         <TextField Label="Catatan" Value="@_notes" ValueChanged="v => _notes = v" MaxLength="250" />
     </div>

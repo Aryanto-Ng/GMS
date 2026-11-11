@@ -1,7 +1,7 @@
 @inject IFgApi Fgs
 @inject ISizeApi Sizes
 @inject ApiErrorHandler Errors
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <UnsavedChangesGuard HasChanges="_dirty" />
 
@@ -30,14 +30,14 @@
             </ul>
             @if (_selected.Count == 0)
             {
-                <p class="gms-bad" role="alert"><FluentIcon Value="@(new Icons.Regular.Size16.DismissCircle())" Color="Color.Neutral" /> Minimal satu Size Berlaku.</p>
+                <p class="gms-bad" role="alert"><AntDesign.Icon Type="close-circle" /> Minimal satu Size Berlaku.</p>
             }
 
             @if (CanEdit)
             {
                 <div class="gms-formactions">
-                    <FluentButton Appearance="Appearance.Neutral" Disabled="@(!_dirty)" OnClick="() => _reload++">Batal</FluentButton>
-                    <FluentButton Appearance="Appearance.Accent" Disabled="@(!_dirty || _selected.Count == 0 || _saving)" OnClick="() => SaveAsync(false)">Simpan Size</FluentButton>
+                    <AntDesign.Button Type="@AntDesign.ButtonType.Default" Disabled="@(!_dirty)" OnClick="() => _reload++">Batal</AntDesign.Button>
+                    <AntDesign.Button Type="@AntDesign.ButtonType.Primary" Disabled="@(!_dirty || _selected.Count == 0 || _saving)" OnClick="() => SaveAsync(false)">Simpan Size</AntDesign.Button>
                 </div>
             }
         </fieldset>

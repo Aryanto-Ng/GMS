@@ -8,8 +8,6 @@ using Gms.Web.Components.Shared;
 using Gms.Web.Infrastructure.Http;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
-using Microsoft.FluentUI.AspNetCore.Components;
-using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons;
 
 namespace Gms.Web.Tests;
 
@@ -51,9 +49,9 @@ public sealed class ComponentTests : WebTestBase
 
         Assert.Equal("7", plain.Find(".gms-metric-value").TextContent);
         Assert.Equal("Lihat PO Terlambat", plain.Find("a").GetAttribute("aria-label"));
-        Assert.Empty(plain.FindAll(".gms-metric-label svg, .gms-metric-label fluent-icon"));
+        Assert.Empty(plain.FindAll(".gms-metric-label svg"));
         Assert.Contains("danger", danger.Find("section").ClassName);
-        Assert.NotEmpty(danger.FindAll(".gms-metric-label svg, .gms-metric-label fluent-icon")); // tidak hanya warna: ada ikon
+        Assert.NotEmpty(danger.FindAll(".gms-metric-label svg")); // tidak hanya warna: ada ikon
     }
 
     [Fact]
@@ -81,7 +79,7 @@ public sealed class ComponentTests : WebTestBase
 
         Assert.Equal("alert", cut.Find(".gms-state").GetAttribute("role"));
         Assert.Contains("00-abc-123", cut.Find("code").TextContent);
-        cut.Find("fluent-button, button.ant-btn").Click();
+        cut.Find("button.ant-btn").Click();
         Assert.Equal(1, retried);
     }
 
@@ -90,7 +88,7 @@ public sealed class ComponentTests : WebTestBase
     {
         var cut = Render<ErrorState>(p => p.Add(x => x.Title, "Tidak ditemukan"));
 
-        Assert.Empty(cut.FindAll("fluent-button, button.ant-btn"));
+        Assert.Empty(cut.FindAll("button.ant-btn"));
     }
 
     [Fact]
@@ -152,7 +150,7 @@ public sealed class ComponentTests : WebTestBase
     {
         var target = 0;
         var first = Render<PagerBar>(p => p.Add(x => x.Page, 1).Add(x => x.PageSize, 10).Add(x => x.TotalCount, 35).Add(x => x.PageChanged, EventCallback.Factory.Create<int>(this, v => target = v)));
-        var buttons = first.FindAll("fluent-button, button.ant-btn");
+        var buttons = first.FindAll("button.ant-btn");
 
         Assert.True(buttons[0].HasAttribute("disabled"));
         Assert.False(buttons[1].HasAttribute("disabled"));
@@ -160,10 +158,10 @@ public sealed class ComponentTests : WebTestBase
         Assert.Equal(2, target);
 
         var last = Render<PagerBar>(p => p.Add(x => x.Page, 4).Add(x => x.PageSize, 10).Add(x => x.TotalCount, 35));
-        Assert.True(last.FindAll("fluent-button, button.ant-btn")[1].HasAttribute("disabled"));
+        Assert.True(last.FindAll("button.ant-btn")[1].HasAttribute("disabled"));
 
         var busy = Render<PagerBar>(p => p.Add(x => x.Page, 2).Add(x => x.PageSize, 10).Add(x => x.TotalCount, 35).Add(x => x.Busy, true));
-        Assert.All(busy.FindAll("fluent-button, button.ant-btn"), b => Assert.True(b.HasAttribute("disabled")));
+        Assert.All(busy.FindAll("button.ant-btn"), b => Assert.True(b.HasAttribute("disabled")));
     }
 
     [Fact]
@@ -182,7 +180,7 @@ public sealed class ComponentTests : WebTestBase
         Assert.Contains("Navy / M", cut.Find(".gms-violations li").TextContent);
         Assert.Contains("melebihi batas 20", cut.Find(".gms-violations li").TextContent);
         Assert.Contains("00-xyz", cut.Find("code").TextContent);
-        Assert.Empty(cut.FindAll("fluent-button, button.ant-btn")); // aturan bisnis: tidak ada "coba lagi"
+        Assert.Empty(cut.FindAll("button.ant-btn")); // aturan bisnis: tidak ada "coba lagi"
     }
 
     [Fact]
@@ -197,10 +195,10 @@ public sealed class ComponentTests : WebTestBase
             .Add(x => x.OnReload, EventCallback.Factory.Create(this, () => reloads++)));
 
         Assert.Contains("Data telah diubah pengguna lain", concurrency.Markup);
-        Assert.Contains("Muat ulang", concurrency.Find("fluent-button, button.ant-btn").TextContent);
-        Assert.Contains("Coba lagi", server.Find("fluent-button, button.ant-btn").TextContent);
-        concurrency.Find("fluent-button, button.ant-btn").Click();
-        server.Find("fluent-button, button.ant-btn").Click();
+        Assert.Contains("Muat ulang", concurrency.Find("button.ant-btn").TextContent);
+        Assert.Contains("Coba lagi", server.Find("button.ant-btn").TextContent);
+        concurrency.Find("button.ant-btn").Click();
+        server.Find("button.ant-btn").Click();
         Assert.Equal(2, reloads);
         Assert.Empty(Render<ProblemBanner>().FindAll(".gms-banner")); // tanpa galat: tidak ada banner
     }

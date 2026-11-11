@@ -257,8 +257,8 @@ public sealed class QtyGridTests : WebTestBase
     {
         var cut = Grid(showMax: true, info: (r, _) => r == "navy" ? new MatrixCellInfo(Max: 1500) : new MatrixCellInfo());
 
-        Assert.Equal(2, cut.FindAll(".gms-cellmax").Count(e => e.TextContent == "maks 1.500"));
-        Assert.Equal(2, cut.FindAll(".gms-cellmax").Count(e => e.TextContent == "tanpa batas"));
+        Assert.Equal(2, cut.FindAll(".gms-cellmax").Count(e => e.TextContent.Trim() == "maks 1.500"));
+        Assert.Equal(2, cut.FindAll(".gms-cellmax").Count(e => e.TextContent.Trim() == "tanpa batas"));
     }
 
     [Fact]

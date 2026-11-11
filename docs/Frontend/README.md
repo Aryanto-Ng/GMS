@@ -27,7 +27,7 @@ Interactive Server untuk halaman kerja; Static SSR untuk halaman akun (sesuai FS
 
 ## Migrasi ke AntDesign Blazor (acuan: `docs/Design.md`)
 
-Status: **fondasi dan shell selesai (2026-11-11)**; halaman dan komponen bersama masih Fluent dan dimigrasi bertahap (Fluent dihapus setelah selesai).
+Status: **Fluent UI sudah dihapus seluruhnya (2026-11-11)**: shell, komponen bersama, dan semua halaman memakai AntDesign Blazor + token Design.md. Paket `Microsoft.FluentUI.*` dan penyedia Fluent sudah dilepas dari proyek.
 
 **Mekanisme tema (keputusan):** AntDesign Blazor 1.6.2 hanya menjadikan palet warna sebagai variabel CSS; radius, tinggi kontrol, dan warna komponen berupa nilai tetap, dan tema gelap adalah stylesheet terpisah. Karena itu token `Design.md` diterapkan dalam tiga lapis:
 1. `wwwroot/css/tokens.css`: token bagian 4 sebagai CSS variable (`--primary`, `--bg-container`, `--space-4`, ...) untuk terang dan gelap (`html[data-theme]`), plus alias `--gms-*` agar CSS halaman lama ikut palet baru.
@@ -52,4 +52,12 @@ Status: **fondasi dan shell selesai (2026-11-11)**; halaman dan komponen bersama
 | DataTable | kelas `gms-table` + `PagerBar.razor` | Komponen `DataTable<T>` dibuat saat halaman dimigrasi (tiap halaman masih menulis tabelnya sendiri) |
 
 Tombol di komponen bersama = `AntDesign.Button` (atribut `aria-label` lewat parameter `AriaLabel`); tautan bergaya tombol = `<a class="ant-btn ant-btn-*">`. Halaman yang belum dimigrasi masih memakai `FluentButton`; `app.css` menyelaraskan token Fluent (aksen, radius) dengan token GMS sebagai jembatan sementara. Pemilih tes: gunakan `button.ant-btn` bersama `fluent-button` selama masa transisi.
+
+### Halaman (langkah 3, 2026-11-11)
+Seluruh halaman (Access, Master Data, PO, WO, Produksi, Gudang, Pengiriman, Payroll, Beranda) dimigrasi: `FluentButton` → `AntDesign.Button` (jenis: Accent→Primary, Neutral→Default, aksi baris/inline→`Link`), `FluentAnchor` → `<a class="ant-btn ant-btn-*">`, `FluentIcon` → `AntDesign.Icon`, spinner → `Loading` pada tombol. Aturan penulisan:
+- `AntDesign.Button` tidak menerima atribut sembarang: gunakan parameter `AriaLabel`, `HtmlType`, `Loading`, `Danger`. Tombol yang butuh `aria-describedby`/`aria-expanded` memakai `<button class="ant-btn ant-btn-*">` biasa. Penjelasan tombol nonaktif ada pada pembungkus `<span title="...">`.
+- Notifikasi sukses: `IGmsToast` (`Services/GmsToast.cs`, membungkus `IMessageService` AntDesign); menggantikan `IToastService` Fluent.
+- Di tes bUnit, teks tombol Ant memuat spasi/indentasi: bandingkan dengan `.TextContent.Trim()`; ikon Ant berperan `img` (gunakan `[role=img][aria-label]` untuk menemukan bar progres).
+
+**Belum dikerjakan:** komponen `DataTable<T>` (halaman masih menulis `<table class="gms-table">` sendiri); pembaruan `docs/Design/_Foundation-UI.md` dan sembilan `*-UI.md` agar menyebut komponen AntDesign; peninjauan visual per halaman selain yang disampel (Beranda, Pengguna, Role, PO, FG, Master Data, Input Output, Payroll).
 

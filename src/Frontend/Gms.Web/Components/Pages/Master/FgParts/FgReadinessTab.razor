@@ -9,11 +9,11 @@
                 @foreach (var item in r.Items)
                 {
                     <li class="@(item.Ok ? "gms-ok" : "gms-bad")">
-                        <FluentIcon Value="@(item.Ok ? (Icon)new Icons.Regular.Size16.CheckmarkCircle() : new Icons.Regular.Size16.DismissCircle())" Color="Color.Neutral" />
+                        <AntDesign.Icon Type="@(item.Ok ? "check-circle" : "close-circle")" />
                         <span class="gms-sr-only">@(item.Ok ? "Terpenuhi:" : "Belum terpenuhi:")</span> @item.Message
                         @if (!item.Ok && TabOf(item.FixTarget) is { } tab)
                         {
-                            <FluentButton Appearance="Appearance.Lightweight" OnClick="() => OnGoto.InvokeAsync(tab)">@LabelOf(tab) ▸</FluentButton>
+                            <AntDesign.Button Type="@AntDesign.ButtonType.Link" OnClick="() => OnGoto.InvokeAsync(tab)">@LabelOf(tab) ▸</AntDesign.Button>
                         }
                     </li>
                 }

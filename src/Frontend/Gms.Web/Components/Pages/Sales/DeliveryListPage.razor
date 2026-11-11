@@ -7,7 +7,7 @@
 
 <PageHeader Title="Pengiriman" Subtitle="@(_total is null ? null : $"{IdFormat.Qty(_total)} surat jalan")">
     <Actions>
-        @if (_user.HasPermission(Permissions.Pengiriman.Create)) { <FluentAnchor Href="/deliveries/new" Appearance="Appearance.Accent">Buat Surat Jalan</FluentAnchor> }
+        @if (_user.HasPermission(Permissions.Pengiriman.Create)) { <a class="ant-btn ant-btn-primary" href="/deliveries/new">Buat Surat Jalan</a> }
     </Actions>
 </PageHeader>
 

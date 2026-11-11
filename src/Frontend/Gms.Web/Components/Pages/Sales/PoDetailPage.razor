@@ -3,7 +3,7 @@
 @inject IPurchaseOrdersApi Pos
 @inject ApiErrorHandler Errors
 @inject AuthenticationStateProvider Auth
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <PageTitle>@(_po?.Code ?? "PO") · GMS</PageTitle>
 
@@ -23,11 +23,11 @@ else
                 Breadcrumbs="@(new[] { new PageHeader.Crumb("Customer PO", "/purchase-orders"), new PageHeader.Crumb(_po.Code) })">
         <Chips><StatusTag Value="@_po.Status" /></Chips>
         <Actions>
-            @if (Can(PoActions.Edit, Permissions.CustomerPO.Edit)) { <FluentAnchor Href="@($"/purchase-orders/{_po.Id}/edit")" Appearance="Appearance.Neutral">Ubah</FluentAnchor> }
-            @if (Can(PoActions.Confirm, Permissions.CustomerPO.Confirm)) { <FluentButton Appearance="Appearance.Accent" OnClick="() => _dialog = Dialog.Confirm">Konfirmasi</FluentButton> }
-            @if (Can(PoActions.CreateWorkOrder, Permissions.WorkOrder.Create)) { <FluentAnchor Href="@($"/work-orders/new?poId={_po.Id}")" Appearance="Appearance.Neutral">Buat WO</FluentAnchor> }
-            @if (Can(PoActions.CreateDelivery, Permissions.Pengiriman.Create)) { <FluentAnchor Href="@($"/deliveries/new?poId={_po.Id}")" Appearance="Appearance.Neutral">Buat Pengiriman</FluentAnchor> }
-            @if (Can(PoActions.Cancel, Permissions.CustomerPO.Cancel)) { <FluentButton Appearance="Appearance.Neutral" OnClick="() => _dialog = Dialog.Cancel">Batalkan</FluentButton> }
+            @if (Can(PoActions.Edit, Permissions.CustomerPO.Edit)) { <a class="ant-btn ant-btn-default" href="@($"/purchase-orders/{_po.Id}/edit")">Ubah</a> }
+            @if (Can(PoActions.Confirm, Permissions.CustomerPO.Confirm)) { <AntDesign.Button Type="@AntDesign.ButtonType.Primary" OnClick="() => _dialog = Dialog.Confirm">Konfirmasi</AntDesign.Button> }
+            @if (Can(PoActions.CreateWorkOrder, Permissions.WorkOrder.Create)) { <a class="ant-btn ant-btn-default" href="@($"/work-orders/new?poId={_po.Id}")">Buat WO</a> }
+            @if (Can(PoActions.CreateDelivery, Permissions.Pengiriman.Create)) { <a class="ant-btn ant-btn-default" href="@($"/deliveries/new?poId={_po.Id}")">Buat Pengiriman</a> }
+            @if (Can(PoActions.Cancel, Permissions.CustomerPO.Cancel)) { <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _dialog = Dialog.Cancel">Batalkan</AntDesign.Button> }
         </Actions>
     </PageHeader>
 
@@ -46,17 +46,17 @@ else
         @if (_editingNumber)
         {
             <input id="po-number" aria-label="No. PO Customer" value="@_number" maxlength="50" @oninput="e => _number = e.Value?.ToString()" />
-            <FluentButton Appearance="Appearance.Accent" OnClick="SaveNumberAsync">Simpan</FluentButton>
-            <FluentButton Appearance="Appearance.Neutral" OnClick="() => _editingNumber = false">Batal</FluentButton>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Primary" OnClick="SaveNumberAsync">Simpan</AntDesign.Button>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _editingNumber = false">Batal</AntDesign.Button>
             @if (_numberProblem is not null) { <ProblemBanner Problem="_numberProblem" /> }
         }
         else
         {
-            @if (string.IsNullOrEmpty(_po.CustomerPoNumber)) { <span class="gms-warn"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" /> Belum ada</span> }
+            @if (string.IsNullOrEmpty(_po.CustomerPoNumber)) { <span class="gms-warn"><AntDesign.Icon Type="warning" /> Belum ada</span> }
             else { <span>@_po.CustomerPoNumber</span> }
             @if (Can(PoActions.SetCustomerPoNumber, Permissions.CustomerPO.Edit))
             {
-                <FluentButton Appearance="Appearance.Lightweight" aria-label="Ubah No. PO Customer" OnClick="StartEditNumber">✎</FluentButton>
+                <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="Ubah No. PO Customer" OnClick="StartEditNumber">✎</AntDesign.Button>
             }
         }
     </div>
@@ -90,17 +90,17 @@ else
                 {
                     <tr>
                         <th scope="row">@line.FgCode</th><td>@line.ColorSize.ColorName</td><td>@line.ColorSize.SizeCode</td>
-                        <td>@IdFormat.Date(line.DeliveryDate) @if (line.IsLate) { <span class="gms-bad"><FluentIcon Value="@(new Icons.Regular.Size16.Clock())" Color="Color.Neutral" /> Terlambat</span> }</td>
+                        <td>@IdFormat.Date(line.DeliveryDate) @if (line.IsLate) { <span class="gms-bad"><AntDesign.Icon Type="clock-circle" /> Terlambat</span> }</td>
                         <td class="num">@IdFormat.Qty(line.Qty)</td><td class="num">@IdFormat.Qty(line.DeliveredQty)</td><td class="num">@IdFormat.Qty(line.AllocatedQty)</td>
                         <td class="num">@IdFormat.Qty(line.InProductionQty)</td><td class="num">@IdFormat.Qty(line.RemainingPlanQty)</td>
                         <td class="gms-rowactions">
                             @if (Can(PoActions.Allocate, Permissions.CustomerPO.Alokasi.Allocate))
                             {
-                                <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Alokasi {line.FgCode} {line.ColorSize.ColorName} {line.ColorSize.SizeCode}")" OnClick="() => Open(line, true)">Alokasi</FluentButton>
+                                <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Alokasi {line.FgCode} {line.ColorSize.ColorName} {line.ColorSize.SizeCode}")" OnClick="() => Open(line, true)">Alokasi</AntDesign.Button>
                             }
                             @if (Can(PoActions.Allocate, Permissions.CustomerPO.Alokasi.Release) && line.AllocatedQty > 0)
                             {
-                                <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Lepas alokasi {line.FgCode} {line.ColorSize.ColorName} {line.ColorSize.SizeCode}")" OnClick="() => Open(line, false)">Lepas</FluentButton>
+                                <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Lepas alokasi {line.FgCode} {line.ColorSize.ColorName} {line.ColorSize.SizeCode}")" OnClick="() => Open(line, false)">Lepas</AntDesign.Button>
                             }
                         </td>
                     </tr>

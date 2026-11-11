@@ -5,7 +5,7 @@
 @inject IWorkerApi Workers
 @inject ApiErrorHandler Errors
 @inject AuthenticationStateProvider Auth
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <PageTitle>Riwayat Produksi · GMS</PageTitle>
 
@@ -56,15 +56,15 @@
                             @if (e.ReplacesId is not null) { <small class="gms-muted">menggantikan</small> }
                         </td>
                         <td class="gms-rowactions">
-                            <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Detail {e.WoCode} {e.ProcessName}")" OnClick="() => ShowDetail(e)">Detail</FluentButton>
+                            <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Detail {e.WoCode} {e.ProcessName}")" OnClick="() => ShowDetail(e)">Detail</AntDesign.Button>
                             @if (e.Status == DocStatus.Active && _user.HasPermission(VoidPermission(e.Kind)))
                             {
-                                <FluentButton Appearance="Appearance.Lightweight" Disabled="@(!e.CanVoid)" Title="@e.DisabledReason" aria-label="@($"Void entri {e.WorkerName ?? e.VendorName} {IdFormat.Date(e.WorkDate)}")" OnClick="() => _voiding = e">Void</FluentButton>
+                                <span title="@e.DisabledReason"><AntDesign.Button Type="@AntDesign.ButtonType.Link" Disabled="@(!e.CanVoid)" AriaLabel="@($"Void entri {e.WorkerName ?? e.VendorName} {IdFormat.Date(e.WorkDate)}")" OnClick="() => _voiding = e">Void</AntDesign.Button></span>
                             }
 
                             @if (e.Status == DocStatus.Active && e.Kind == EntryKind.Output && _user.HasPermission(Permissions.ProductionOutput.Correct))
                             {
-                                <FluentButton Appearance="Appearance.Lightweight" Disabled="@(!e.CanCorrect)" Title="@e.DisabledReason" aria-label="@($"Koreksi entri {e.WorkerName} {IdFormat.Date(e.WorkDate)}")" OnClick="() => StartCorrect(e)">Koreksi</FluentButton>
+                                <span title="@e.DisabledReason"><AntDesign.Button Type="@AntDesign.ButtonType.Link" Disabled="@(!e.CanCorrect)" AriaLabel="@($"Koreksi entri {e.WorkerName} {IdFormat.Date(e.WorkDate)}")" OnClick="() => StartCorrect(e)">Koreksi</AntDesign.Button></span>
                             }
                         </td>
                     </tr>
@@ -83,7 +83,7 @@
             @foreach (var l in _detail.Lines) { <li>@l.ColorSize.ColorName · @l.ColorSize.SizeCode: @IdFormat.Qty(l.Qty)</li> }
         </ul>
         <p class="gms-note">Dibuat @IdFormat.DateTime(_detail.Item.CreatedAt) oleh @(_detail.Item.CreatedByName ?? "—")@(string.IsNullOrEmpty(_detail.Reason) ? string.Empty : $" · Alasan: {_detail.Reason}")@(string.IsNullOrEmpty(_detail.Item.VoidReason) ? string.Empty : $" · Void: {_detail.Item.VoidReason}")</p>
-        <FluentButton Appearance="Appearance.Neutral" OnClick="() => _detail = null">Tutup</FluentButton>
+        <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _detail = null">Tutup</AntDesign.Button>
     </section>
 }
 
@@ -103,7 +103,7 @@
                 <TextField Label="@($"{l.ColorSize.ColorName} · {l.ColorSize.SizeCode}")" InputMode="numeric" MaxLength="7" Value="@_cQty[l.WoLineId]" ValueChanged="v => { _cQty[l.WoLineId] = v ?? string.Empty; _correctPreview = null; }" />
             }
         </div>
-        <FluentButton Appearance="Appearance.Neutral" OnClick="CheckCorrectionAsync">Periksa dampak</FluentButton>
+        <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="CheckCorrectionAsync">Periksa dampak</AntDesign.Button>
         @if (_correctPreview is not null) { <ImpactPreviewTable Preview="_correctPreview" /> }
     }
 </ConfirmDialog>

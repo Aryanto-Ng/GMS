@@ -2,7 +2,7 @@
 @inject ICustomerApi Customers
 @inject ApiErrorHandler Errors
 @inject NavigationManager Nav
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <UnsavedChangesGuard HasChanges="_dirty && !_saved" />
 
@@ -25,12 +25,11 @@
         <div class="gms-formactions">
             @if (Fg is null)
             {
-                <FluentAnchor Href="/master/fgs" Appearance="Appearance.Neutral">Batal</FluentAnchor>
+                <a class="ant-btn ant-btn-default" href="/master/fgs">Batal</a>
             }
-            <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="_saving">
-                @if (_saving) { <FluentProgressRing Width="16px" Style="margin-inline-end:6px" /> }
+            <AntDesign.Button Type="@AntDesign.ButtonType.Primary" HtmlType="submit" Disabled="_saving">
                 Simpan
-            </FluentButton>
+            </AntDesign.Button>
         </div>
     }
 </form>

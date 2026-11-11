@@ -8,7 +8,7 @@
 @inject IRolesApi Roles
 @inject ApiErrorHandler Errors
 @inject NavigationManager Nav
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 @inject IJSRuntime JS
 @inject AuthenticationStateProvider Auth
 
@@ -28,8 +28,8 @@
         <div>
             <p>Password sementara — <strong>catat sekarang, tidak ditampilkan lagi</strong>:</p>
             <p><code class="gms-temp" id="temp-password">@_tempPassword</code>
-               <FluentButton Appearance="Appearance.Neutral" OnClick="() => CopyAsync(_tempPassword)">Salin</FluentButton>
-               <FluentButton Appearance="Appearance.Lightweight" OnClick="() => _tempPassword = null">Tutup</FluentButton></p>
+               <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => CopyAsync(_tempPassword)">Salin</AntDesign.Button>
+               <AntDesign.Button Type="@AntDesign.ButtonType.Link" OnClick="() => _tempPassword = null">Tutup</AntDesign.Button></p>
             <p class="gms-sr-only" aria-live="polite">@_copyNote</p>
         </div>
     </div>
@@ -78,25 +78,24 @@ else
                     <label for="u-pass">Password awal <span class="gms-required">wajib</span></label>
                     <div class="gms-inline">
                         <input id="u-pass" type="text" value="@_password" autocomplete="off" aria-describedby="u-pass-hint" @oninput="e => { _password = e.Value?.ToString() ?? string.Empty; _dirty = true; }" />
-                        <FluentButton Appearance="Appearance.Neutral" OnClick="Generate">Buat otomatis</FluentButton>
-                        <FluentButton Appearance="Appearance.Neutral" Disabled="@(_password.Length == 0)" OnClick="() => CopyAsync(_password)">Salin</FluentButton>
+                        <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="Generate">Buat otomatis</AntDesign.Button>
+                        <AntDesign.Button Type="@AntDesign.ButtonType.Default" Disabled="@(_password.Length == 0)" OnClick="() => CopyAsync(_password)">Salin</AntDesign.Button>
                     </div>
                     <small id="u-pass-hint">Pengguna wajib mengganti password saat login pertama.</small>
                     <ul class="gms-rules" aria-live="polite">
-                        <li class="@(_password.Length >= 8 ? "gms-ok" : "gms-bad")"><FluentIcon Value="@Rule(_password.Length >= 8)" Color="Color.Neutral" /> Minimal 8 karakter</li>
-                        <li class="@(_password.Any(char.IsLetter) ? "gms-ok" : "gms-bad")"><FluentIcon Value="@Rule(_password.Any(char.IsLetter))" Color="Color.Neutral" /> Ada huruf</li>
-                        <li class="@(_password.Any(char.IsDigit) ? "gms-ok" : "gms-bad")"><FluentIcon Value="@Rule(_password.Any(char.IsDigit))" Color="Color.Neutral" /> Ada angka</li>
+                        <li class="@(_password.Length >= 8 ? "gms-ok" : "gms-bad")"><AntDesign.Icon Type="@Rule(_password.Length >= 8)" /> Minimal 8 karakter</li>
+                        <li class="@(_password.Any(char.IsLetter) ? "gms-ok" : "gms-bad")"><AntDesign.Icon Type="@Rule(_password.Any(char.IsLetter))" /> Ada huruf</li>
+                        <li class="@(_password.Any(char.IsDigit) ? "gms-ok" : "gms-bad")"><AntDesign.Icon Type="@Rule(_password.Any(char.IsDigit))" /> Ada angka</li>
                     </ul>
                 }
 
                 <div class="gms-formactions">
-                    <FluentAnchor Href="/admin/users" Appearance="Appearance.Neutral">Batal</FluentAnchor>
+                    <a class="ant-btn ant-btn-default" href="/admin/users">Batal</a>
                     @if (_canEdit)
                     {
-                        <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="_saving">
-                            @if (_saving) { <FluentProgressRing Width="16px" Style="margin-inline-end:6px" /> }
+                        <AntDesign.Button Type="@AntDesign.ButtonType.Primary" HtmlType="submit" Disabled="_saving">
                             Simpan
-                        </FluentButton>
+                        </AntDesign.Button>
                     }
                 </div>
             </form>
@@ -115,23 +114,22 @@ else
                 <div class="gms-stack">
                     @if (_user.HasPermission(Permissions.AccessManagement.User.ResetPassword))
                     {
-                        <FluentButton Appearance="Appearance.Neutral" OnClick="() => _resetOpen = true">Reset Password</FluentButton>
+                        <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _resetOpen = true">Reset Password</AntDesign.Button>
                     }
                     @if (_detail.Status == UserStatus.Locked && _user.HasPermission(Permissions.AccessManagement.User.Unlock))
                     {
-                        <FluentButton Appearance="Appearance.Neutral" OnClick="() => _confirm = Confirm.Unlock">Buka Kunci</FluentButton>
+                        <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _confirm = Confirm.Unlock">Buka Kunci</AntDesign.Button>
                     }
                     @if (_detail.HasActiveSession && _user.HasPermission(Permissions.AccessManagement.User.EndSession))
                     {
-                        <FluentButton Appearance="Appearance.Neutral" OnClick="() => _confirm = Confirm.EndSession">Akhiri Sesi</FluentButton>
+                        <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _confirm = Confirm.EndSession">Akhiri Sesi</AntDesign.Button>
                     }
                     @if (_user.HasPermission(Permissions.AccessManagement.User.Deactivate))
                     {
                         var blocked = _detail.Status != UserStatus.Inactive && (_detail.IsLastActiveAdministrator || _detail.Id == _selfId);
-                        <FluentButton Appearance="Appearance.Neutral" Disabled="blocked" aria-describedby="@(blocked ? "deact-why" : null)"
-                                      OnClick="() => _confirm = _detail.Status == UserStatus.Inactive ? Confirm.Activate : Confirm.Deactivate">
-                            @(_detail.Status == UserStatus.Inactive ? "Aktifkan" : "Nonaktifkan")
-                        </FluentButton>
+                        <button type="button" class="ant-btn ant-btn-default" disabled="@blocked" aria-describedby="@(blocked ? "deact-why" : null)" @onclick="() => _confirm = _detail.Status == UserStatus.Inactive ? Confirm.Activate : Confirm.Deactivate">
+                            <span>@(_detail.Status == UserStatus.Inactive ? "Aktifkan" : "Nonaktifkan")</span>
+                        </button>
                         @if (blocked)
                         {
                             <small id="deact-why">@(_detail.Id == _selfId ? "Anda tidak dapat menonaktifkan diri sendiri." : "Administrator aktif terakhir tidak dapat dinonaktifkan.")</small>
@@ -178,7 +176,7 @@ else
     private Guid? _selfId;
     private System.Security.Claims.ClaimsPrincipal _user = new();
 
-    private static Icon Rule(bool ok) => ok ? new Icons.Regular.Size16.CheckmarkCircle() : new Icons.Regular.Size16.DismissCircle();
+    private static string Rule(bool ok) => ok ? "check-circle" : "close-circle";
 
     private string ConfirmTitle => _confirm switch
     {

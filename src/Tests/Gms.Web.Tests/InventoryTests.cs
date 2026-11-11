@@ -208,7 +208,7 @@ public sealed class InventoryPageTests : WebTestBase
 
     private static IElement Dialog<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent => cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null);
 
-    private static IElement DialogConfirm<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent => Dialog(cut).QuerySelectorAll("fluent-button, button.ant-btn").Last();
+    private static IElement DialogConfirm<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent => Dialog(cut).QuerySelectorAll("button.ant-btn").Last();
 
     [Fact]
     public async Task Form_Serah_Terima_menampilkan_batas_perkiraan_alokasi_dan_menyimpan_lalu_menavigasi_ke_detail()
@@ -221,7 +221,7 @@ public sealed class InventoryPageTests : WebTestBase
 
         Assert.Contains("maks 30", cut.Find("table.gms-matrix").TextContent);
         cut.Find("table.gms-matrix input[aria-label='Qty, Size Navy S']").Input("30");
-        cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent == "Perkiraan alokasi").Click();
+        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Trim() == "Perkiraan alokasi").Click();
         cut.WaitForAssertion(() => Assert.Contains("Perkiraan alokasi otomatis ke PO-202611-0001", cut.Markup));
         Assert.Contains("Stok bebas (kelebihan produksi): 0 pcs", cut.FindAll("p[role=status]").Single(p => p.TextContent.Contains("Perkiraan")).TextContent);
         cut.Find("form").Submit();
@@ -257,13 +257,13 @@ public sealed class InventoryPageTests : WebTestBase
         var detail = Render<HandoverFgDetailPage>(p => p.Add(x => x.Id, result.Id));
         detail.WaitForAssertion(() => Assert.Contains("ST-9", detail.Find("h1").TextContent));
         Assert.Contains("30", detail.Find("tbody").TextContent);
-        detail.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn").Single(b => b.TextContent == "Void").Click();
+        detail.FindAll(".gms-pageheader-actions button.ant-btn").Single(b => b.TextContent.Trim() == "Void").Click();
         detail.WaitForAssertion(() => Assert.NotEmpty(Dialog(detail).QuerySelectorAll(".gms-impact")));
         Dialog(detail).QuerySelector("textarea")!.Input("salah");
         DialogConfirm(detail).Click();
 
         detail.WaitForAssertion(() => Assert.Contains("Di-void: salah", detail.Markup));
-        Assert.Empty(detail.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn"));
+        Assert.Empty(detail.FindAll(".gms-pageheader-actions button.ant-btn"));
     }
 
     [Fact]
@@ -273,7 +273,7 @@ public sealed class InventoryPageTests : WebTestBase
 
         cut.WaitForAssertion(() => Assert.Equal(4, cut.FindAll("tbody tr").Count));
         Assert.Contains("Fisik 480", cut.Find("[role=status]").TextContent);
-        Assert.Contains("/stock/ledger?fgId=", cut.Find("tbody fluent-anchor, tbody a.ant-btn").GetAttribute("href"));
+        Assert.Contains("/stock/ledger?fgId=", cut.Find("tbody a.ant-btn").GetAttribute("href"));
         cut.Find("#st-q").Change("zzz");
         cut.WaitForAssertion(() => Assert.Contains("Tidak ada stok", cut.Markup));
     }
@@ -283,20 +283,20 @@ public sealed class InventoryPageTests : WebTestBase
     {
         var cut = Render<StockPage>();
         cut.WaitForAssertion(() => Assert.Equal(4, cut.FindAll("tbody tr").Count));
-        cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn").Single(b => b.TextContent == "Penyesuaian").Click();
+        cut.FindAll(".gms-pageheader-actions button.ant-btn").Single(b => b.TextContent.Trim() == "Penyesuaian").Click();
         cut.WaitForAssertion(() => Assert.NotEmpty(Dialog(cut).QuerySelectorAll("select")));
         var selects = Dialog(cut).QuerySelectorAll("select");
         selects[0].Change(MockFgApi.KemejaId.ToString());
         Dialog(cut).QuerySelectorAll("select")[1].Change(Sync(_rig.Colors.LookupAsync("NVY"))[0].Id.ToString());
         Dialog(cut).QuerySelectorAll("select")[2].Change(Sync(_rig.Sizes.LookupAsync(null))[0].Id.ToString());
         Dialog(cut).QuerySelector("input[inputmode=numeric]")!.Input("-500");
-        Dialog(cut).QuerySelectorAll("fluent-button, button.ant-btn").Single(b => b.TextContent == "Periksa hasil").Click();
+        Dialog(cut).QuerySelectorAll("button.ant-btn").Single(b => b.TextContent.Trim() == "Periksa hasil").Click();
 
         cut.WaitForAssertion(() => Assert.Contains("Stok fisik tidak boleh negatif", Dialog(cut).TextContent));
         Assert.True(DialogConfirm(cut).HasAttribute("disabled"));
 
         Dialog(cut).QuerySelector("input[inputmode=numeric]")!.Input("-10");
-        Dialog(cut).QuerySelectorAll("fluent-button, button.ant-btn").Single(b => b.TextContent == "Periksa hasil").Click();
+        Dialog(cut).QuerySelectorAll("button.ant-btn").Single(b => b.TextContent.Trim() == "Periksa hasil").Click();
         Dialog(cut).QuerySelector("textarea")!.Input("rusak");
         cut.WaitForAssertion(() => Assert.False(DialogConfirm(cut).HasAttribute("disabled")));
         DialogConfirm(cut).Click();
@@ -341,11 +341,11 @@ public sealed class InventoryPageTests : WebTestBase
 
         var list = Render<MaterialHandoverListPage>();
         list.WaitForAssertion(() => Assert.Single(list.FindAll("tbody tr")));
-        list.FindAll("tbody fluent-button, tbody button.ant-btn").Single(b => b.TextContent == "Void").Click();
+        list.FindAll("tbody button.ant-btn").Single(b => b.TextContent.Trim() == "Void").Click();
         Dialog(list).QuerySelector("textarea")!.Input("salah");
         DialogConfirm(list).Click();
 
-        list.WaitForAssertion(() => Assert.DoesNotContain(list.FindAll("tbody fluent-button, tbody button.ant-btn"), b => b.TextContent == "Void"));
+        list.WaitForAssertion(() => Assert.DoesNotContain(list.FindAll("tbody button.ant-btn"), b => b.TextContent.Trim() == "Void"));
     }
 
     [Fact]
@@ -371,8 +371,8 @@ public sealed class InventoryPageTests : WebTestBase
 
         cut.FindComponent<Microsoft.AspNetCore.Components.Forms.InputFile>().UploadFiles(InputFileContent.CreateFromText("fg_code,color_code,size_code,qty,date\nKMJ-001,NVY,S,10,2026-11-01\n", "saldo.csv"));
         cut.WaitForAssertion(() => Assert.Equal("2. Periksa", cut.Find("[aria-current=step]").TextContent));
-        cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent.Contains("Lanjut")).Click();
-        cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent.Contains("Impor sekarang")).Click();
+        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Lanjut")).Click();
+        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Impor sekarang")).Click();
 
         cut.WaitForAssertion(() => Assert.Contains("Impor selesai", cut.Markup));
         Assert.Equal(490, Sync(_rig.Inventory.ListStockAsync(new StockQuery())).OnHandTotal);

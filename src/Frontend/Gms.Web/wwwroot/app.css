@@ -124,8 +124,10 @@ small { font-size: 12px; line-height: 20px; }
 .gms-table thead th { background: var(--fill-alter); font-weight: 600; position: sticky; top: var(--header-height); z-index: 1; }
 .gms-table thead th:first-child { border-top-left-radius: var(--radius-lg); }
 .gms-table thead th:last-child { border-top-right-radius: var(--radius-lg); }
-.gms-table tbody tr:hover td { background: var(--fill-hover); }
+.gms-table tbody tr:hover td, .gms-table tbody tr:hover th { background: var(--fill-hover); }
 .gms-table .num { text-align: end; font-variant-numeric: tabular-nums; }
+.gms-table td .ant-btn-link, .gms-rowactions .ant-btn-link { padding-inline: var(--space-2); }
+.gms-table th > span[title] > .anticon, .gms-table th .anticon { margin-inline-start: var(--space-1); }
 .gms-table tr.violation td { background: var(--danger-bg); }
 .gms-ok { color: var(--success-text); display: inline-flex; gap: var(--space-1); align-items: center; }
 .gms-bad { color: var(--danger-text); display: inline-flex; gap: var(--space-1); align-items: center; font-weight: 600; }
@@ -231,17 +233,3 @@ tr.gms-inactive { opacity: .7; }
 .gms-big { font-size: 24px; line-height: 32px; font-weight: 600; margin: 0; display: flex; gap: var(--space-2); align-items: baseline; font-variant-numeric: tabular-nums; } .gms-big small { font-size: 14px; font-weight: 400; color: var(--text-tertiary); }
 @media (max-width: 1365px) { .gms-dcard, .gms-dcard.small, .gms-dcard.medium, .gms-dcard.wide { grid-column: span 6; } }
 @media (max-width: 1023px) { .gms-dcard, .gms-dcard.small, .gms-dcard.medium, .gms-dcard.wide { grid-column: span 12; } }
-
-/*
- * Jembatan sementara untuk komponen Fluent yang belum dimigrasi (dihapus bersama Fluent): selaraskan token Fluent dengan token GMS
- * agar tombol/isian lama memakai warna aksen dan radius Design.md, termasuk di tema gelap.
- */
-body {
-    --accent-fill-rest: var(--primary) !important;
-    --accent-fill-hover: var(--primary-hover) !important;
-    --accent-fill-active: var(--primary-active) !important;
-    --foreground-on-accent-rest: var(--on-primary) !important;
-    --neutral-foreground-rest: var(--text) !important;
-    --control-corner-radius: 6 !important;
-}
-.gms-danger { --accent-fill-rest: var(--danger) !important; --accent-fill-hover: var(--danger-hover) !important; --accent-fill-active: var(--danger-hover) !important; }

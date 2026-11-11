@@ -34,7 +34,7 @@ public sealed class DialogAndAsyncTests : WebTestBase
         });
 
     private static AngleSharp.Dom.IElement Confirm(IRenderedComponent<ConfirmDialog> cut) =>
-        cut.FindAll("fluent-button, button.ant-btn").First(b => b.TextContent.Contains("Ya, lanjutkan"));
+        cut.FindAll("button.ant-btn").First(b => b.TextContent.Contains("Ya, lanjutkan"));
 
     // ===== ConfirmDialog =====
 
@@ -60,7 +60,7 @@ public sealed class DialogAndAsyncTests : WebTestBase
     {
         var cut = Dialog(open: false);
 
-        Assert.Empty(cut.FindAll("h2, textarea, fluent-button"));
+        Assert.Empty(cut.FindAll("h2, textarea"));
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public sealed class DialogAndAsyncTests : WebTestBase
         var plain = Render<ConfirmDialog>(p => p.Add(x => x.Open, true).Add(x => x.Title, "Lepas").Add(x => x.Danger, false).Add(x => x.OnConfirm, _ => Task.CompletedTask));
 
         Assert.Contains("ant-btn-dangerous", Confirm(danger).ClassName);
-        Assert.DoesNotContain("ant-btn-dangerous", plain.FindAll("fluent-button, button.ant-btn").Last().ClassName ?? string.Empty);
+        Assert.DoesNotContain("ant-btn-dangerous", plain.FindAll("button.ant-btn").Last().ClassName ?? string.Empty);
     }
 
     [Fact]
@@ -93,7 +93,7 @@ public sealed class DialogAndAsyncTests : WebTestBase
         var cut = Render<ConfirmDialog>(p => p.Add(x => x.Open, true).Add(x => x.Title, "Tutup").Add(x => x.ReasonRequired, false).Add(x => x.OnConfirm, _ => Task.CompletedTask));
 
         Assert.Contains("opsional", cut.Find("label").TextContent);
-        Assert.False(cut.FindAll("fluent-button, button.ant-btn").Last().HasAttribute("disabled"));
+        Assert.False(cut.FindAll("button.ant-btn").Last().HasAttribute("disabled"));
     }
 
     [Fact]
@@ -268,7 +268,7 @@ public sealed class DialogAndAsyncTests : WebTestBase
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find(".gms-state.error")));
         Assert.Contains("00-t", cut.Find("code").TextContent);
 
-        cut.Find("fluent-button, button.ant-btn").Click();
+        cut.Find("button.ant-btn").Click();
         cut.WaitForAssertion(() => Assert.Equal("pulih", cut.Find("#isi").TextContent));
         Assert.Equal(2, calls);
     }
@@ -281,8 +281,8 @@ public sealed class DialogAndAsyncTests : WebTestBase
 
         notFound.WaitForAssertion(() => Assert.NotNull(notFound.Find(".gms-state.error")));
         forbidden.WaitForAssertion(() => Assert.NotNull(forbidden.Find(".gms-state.error")));
-        Assert.Empty(notFound.FindAll("fluent-button, button.ant-btn"));
-        Assert.Empty(forbidden.FindAll("fluent-button, button.ant-btn"));
+        Assert.Empty(notFound.FindAll("button.ant-btn"));
+        Assert.Empty(forbidden.FindAll("button.ant-btn"));
         Assert.Contains("Data tidak ditemukan", notFound.Markup);
     }
 

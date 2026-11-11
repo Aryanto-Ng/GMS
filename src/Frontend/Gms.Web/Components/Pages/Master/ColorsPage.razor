@@ -1,7 +1,7 @@
 @page "/master/colors"
 @attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.MasterData.Color.View)]
 @inject IColorApi Colors
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <PageTitle>Color · GMS</PageTitle>
 

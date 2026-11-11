@@ -4,7 +4,7 @@
 @inject FileDownloader Downloader
 @inject ApiErrorHandler Errors
 @inject AuthenticationStateProvider Auth
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <PageTitle>@(_period?.Code ?? "Periode Gaji") · GMS</PageTitle>
 
@@ -22,19 +22,19 @@ else
 {
     <PageHeader Title="@_period.Code" Subtitle="@($"{IdFormat.Date(_period.StartDate)} – {IdFormat.Date(_period.EndDate)} · {_period.WorkerCount} pekerja · Total Rp {IdFormat.Number(_period.TotalPaid)}{(_period.IsProvisional ? "*" : string.Empty)}")"
                 Breadcrumbs="@(new[] { new PageHeader.Crumb("Periode Gaji", "/payroll"), new PageHeader.Crumb(_period.Code) })">
-        <Chips><StatusTag Value="@_period.Status" /> @if (_period.IsProvisional) { <span class="gms-warn"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" /> BELUM FINAL</span> }</Chips>
+        <Chips><StatusTag Value="@_period.Status" /> @if (_period.IsProvisional) { <span class="gms-warn"><AntDesign.Icon Type="warning" /> BELUM FINAL</span> }</Chips>
         <Actions>
-            <FluentButton Appearance="Appearance.Neutral" OnClick="RefreshAsync">Segarkan</FluentButton>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="RefreshAsync">Segarkan</AntDesign.Button>
             @if (_user.HasPermission(Permissions.Payroll.Export))
             {
-                <FluentButton Appearance="Appearance.Neutral" OnClick="() => ExportAsync(PayrollExportFormat.Xlsx)">Excel (.xlsx)</FluentButton>
-                <FluentButton Appearance="Appearance.Neutral" OnClick="() => ExportAsync(PayrollExportFormat.CsvSummary)">CSV Ringkasan</FluentButton>
-                <FluentButton Appearance="Appearance.Neutral" OnClick="() => ExportAsync(PayrollExportFormat.CsvDaily)">CSV Harian</FluentButton>
+                <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => ExportAsync(PayrollExportFormat.Xlsx)">Excel (.xlsx)</AntDesign.Button>
+                <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => ExportAsync(PayrollExportFormat.CsvSummary)">CSV Ringkasan</AntDesign.Button>
+                <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => ExportAsync(PayrollExportFormat.CsvDaily)">CSV Harian</AntDesign.Button>
             }
 
-            @if (_user.HasPermission(Permissions.Payroll.PrintSlip)) { <FluentButton Appearance="Appearance.Neutral" OnClick="() => _slipOpen = true">Slip Gaji</FluentButton> }
-            @if (_period.CanEdit && _user.HasPermission(Permissions.Payroll.CreatePeriod)) { <FluentButton Appearance="Appearance.Neutral" OnClick="StartEdit">Ubah</FluentButton> }
-            @if (_period.CanClose && _user.HasPermission(Permissions.Payroll.ClosePeriod)) { <FluentButton Appearance="Appearance.Accent" OnClick="StartClose">Tutup Periode</FluentButton> }
+            @if (_user.HasPermission(Permissions.Payroll.PrintSlip)) { <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _slipOpen = true">Slip Gaji</AntDesign.Button> }
+            @if (_period.CanEdit && _user.HasPermission(Permissions.Payroll.CreatePeriod)) { <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="StartEdit">Ubah</AntDesign.Button> }
+            @if (_period.CanClose && _user.HasPermission(Permissions.Payroll.ClosePeriod)) { <AntDesign.Button Type="@AntDesign.ButtonType.Primary" OnClick="StartClose">Tutup Periode</AntDesign.Button> }
         </Actions>
     </PageHeader>
 
@@ -64,7 +64,7 @@ else
                             {
                                 <tr>
                                     <th scope="row"><a href="#" @onclick="() => ShowWorker(r.WorkerId)" @onclick:preventDefault>@r.WorkerCode @r.WorkerName</a>
-                                        @if (r.IsNegative) { <span class="gms-bad"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" /> total negatif</span> }</th>
+                                        @if (r.IsNegative) { <span class="gms-bad"><AntDesign.Icon Type="warning" /> total negatif</span> }</th>
                                     <td class="num">@IdFormat.Qty(r.TotalQty)</td><td class="num">@IdFormat.Number(r.SumBeforeRounding, 5)</td>
                                     <td class="num @(r.IsNegative ? "gms-negative" : null)">@IdFormat.Number(r.Paid)</td>
                                 </tr>
@@ -182,9 +182,9 @@ else
     @if (_closePreview is not null)
     {
         <p>Pekerja <strong>@_closePreview.WorkerCount</strong> · Total <strong>Rp @IdFormat.Number(_closePreview.TotalPaid)</strong></p>
-        @if (_closePreview.NegativeWorkers.Count > 0) { <p class="gms-warn" role="status"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" /> @_closePreview.NegativeWorkers.Count pekerja bertotal negatif (@string.Join(", ", _closePreview.NegativeWorkers.Select(w => w.WorkerName)))</p> }
-        @if (_closePreview.EndDateInFuture) { <p class="gms-warn" role="status"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" /> Tanggal selesai periode di masa depan.</p> }
-        <p class="gms-note"><FluentIcon Value="@(new Icons.Regular.Size16.Info())" Color="Color.Neutral" /> Penutupan PERMANEN. Input produksi pada tanggal ini akan terkunci; koreksi dilakukan lewat Penyesuaian pada periode berikutnya.</p>
+        @if (_closePreview.NegativeWorkers.Count > 0) { <p class="gms-warn" role="status"><AntDesign.Icon Type="warning" /> @_closePreview.NegativeWorkers.Count pekerja bertotal negatif (@string.Join(", ", _closePreview.NegativeWorkers.Select(w => w.WorkerName)))</p> }
+        @if (_closePreview.EndDateInFuture) { <p class="gms-warn" role="status"><AntDesign.Icon Type="warning" /> Tanggal selesai periode di masa depan.</p> }
+        <p class="gms-note"><AntDesign.Icon Type="info-circle" /> Penutupan PERMANEN. Input produksi pada tanggal ini akan terkunci; koreksi dilakukan lewat Penyesuaian pada periode berikutnya.</p>
         <TextField Label="Ketik kode periode untuk konfirmasi" Value="@_confirm" ValueChanged="v => _confirm = v" MaxLength="40" Hint="@_closePreview.ConfirmationCode" />
     }
 </ConfirmDialog>

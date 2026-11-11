@@ -4,7 +4,7 @@
 @inject IWorkOrdersApi Wos
 @inject IVendorApi Vendors
 @inject ApiErrorHandler Errors
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <PageTitle>Kirim/Terima Vendor · GMS</PageTitle>
 <UnsavedChangesGuard HasChanges="_dirty" />
@@ -47,7 +47,7 @@ else
     {
         <QtyGrid Caption="@(_kind == VendorMovementKind.Send ? "Qty kirim" : "Qty terima")" RowHeader="" Rows="_row" Columns="_columns" Values="_values" CellInfo="CellInfo" ShowMax="true" Compact="true" OnChanged="() => _dirty = true" />
         <div class="gms-formactions">
-            <FluentButton Appearance="Appearance.Accent" Disabled="@(_saving || _ctx.BlockedReason is not null)" OnClick="SaveAsync">Simpan</FluentButton>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Primary" Disabled="@(_saving || _ctx.BlockedReason is not null)" OnClick="SaveAsync">Simpan</AntDesign.Button>
         </div>
     }
 

@@ -2,7 +2,7 @@
 @attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.MasterData.FG.View)]
 @inject IFgApi Fgs
 @inject NavigationManager Nav
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <PageTitle>FG · GMS</PageTitle>
 

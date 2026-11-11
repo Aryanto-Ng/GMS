@@ -6,18 +6,17 @@ using Gms.Web.Infrastructure.Http;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.FluentUI.AspNetCore.Components;
 
 namespace Gms.Web.Tests;
 
-/// <summary>Dasar tes komponen: layanan Fluent UI, JS longgar (modul isolasi dipalsukan), pengguna uji, dan penanganan galat API.</summary>
+/// <summary>Dasar tes komponen: layanan AntDesign, JS longgar (modul isolasi dipalsukan), pengguna uji, dan penanganan galat API.</summary>
 public abstract class WebTestBase : BunitContext
 {
     protected WebTestBase()
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
-        Services.AddFluentUIComponents();
         Services.AddAntDesign();
+        Services.AddScoped<Gms.Web.Services.IGmsToast, Gms.Web.Services.GmsToast>();
         Services.AddScoped<ApiErrorHandler>();
         Services.AddSingleton<AuthenticationStateProvider>(new FakeAuth(User(Array.Empty<string>())));
         Services.AddSingleton<Microsoft.AspNetCore.Components.Forms.AntiforgeryStateProvider, FakeAntiforgery>();

@@ -3,13 +3,6 @@
 @inject AuthenticationStateProvider Auth
 @inject IJSRuntime JS
 
-@* Sementara halaman belum seluruhnya bermigrasi dari Fluent, penyedia Fluent tetap dipasang (dialog/toast/tooltip halaman lama).
-   Tema Fluent mengikuti pilihan tema GMS agar komponen lama tetap terbaca di mode gelap. *@
-<FluentDesignTheme Mode="_fluentMode" />
-<FluentToastProvider MaxToastCount="4" Timeout="4000" Position="ToastPosition.TopEnd" />
-<FluentDialogProvider />
-<FluentTooltipProvider />
-
 <a class="gms-skip" href="#gms-main">Lewati ke konten utama</a>
 
 <div class="gms-app">
@@ -64,7 +57,6 @@
 <div id="gms-catalog" hidden data-json="@_catalogJson"></div>
 
 @code {
-    private DesignThemeModes _fluentMode = DesignThemeModes.System;
     private string _theme = "system";
     private IReadOnlyList<NavCategory> _catalog = [];
     private string _catalogJson = "[]";
@@ -113,6 +105,5 @@
     private void Apply(string theme)
     {
         _theme = theme;
-        _fluentMode = theme switch { "light" => DesignThemeModes.Light, "dark" => DesignThemeModes.Dark, _ => DesignThemeModes.System };
     }
 }

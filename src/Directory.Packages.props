@@ -8,8 +8,7 @@
     Package yang sudah diizinkan user:
       - EF Core standar + provider PostgreSQL (Npgsql)             -> keputusan database, 2026-11-08
       - ASP.NET Core Identity (EF Core store)                      -> 2026-11-08
-      - Microsoft.FluentUI.AspNetCore.Components                   -> 2026-11-08
-      - Microsoft.FluentUI.AspNetCore.Components.Icons             -> 2026-11-09
+      - (dihapus 2026-11-11) Microsoft.FluentUI.AspNetCore.Components + Icons digantikan AntDesign
       - AntDesign (AntDesign Blazor, MIT; UI sesuai docs/Design.md) -> 2026-11-11 (menggantikan Fluent UI setelah migrasi Frontend)
       - PDFsharp-MigraDoc (slip gaji + surat jalan)                -> 2026-11-08
       - ClosedXML (ekspor Excel)                                   -> 2026-11-08
@@ -48,12 +47,8 @@
   </ItemGroup>
 
   <ItemGroup Label="UI">
-    <!-- 4.14.x = jalur matang (Fluent 2, net10). 5.0.x adalah major baru; ditinjau Frontend sebelum dipakai. -->
-    <!-- AntDesign Blazor 1.6.2 (stabil, MIT, target net10.0, dependensi: OneOf 3.0.271). Tema lewat CSS variable (awalan ant). Fluent UI dihapus setelah migrasi selesai. -->
+    <!-- AntDesign Blazor 1.6.2 (stabil, MIT, target net10.0, dependensi: OneOf 3.0.271). Tema lewat CSS variable (awalan ant). -->
     <PackageVersion Include="AntDesign" Version="1.6.2" />
-    <PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components" Version="4.14.5" />
-    <!-- Set ikon Fluent 2 (paket terpisah di Fluent UI v4). Diizinkan user 2026-11-09. Versi mengikuti paket utama. -->
-    <PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="4.14.5" />
   </ItemGroup>
 
   <ItemGroup Label="Dokumen (PDF + Excel)">

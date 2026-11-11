@@ -3,7 +3,7 @@
 @inject IInventoryApi Inventory
 @inject ApiErrorHandler Errors
 @inject AuthenticationStateProvider Auth
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <PageTitle>Serah Terima FG · GMS</PageTitle>
 
@@ -25,7 +25,7 @@ else
         <Actions>
             @if (_doc.Item.Status == DocStatus.Active && _user.HasPermission(Permissions.SerahTerimaFG.Void))
             {
-                <FluentButton Appearance="Appearance.Neutral" Disabled="@(!_doc.CanVoid)" Title="@_doc.DisabledReason" OnClick="() => _voiding = true">Void</FluentButton>
+                <span title="@_doc.DisabledReason"><AntDesign.Button Type="@AntDesign.ButtonType.Default" Disabled="@(!_doc.CanVoid)" OnClick="() => _voiding = true">Void</AntDesign.Button></span>
             }
         </Actions>
     </PageHeader>

@@ -5,7 +5,7 @@
 @inject IMaterialApi Materials
 @inject ApiErrorHandler Errors
 @inject NavigationManager Nav
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <PageTitle>Buat Serah Terima Material · GMS</PageTitle>
 <UnsavedChangesGuard HasChanges="_dirty && !_saved" />
@@ -32,16 +32,16 @@
                 <LookupSelect Label="@($"Material {i + 1}")" Items="_materials" Value="line.Material" ValueChanged="v => { line.Material = v; _dirty = true; }" Required="true" ShowCode="true" />
                 <TextField Label="Qty (maks 3 desimal)" InputMode="decimal" MaxLength="12" Value="@line.Qty" ValueChanged="v => { line.Qty = v ?? string.Empty; _dirty = true; }" Required="true" />
                 <TextField Label="Keterangan" MaxLength="100" Value="@line.Notes" ValueChanged="v => { line.Notes = v; _dirty = true; }" />
-                <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Hapus baris {i + 1}")" Disabled="@(_lines.Count == 1)" OnClick="() => _lines.Remove(line)">✕</FluentButton>
+                <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Hapus baris {i + 1}")" Disabled="@(_lines.Count == 1)" OnClick="() => _lines.Remove(line)">✕</AntDesign.Button>
             </div>
         }
 
-        <FluentButton Appearance="Appearance.Neutral" OnClick="() => _lines.Add(new Line())">Tambah material</FluentButton>
+        <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _lines.Add(new Line())">Tambah material</AntDesign.Button>
     </section>
 
     <div class="gms-formactions">
-        <FluentAnchor Href="/handovers/material" Appearance="Appearance.Neutral">Batal</FluentAnchor>
-        <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="_saving">Simpan</FluentButton>
+        <a class="ant-btn ant-btn-default" href="/handovers/material">Batal</a>
+        <AntDesign.Button Type="@AntDesign.ButtonType.Primary" HtmlType="submit" Disabled="_saving">Simpan</AntDesign.Button>
     </div>
 </form>
 

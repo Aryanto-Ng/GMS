@@ -7,7 +7,7 @@
 
 <PageHeader Title="Work Order" Subtitle="@(_total is null ? null : $"{IdFormat.Qty(_total)} WO")">
     <Actions>
-        @if (_user.HasPermission(Permissions.WorkOrder.Create)) { <FluentAnchor Href="/work-orders/new" Appearance="Appearance.Accent">Buat WO</FluentAnchor> }
+        @if (_user.HasPermission(Permissions.WorkOrder.Create)) { <a class="ant-btn ant-btn-primary" href="/work-orders/new">Buat WO</a> }
     </Actions>
 </PageHeader>
 
@@ -48,7 +48,7 @@
                         <td><StatusTag Value="@wo.Status" /></td>
                         <td class="num">@IdFormat.Qty(wo.TotalQty)</td>
                         <td><div class="gms-stack-bar" aria-hidden="true"><span class="gms-seg success" style="width:@Math.Min(100m, wo.ProgressPercent)%"></span></div> @IdFormat.Number(wo.ProgressPercent, 1)%@(wo.ProgressPercent > 100 ? " (kelebihan)" : string.Empty)</td>
-                        <td>@IdFormat.Date(wo.TargetDate) @if (wo.IsLate) { <span class="gms-bad"><FluentIcon Value="@(new Icons.Regular.Size16.Clock())" Color="Color.Neutral" /> Terlambat</span> }</td>
+                        <td>@IdFormat.Date(wo.TargetDate) @if (wo.IsLate) { <span class="gms-bad"><AntDesign.Icon Type="clock-circle" /> Terlambat</span> }</td>
                     </tr>
                 }
             </tbody>

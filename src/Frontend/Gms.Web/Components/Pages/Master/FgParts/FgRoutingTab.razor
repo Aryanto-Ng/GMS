@@ -1,7 +1,7 @@
 @inject IFgApi Fgs
 @inject IProcessApi Processes
 @inject ApiErrorHandler Errors
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <UnsavedChangesGuard HasChanges="_dirty" />
 
@@ -32,9 +32,9 @@
                             @if (CanEdit)
                             {
                                 <span class="gms-rowactions">
-                                    <FluentButton Appearance="Appearance.Lightweight" Disabled="@(index == 0)" aria-label="@($"Naikkan {step.Name}")" OnClick="() => Move(index, -1)">↑</FluentButton>
-                                    <FluentButton Appearance="Appearance.Lightweight" Disabled="@(index == _steps.Count - 1)" aria-label="@($"Turunkan {step.Name}")" OnClick="() => Move(index, 1)">↓</FluentButton>
-                                    <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Hapus langkah {step.Name}")" OnClick="() => Remove(index)">✕</FluentButton>
+                                    <AntDesign.Button Type="@AntDesign.ButtonType.Link" Disabled="@(index == 0)" AriaLabel="@($"Naikkan {step.Name}")" OnClick="() => Move(index, -1)">↑</AntDesign.Button>
+                                    <AntDesign.Button Type="@AntDesign.ButtonType.Link" Disabled="@(index == _steps.Count - 1)" AriaLabel="@($"Turunkan {step.Name}")" OnClick="() => Move(index, 1)">↓</AntDesign.Button>
+                                    <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Hapus langkah {step.Name}")" OnClick="() => Remove(index)">✕</AntDesign.Button>
                                 </span>
                             }
                         </li>
@@ -55,11 +55,11 @@
                             }
                         </select>
                     </div>
-                    <FluentButton Appearance="Appearance.Neutral" Disabled="@(_toAdd is null)" OnClick="Add">Tambah</FluentButton>
+                    <AntDesign.Button Type="@AntDesign.ButtonType.Default" Disabled="@(_toAdd is null)" OnClick="Add">Tambah</AntDesign.Button>
                 </div>
             }
 
-            <p class="gms-note"><FluentIcon Value="@(new Icons.Regular.Size16.Info())" Color="Color.Neutral" /> Perubahan hanya berlaku untuk Work Order yang dirilis setelah ini.</p>
+            <p class="gms-note"><AntDesign.Icon Type="info-circle" /> Perubahan hanya berlaku untuk Work Order yang dirilis setelah ini.</p>
             @if (_steps.Count == 0 && _dirty)
             {
                 <p class="gms-bad" role="alert">Minimal 1 langkah.</p>
@@ -68,8 +68,8 @@
             @if (CanEdit)
             {
                 <div class="gms-formactions">
-                    <FluentButton Appearance="Appearance.Neutral" Disabled="@(!_dirty)" OnClick="() => _reload++">Batal</FluentButton>
-                    <FluentButton Appearance="Appearance.Accent" Disabled="@(!_dirty || _steps.Count == 0 || _saving)" OnClick="() => SaveAsync(false)">Simpan routing</FluentButton>
+                    <AntDesign.Button Type="@AntDesign.ButtonType.Default" Disabled="@(!_dirty)" OnClick="() => _reload++">Batal</AntDesign.Button>
+                    <AntDesign.Button Type="@AntDesign.ButtonType.Primary" Disabled="@(!_dirty || _steps.Count == 0 || _saving)" OnClick="() => SaveAsync(false)">Simpan routing</AntDesign.Button>
                 </div>
             }
         </section>

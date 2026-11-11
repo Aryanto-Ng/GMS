@@ -170,7 +170,7 @@ public sealed class DashboardPageTests : WebTestBase
         var cut = Render<Home>();
 
         cut.WaitForAssertion(() => Assert.Contains("00-gagal", cut.Find("[aria-label='WO Terlambat']").TextContent));
-        Assert.NotEmpty(cut.Find("[aria-label='WO Terlambat']").QuerySelectorAll("fluent-button, button.ant-btn")); // Coba lagi
+        Assert.NotEmpty(cut.Find("[aria-label='WO Terlambat']").QuerySelectorAll("button.ant-btn")); // Coba lagi
         cut.WaitForAssertion(() => Assert.DoesNotContain("Memuat", cut.Find("[aria-label='WO Berjalan']").TextContent));
         Assert.Contains("Released", cut.Find("[aria-label='WO Berjalan']").TextContent);
         Assert.Contains("PO", cut.Find("[aria-label='PO Terlambat']").TextContent);
@@ -195,7 +195,7 @@ public sealed class DashboardPageTests : WebTestBase
 
         var cut = Render<Home>();
 
-        var links = cut.FindAll("[aria-label='Aksi Cepat'] fluent-anchor, [aria-label='Aksi Cepat'] a.ant-btn").Select(a => a.TextContent).ToArray();
+        var links = cut.FindAll("[aria-label='Aksi Cepat'] a.ant-btn").Select(a => a.TextContent).ToArray();
         Assert.Equal(["Input Output", "Buat PO"], links);
     }
 
@@ -206,7 +206,7 @@ public sealed class DashboardPageTests : WebTestBase
 
         var cut = Render<Home>();
 
-        Assert.Equal(6, cut.FindAll("[aria-label='Aksi Cepat'] fluent-anchor, [aria-label='Aksi Cepat'] a.ant-btn").Count);
+        Assert.Equal(6, cut.FindAll("[aria-label='Aksi Cepat'] a.ant-btn").Count);
     }
 
     [Fact]
@@ -216,7 +216,7 @@ public sealed class DashboardPageTests : WebTestBase
         var cut = Render<Home>();
         cut.WaitForAssertion(() => Assert.Contains("PO Terlambat", cut.Markup));
 
-        cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn").Single(b => b.TextContent == "Segarkan").Click();
+        cut.FindAll(".gms-pageheader-actions button.ant-btn").Single(b => b.TextContent.Trim() == "Segarkan").Click();
 
         Assert.Equal("Beranda diperbarui", cut.Find("[role=status][aria-live=polite].gms-sr-only").TextContent);
         cut.WaitForAssertion(() => Assert.Contains("PO", cut.Find("[aria-label='PO Terlambat']").TextContent));

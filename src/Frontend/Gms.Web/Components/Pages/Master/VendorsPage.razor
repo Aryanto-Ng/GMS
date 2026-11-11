@@ -1,7 +1,7 @@
 @page "/master/vendors"
 @attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.MasterData.Vendor.View)]
 @inject IVendorApi Vendors
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <PageTitle>Vendor · GMS</PageTitle>
 

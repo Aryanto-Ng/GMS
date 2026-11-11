@@ -1,7 +1,7 @@
 @page "/master/sizes"
 @attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.MasterData.Size.View)]
 @inject ISizeApi Sizes
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <PageTitle>Size · GMS</PageTitle>
 

@@ -2,13 +2,13 @@
 @attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.SerahTerimaMaterial.View)]
 @inject IInventoryApi Inventory
 @inject AuthenticationStateProvider Auth
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <PageTitle>Serah Terima Material · GMS</PageTitle>
 
 <PageHeader Title="Serah Terima Material" Subtitle="Catatan penyerahan bahan ke Konveksi (tanpa stok).">
     <Actions>
-        @if (_user.HasPermission(Permissions.SerahTerimaMaterial.Create)) { <FluentAnchor Href="/handovers/material/new" Appearance="Appearance.Accent">Buat Serah Terima Material</FluentAnchor> }
+        @if (_user.HasPermission(Permissions.SerahTerimaMaterial.Create)) { <a class="ant-btn ant-btn-primary" href="/handovers/material/new">Buat Serah Terima Material</a> }
     </Actions>
 </PageHeader>
 
@@ -25,10 +25,10 @@
                         <td>@IdFormat.Date(d.Date)</td><th scope="row">@(d.DocNo ?? "—")</th><td>@d.WoCode</td><td class="num">@d.ItemCount</td>
                         <td><StatusTag Value="@d.Status" /></td>
                         <td class="gms-rowactions">
-                            <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Detail {d.DocNo ?? d.WoCode}")" OnClick="() => ShowAsync(d)">Detail</FluentButton>
+                            <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Detail {d.DocNo ?? d.WoCode}")" OnClick="() => ShowAsync(d)">Detail</AntDesign.Button>
                             @if (d.Status == DocStatus.Active && _user.HasPermission(Permissions.SerahTerimaMaterial.Void))
                             {
-                                <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Void {d.DocNo ?? d.WoCode}")" OnClick="() => _voiding = d">Void</FluentButton>
+                                <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Void {d.DocNo ?? d.WoCode}")" OnClick="() => _voiding = d">Void</AntDesign.Button>
                             }
                         </td>
                     </tr>
@@ -48,7 +48,7 @@
             <tbody>@foreach (var l in _detail.Lines) { <tr><th scope="row">@l.MaterialCode · @l.MaterialName</th><td class="num">@IdFormat.Number(l.Qty, 3)</td><td>@l.UomCode</td><td>@(l.Notes ?? "—")</td></tr> }</tbody>
         </table>
         @if (!string.IsNullOrEmpty(_detail.VoidReason)) { <p class="gms-note">Void: @_detail.VoidReason</p> }
-        <FluentButton Appearance="Appearance.Neutral" OnClick="() => _detail = null">Tutup</FluentButton>
+        <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _detail = null">Tutup</AntDesign.Button>
     </section>
 }
 

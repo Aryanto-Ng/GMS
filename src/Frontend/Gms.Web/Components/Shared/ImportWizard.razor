@@ -1,7 +1,7 @@
 @inject IImportApi Imports
 @inject FileDownloader Downloader
 @inject ApiErrorHandler Errors
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 @* Wizard Impor CSV 3 langkah (MasterData-UI.md bagian 4): Unggah → Periksa (dry-run) → Konfirmasi. Semua-atau-tidak-sama-sekali. *@
 <PageHeader Title="@($"Impor {Title}")" Breadcrumbs="@(new[] { new PageHeader.Crumb(Title, ListHref), new PageHeader.Crumb("Impor") })" />

@@ -4,7 +4,7 @@
 @inject IWorkOrdersApi Wos
 @inject IWorkerApi Workers
 @inject ApiErrorHandler Errors
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <PageTitle>Input Output · GMS</PageTitle>
 <UnsavedChangesGuard HasChanges="_dirty" />
@@ -43,7 +43,7 @@ else if (_ctx is not null)
 
     <div class="gms-inline">
         <LookupSelect Label="Tambah pekerja" Items="_available" @bind-Value="_addWorker" ShowCode="true" Placeholder="Cari kode/nama…" />
-        <FluentButton Appearance="Appearance.Neutral" Disabled="@(_addWorker is null || _ctx.BlockedReason is not null)" OnClick="AddWorker">Tambah pekerja</FluentButton>
+        <AntDesign.Button Type="@AntDesign.ButtonType.Default" Disabled="@(_addWorker is null || _ctx.BlockedReason is not null)" OnClick="AddWorker">Tambah pekerja</AntDesign.Button>
     </div>
 
     @if (_rows.Count == 0)
@@ -56,13 +56,13 @@ else if (_ctx is not null)
         <ul class="gms-chips" aria-label="Pekerja pada tabel">
             @foreach (var row in _rows)
             {
-                <li class="gms-chipbtn">@row.Label <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Hapus {row.Label}")" OnClick="() => RemoveWorker(row)">✕</FluentButton></li>
+                <li class="gms-chipbtn">@row.Label <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Hapus {row.Label}")" OnClick="() => RemoveWorker(row)">✕</AntDesign.Button></li>
             }
         </ul>
         <div class="gms-formactions">
             @if (_dirty) { <span class="gms-note" role="status">● Belum disimpan</span> }
             <span class="gms-note">@_rows.Count pekerja · @IdFormat.Qty(_values.All.Sum(v => v.Qty)) pcs</span>
-            <FluentButton Appearance="Appearance.Accent" Disabled="@(_saving || _ctx.BlockedReason is not null)" OnClick="() => SaveAsync(false)">Simpan</FluentButton>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Primary" Disabled="@(_saving || _ctx.BlockedReason is not null)" OnClick="() => SaveAsync(false)">Simpan</AntDesign.Button>
         </div>
     }
 }

@@ -4,7 +4,7 @@
 @inject IWorkOrdersApi Wos
 @inject IWorkerApi Workers
 @inject ApiErrorHandler Errors
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <PageTitle>Penyesuaian Output · GMS</PageTitle>
 <UnsavedChangesGuard HasChanges="_dirty" />
@@ -34,7 +34,7 @@
     }
 
     <div class="gms-formactions">
-        <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="_saving">Simpan penyesuaian</FluentButton>
+        <AntDesign.Button Type="@AntDesign.ButtonType.Primary" HtmlType="submit" Disabled="_saving">Simpan penyesuaian</AntDesign.Button>
     </div>
 </form>
 

@@ -63,15 +63,15 @@
                         <td class="gms-rowactions">
                             @if (CanEdit)
                             {
-                                <AntDesign.Button Type="@AntDesign.ButtonType.Text" AriaLabel="@($"Ubah {Label(item)}")" OnClick="() => OnEdit.InvokeAsync(item)">Ubah</AntDesign.Button>
+                                <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Ubah {Label(item)}")" OnClick="() => OnEdit.InvokeAsync(item)">Ubah</AntDesign.Button>
                             }
                             @if (RowLink is not null)
                             {
-                                <a class="ant-btn ant-btn-text" href="@RowLink(item)" aria-label="@($"Buka {Label(item)}")">Buka</a>
+                                <a class="ant-btn ant-btn-link" href="@RowLink(item)" aria-label="@($"Buka {Label(item)}")">Buka</a>
                             }
                             @if (CanDeactivate)
                             {
-                                <AntDesign.Button Type="@AntDesign.ButtonType.Text" AriaLabel="@($"{(active ? "Nonaktifkan" : "Aktifkan")} {Label(item)}")"
+                                <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"{(active ? "Nonaktifkan" : "Aktifkan")} {Label(item)}")"
                                               OnClick="() => _target = item">@(active ? "Nonaktifkan" : "Aktifkan")</AntDesign.Button>
                             }
                         </td>

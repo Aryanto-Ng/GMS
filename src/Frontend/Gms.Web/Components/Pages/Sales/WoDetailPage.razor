@@ -3,7 +3,7 @@
 @inject IWorkOrdersApi Wos
 @inject ApiErrorHandler Errors
 @inject AuthenticationStateProvider Auth
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <PageTitle>@(_wo?.Code ?? "WO") · GMS</PageTitle>
 
@@ -22,14 +22,14 @@ else
     <PageHeader Title="@_wo.Code" Subtitle="@($"{_wo.PoCode} · {_wo.CustomerName} · {_wo.FgCode}")" Breadcrumbs="@(new[] { new PageHeader.Crumb("Work Order", "/work-orders"), new PageHeader.Crumb(_wo.Code) })">
         <Chips><StatusTag Value="@_wo.Status" /></Chips>
         <Actions>
-            @if (Can(WoActions.Edit, Permissions.WorkOrder.Edit)) { <FluentAnchor Href="@($"/work-orders/{_wo.Id}/edit")" Appearance="Appearance.Neutral">Ubah</FluentAnchor> }
-            @if (Can(WoActions.EditQuantities, Permissions.WorkOrder.Edit)) { <FluentButton Appearance="Appearance.Neutral" OnClick="OpenQty">Ubah Qty</FluentButton> }
-            @if (Can(WoActions.Release, Permissions.WorkOrder.Release)) { <FluentButton Appearance="Appearance.Accent" OnClick="() => OpenAsync(Act.Release)">Rilis</FluentButton> }
-            @if (Can(WoActions.Complete, Permissions.WorkOrder.Complete)) { <FluentButton Appearance="Appearance.Accent" OnClick="() => OpenAsync(Act.Complete)">Tandai Selesai</FluentButton> }
-            @if (Can(WoActions.Resume, Permissions.WorkOrder.Complete)) { <FluentButton Appearance="Appearance.Neutral" OnClick="() => OpenAsync(Act.Resume)">Buka Kembali</FluentButton> }
-            @if (Can(WoActions.Close, Permissions.WorkOrder.Close)) { <FluentButton Appearance="Appearance.Accent" OnClick="() => OpenAsync(Act.Close)">Close</FluentButton> }
-            @if (Can(WoActions.Reopen, Permissions.WorkOrder.Reopen)) { <FluentButton Appearance="Appearance.Neutral" OnClick="() => OpenAsync(Act.Reopen)">Reopen</FluentButton> }
-            @if (Can(WoActions.Cancel, Permissions.WorkOrder.Cancel)) { <FluentButton Appearance="Appearance.Neutral" OnClick="() => OpenAsync(Act.Cancel)">Batalkan</FluentButton> }
+            @if (Can(WoActions.Edit, Permissions.WorkOrder.Edit)) { <a class="ant-btn ant-btn-default" href="@($"/work-orders/{_wo.Id}/edit")">Ubah</a> }
+            @if (Can(WoActions.EditQuantities, Permissions.WorkOrder.Edit)) { <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="OpenQty">Ubah Qty</AntDesign.Button> }
+            @if (Can(WoActions.Release, Permissions.WorkOrder.Release)) { <AntDesign.Button Type="@AntDesign.ButtonType.Primary" OnClick="() => OpenAsync(Act.Release)">Rilis</AntDesign.Button> }
+            @if (Can(WoActions.Complete, Permissions.WorkOrder.Complete)) { <AntDesign.Button Type="@AntDesign.ButtonType.Primary" OnClick="() => OpenAsync(Act.Complete)">Tandai Selesai</AntDesign.Button> }
+            @if (Can(WoActions.Resume, Permissions.WorkOrder.Complete)) { <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => OpenAsync(Act.Resume)">Buka Kembali</AntDesign.Button> }
+            @if (Can(WoActions.Close, Permissions.WorkOrder.Close)) { <AntDesign.Button Type="@AntDesign.ButtonType.Primary" OnClick="() => OpenAsync(Act.Close)">Close</AntDesign.Button> }
+            @if (Can(WoActions.Reopen, Permissions.WorkOrder.Reopen)) { <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => OpenAsync(Act.Reopen)">Reopen</AntDesign.Button> }
+            @if (Can(WoActions.Cancel, Permissions.WorkOrder.Cancel)) { <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => OpenAsync(Act.Cancel)">Batalkan</AntDesign.Button> }
         </Actions>
     </PageHeader>
 
@@ -118,7 +118,7 @@ else
             <ul class="gms-readiness">
                 @foreach (var c in _release.Checks)
                 {
-                    <li class="@(c.Ok ? "gms-ok" : "gms-bad")"><FluentIcon Value="@(c.Ok ? (Icon)new Icons.Regular.Size16.CheckmarkCircle() : new Icons.Regular.Size16.DismissCircle())" Color="Color.Neutral" />
+                    <li class="@(c.Ok ? "gms-ok" : "gms-bad")"><AntDesign.Icon Type="@(c.Ok ? "check-circle" : "close-circle")" />
                         <span class="gms-sr-only">@(c.Ok ? "Terpenuhi:" : "Belum terpenuhi:")</span> @c.Message
                         @if (!c.Ok && !string.IsNullOrEmpty(c.FixTarget)) { <a href="@c.FixTarget">Perbaiki ▸</a> }</li>
                 }
@@ -141,7 +141,7 @@ else
             <p>Dalam Produksi menjadi 0. Sisa kebutuhan @IdFormat.Qty(_close.ReturnedToPoPlanQty) pcs kembali ke Sisa Rencana PO.</p>
             @if (_close.UnhandedCells.Count > 0)
             {
-                <p class="gms-warn" role="status"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" /> Output belum diserahterimakan:
+                <p class="gms-warn" role="status"><AntDesign.Icon Type="warning" /> Output belum diserahterimakan:
                     @string.Join(", ", _close.UnhandedCells.Select(c => $"{c.ColorSize.ColorName} {c.ColorSize.SizeCode} {IdFormat.Qty(c.Qty)}"))</p>
             }
         }

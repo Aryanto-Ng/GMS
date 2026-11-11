@@ -6,7 +6,7 @@
 @inject IUsersApi Users
 @inject IRolesApi Roles
 @inject ApiErrorHandler Errors
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 @inject AuthenticationStateProvider Auth
 
 <PageTitle>Pengguna · GMS</PageTitle>
@@ -15,7 +15,7 @@
     <Actions>
         @if (_can(Permissions.AccessManagement.User.Create))
         {
-            <FluentAnchor Href="/admin/users/new" Appearance="Appearance.Accent">Tambah Pengguna</FluentAnchor>
+            <a class="ant-btn ant-btn-primary" href="/admin/users/new">Tambah Pengguna</a>
         }
     </Actions>
 </PageHeader>
@@ -68,19 +68,19 @@
                         <td class="gms-rowactions">
                             @if (_can(Permissions.AccessManagement.User.Edit))
                             {
-                                <FluentAnchor Href="@($"/admin/users/{user.Id}")" Appearance="Appearance.Lightweight" aria-label="@($"Ubah {user.UserName}")">Ubah</FluentAnchor>
+                                <a class="ant-btn ant-btn-link" href="@($"/admin/users/{user.Id}")" aria-label="@($"Ubah {user.UserName}")">Ubah</a>
                             }
                             @if (user.Status == UserStatus.Locked && _can(Permissions.AccessManagement.User.Unlock))
                             {
-                                <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Buka kunci {user.UserName}")" OnClick="() => Ask(Pending.Unlock, user)">Buka kunci</FluentButton>
+                                <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Buka kunci {user.UserName}")" OnClick="() => Ask(Pending.Unlock, user)">Buka kunci</AntDesign.Button>
                             }
                             @if (_can(Permissions.AccessManagement.User.Deactivate) && user.Status != UserStatus.Inactive)
                             {
-                                <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Nonaktifkan {user.UserName}")" OnClick="() => Ask(Pending.Deactivate, user)">Nonaktifkan</FluentButton>
+                                <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Nonaktifkan {user.UserName}")" OnClick="() => Ask(Pending.Deactivate, user)">Nonaktifkan</AntDesign.Button>
                             }
                             @if (_can(Permissions.AccessManagement.User.Deactivate) && user.Status == UserStatus.Inactive)
                             {
-                                <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Aktifkan {user.UserName}")" OnClick="() => Ask(Pending.Activate, user)">Aktifkan</FluentButton>
+                                <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Aktifkan {user.UserName}")" OnClick="() => Ask(Pending.Activate, user)">Aktifkan</AntDesign.Button>
                             }
                         </td>
                     </tr>

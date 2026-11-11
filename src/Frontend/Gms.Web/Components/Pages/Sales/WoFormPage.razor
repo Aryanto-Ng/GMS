@@ -5,7 +5,7 @@
 @inject IPurchaseOrdersApi Pos
 @inject ApiErrorHandler Errors
 @inject NavigationManager Nav
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 @inject AuthenticationStateProvider Auth
 
 <PageTitle>@(IsNew ? "Buat WO" : "Ubah WO Draft") · GMS</PageTitle>
@@ -52,7 +52,7 @@ else
                     <ul class="gms-readiness">
                         @foreach (var item in _fg.Readiness.Where(i => !i.Ok))
                         {
-                            <li class="gms-bad"><FluentIcon Value="@(new Icons.Regular.Size16.DismissCircle())" Color="Color.Neutral" /> @item.Message</li>
+                            <li class="gms-bad"><AntDesign.Icon Type="close-circle" /> @item.Message</li>
                         }
                     </ul>
                     <p><a href="/master/fgs/@_fg.FgId">Buka FG di Master Data</a> · Draft tetap dapat disimpan.</p>
@@ -76,8 +76,8 @@ else
             </section>
 
             <div class="gms-formactions">
-                <FluentAnchor Href="@(IsNew ? "/work-orders" : $"/work-orders/{Id}")" Appearance="Appearance.Neutral">Batal</FluentAnchor>
-                <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="_saving">Simpan Draft</FluentButton>
+                <a class="ant-btn ant-btn-default" href="@(IsNew ? "/work-orders" : $"/work-orders/{Id}")">Batal</a>
+                <AntDesign.Button Type="@AntDesign.ButtonType.Primary" HtmlType="submit" Disabled="_saving">Simpan Draft</AntDesign.Button>
             </div>
         }
     </form>

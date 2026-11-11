@@ -1,6 +1,6 @@
 @inject IFgApi Fgs
 @inject ApiErrorHandler Errors
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 @* Salin routing dan tarif dari FG lain (MasterData-UI.md 2.6): 1 Pilih sumber → 2 Pratinjau → 3 Konfirmasi. *@
 <ConfirmDialog Open="Open" OpenChanged="OnOpenChanged" ShowReason="false" Danger="false" ConfirmText="Salin dan simpan"
@@ -21,7 +21,7 @@
     {
         <LookupSelect Label="FG sumber" Items="_sources" @bind-Value="_source" Required="true" ShowCode="true" />
         <div class="gms-formactions">
-            <FluentButton Appearance="Appearance.Accent" Disabled="@(_source is null || _busy)" OnClick="PreviewAsync">Lanjut</FluentButton>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Primary" Disabled="@(_source is null || _busy)" OnClick="PreviewAsync">Lanjut</AntDesign.Button>
         </div>
     }
     else if (_step == 2 && _preview is not null)
@@ -33,13 +33,13 @@
         <p>@_preview.Cells.Count(c => c.Rate is not null) sel tarif akan disalin.</p>
         @if (_preview.SkippedSizeCodes.Count > 0)
         {
-            <p class="gms-warn" role="status"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" />
+            <p class="gms-warn" role="status"><AntDesign.Icon Type="warning" />
                 Dilewati karena Size tidak berlaku pada FG ini: @string.Join(", ", _preview.SkippedSizeCodes).</p>
         }
 
         <div class="gms-formactions">
-            <FluentButton Appearance="Appearance.Neutral" OnClick="() => _step = 1">Kembali</FluentButton>
-            <FluentButton Appearance="Appearance.Accent" OnClick="() => _step = 3">Lanjut</FluentButton>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _step = 1">Kembali</AntDesign.Button>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Primary" OnClick="() => _step = 3">Lanjut</AntDesign.Button>
         </div>
     }
     else if (_step == 3 && _preview is not null)
@@ -57,7 +57,7 @@
         }
 
         <div class="gms-formactions">
-            <FluentButton Appearance="Appearance.Neutral" OnClick="() => _step = 2">Kembali</FluentButton>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _step = 2">Kembali</AntDesign.Button>
         </div>
     }
 </ConfirmDialog>

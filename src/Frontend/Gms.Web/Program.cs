@@ -17,7 +17,6 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-using Microsoft.FluentUI.AspNetCore.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -26,8 +25,8 @@ services.Configure<ApiOptions>(builder.Configuration.GetSection(ApiOptions.Secti
 var api = builder.Configuration.GetSection(ApiOptions.SectionName).Get<ApiOptions>() ?? new ApiOptions();
 
 services.AddRazorComponents().AddInteractiveServerComponents();
-services.AddFluentUIComponents();
 services.AddAntDesign();
+services.AddScoped<Gms.Web.Services.IGmsToast, Gms.Web.Services.GmsToast>();
 services.AddHttpContextAccessor();
 
 // Produksi: kunci Data Protection (enkripsi cookie gms.auth) disimpan di volume agar login bertahan setelah restart/deploy.

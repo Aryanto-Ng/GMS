@@ -175,7 +175,7 @@ public sealed class PayrollPageTests : WebTestBase
 
     private static IElement Dialog<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent => cut.FindAll("dialog").Last(d => d.QuerySelector("h2") is not null);
 
-    private static IElement DialogConfirm<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent => Dialog(cut).QuerySelectorAll("fluent-button, button.ant-btn").Last();
+    private static IElement DialogConfirm<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent => Dialog(cut).QuerySelectorAll("button.ant-btn").Last();
 
     private async Task<PayrollPeriodDto> SeedOpenPeriodAsync()
     {
@@ -189,10 +189,10 @@ public sealed class PayrollPageTests : WebTestBase
         var cut = Render<PayrollPeriodsPage>();
         cut.WaitForAssertion(() => Assert.Contains("Belum ada periode gaji", cut.Markup));
 
-        cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn").Single(b => b.TextContent == "Buat Periode").Click();
+        cut.FindAll(".gms-pageheader-actions button.ant-btn").Single(b => b.TextContent.Trim() == "Buat Periode").Click();
         Assert.True(DialogConfirm(cut).HasAttribute("disabled"));
         Dialog(cut).QuerySelectorAll("input[type=date]")[0].Input("2026-11-01");
-        Dialog(cut).QuerySelectorAll("fluent-button, button.ant-btn").Single(b => b.TextContent == "7 hari").Click();
+        Dialog(cut).QuerySelectorAll("button.ant-btn").Single(b => b.TextContent.Trim() == "7 hari").Click();
 
         Assert.Equal("2026-11-07", Dialog(cut).QuerySelectorAll("input[type=date]")[1].GetAttribute("value"));
         Assert.False(DialogConfirm(cut).HasAttribute("disabled"));
@@ -210,7 +210,7 @@ public sealed class PayrollPageTests : WebTestBase
         Assert.Contains("Belum final", cut.Find("tbody").TextContent);
         Assert.Contains("7.000 *", cut.Find("tbody").TextContent);
         Assert.Contains("BELUM FINAL", cut.Markup);
-        Assert.True(cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn").Single(b => b.TextContent == "Buat Periode").HasAttribute("disabled"));
+        Assert.True(cut.FindAll(".gms-pageheader-actions button.ant-btn").Single(b => b.TextContent.Trim() == "Buat Periode").HasAttribute("disabled"));
     }
 
     [Fact]
@@ -250,15 +250,15 @@ public sealed class PayrollPageTests : WebTestBase
         var cut = Render<PayrollPeriodDetailPage>(x => x.Add(y => y.Id, p.Id));
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("tbody tr")));
 
-        cut.FindAll("[role=tab]").Single(t => t.TextContent == "Rincian Harian").Click();
+        cut.FindAll("[role=tab]").Single(t => t.TextContent.Trim() == "Rincian Harian").Click();
         cut.WaitForAssertion(() => Assert.Contains("Cutting", cut.Find("tbody").TextContent));
-        cut.FindAll("[role=tab]").Single(t => t.TextContent == "Matriks Harian").Click();
+        cut.FindAll("[role=tab]").Single(t => t.TextContent.Trim() == "Matriks Harian").Click();
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".gms-daymatrix")));
         Assert.Equal(7, cut.FindAll(".gms-daymatrix thead th").Count - 2);
         Assert.Contains("20", cut.Find(".gms-daymatrix tbody").TextContent);
         cut.FindAll("input[name=matrix-mode]")[1].Change(true);
         Assert.Contains("7.000", cut.Find(".gms-daymatrix tbody").TextContent);
-        cut.FindAll("[role=tab]").Single(t => t.TextContent == "Penyesuaian").Click();
+        cut.FindAll("[role=tab]").Single(t => t.TextContent.Trim() == "Penyesuaian").Click();
         cut.WaitForAssertion(() => Assert.Contains("Tidak ada penyesuaian pada periode ini", cut.Markup));
     }
 
@@ -269,7 +269,7 @@ public sealed class PayrollPageTests : WebTestBase
         var cut = Render<PayrollPeriodDetailPage>(x => x.Add(y => y.Id, p.Id));
         cut.WaitForAssertion(() => Assert.Contains("Tutup Periode", cut.Find(".gms-pageheader-actions").TextContent));
 
-        cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn").Single(b => b.TextContent == "Tutup Periode").Click();
+        cut.FindAll(".gms-pageheader-actions button.ant-btn").Single(b => b.TextContent.Trim() == "Tutup Periode").Click();
         cut.WaitForAssertion(() => Assert.Contains("Penutupan PERMANEN", Dialog(cut).TextContent));
         Assert.Contains("Rp 7.000", Dialog(cut).TextContent);
         Assert.True(DialogConfirm(cut).HasAttribute("disabled"));
@@ -280,7 +280,7 @@ public sealed class PayrollPageTests : WebTestBase
         DialogConfirm(cut).Click();
 
         cut.WaitForAssertion(() => Assert.Contains("Periode ditutup pada", cut.Markup));
-        Assert.DoesNotContain(cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn"), b => b.TextContent is "Tutup Periode" or "Ubah");
+        Assert.DoesNotContain(cut.FindAll(".gms-pageheader-actions button.ant-btn"), b => b.TextContent is "Tutup Periode" or "Ubah");
         Assert.Equal("Closed", cut.Find(".gms-pageheader .gms-tag").TextContent.Trim());
     }
 
@@ -291,9 +291,9 @@ public sealed class PayrollPageTests : WebTestBase
         var cut = Render<PayrollPeriodDetailPage>(x => x.Add(y => y.Id, p.Id));
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("tbody tr")));
 
-        cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn").Single(b => b.TextContent == "CSV Ringkasan").Click();
+        cut.FindAll(".gms-pageheader-actions button.ant-btn").Single(b => b.TextContent.Trim() == "CSV Ringkasan").Click();
         cut.WaitForAssertion(() => Assert.Contains(JSInterop.Invocations, i => i.Identifier == "save" && ((string)i.Arguments[0]!).EndsWith("-ringkasan-BELUM-FINAL.csv")));
-        cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn").Single(b => b.TextContent == "Slip Gaji").Click();
+        cut.FindAll(".gms-pageheader-actions button.ant-btn").Single(b => b.TextContent.Trim() == "Slip Gaji").Click();
         DialogConfirm(cut).Click();
 
         cut.WaitForAssertion(() => Assert.Contains(JSInterop.Invocations, i => i.Identifier == "save" && ((string)i.Arguments[0]!).StartsWith("slip-")));
@@ -308,7 +308,7 @@ public sealed class PayrollPageTests : WebTestBase
         var cut = Render<PayrollPeriodDetailPage>(x => x.Add(y => y.Id, p.Id));
 
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("tbody tr")));
-        Assert.Equal(["Segarkan"], cut.FindAll(".gms-pageheader-actions fluent-button, .gms-pageheader-actions button.ant-btn").Select(b => b.TextContent));
+        Assert.Equal(["Segarkan"], cut.FindAll(".gms-pageheader-actions button.ant-btn").Select(b => b.TextContent.Trim()));
     }
 
     [Fact]

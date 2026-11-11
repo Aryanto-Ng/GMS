@@ -1,6 +1,6 @@
 @inject IFgApi Fgs
 @inject ApiErrorHandler Errors
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <UnsavedChangesGuard HasChanges="_dirty" />
 
@@ -8,8 +8,8 @@
     <EmptyContent>
         <EmptyState Title="Tarif muncul setelah routing dan Size Berlaku diisi"
                     Description="Susun Size Berlaku dan routing FG ini lebih dulu.">
-            <FluentButton Appearance="Appearance.Neutral" OnClick="() => OnGoto.InvokeAsync(FgTab.Sizes)">Ke Size Berlaku</FluentButton>
-            <FluentButton Appearance="Appearance.Neutral" OnClick="() => OnGoto.InvokeAsync(FgTab.Routing)">Ke Routing</FluentButton>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => OnGoto.InvokeAsync(FgTab.Sizes)">Ke Size Berlaku</AntDesign.Button>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => OnGoto.InvokeAsync(FgTab.Routing)">Ke Routing</AntDesign.Button>
         </EmptyState>
     </EmptyContent>
     <ChildContent Context="grid">
@@ -27,7 +27,7 @@
             <h2 id="tariff-title">Tarif per unit (Rp) — Proses Internal × Size</h2>
             @if (grid.InternalSteps.Count == 0)
             {
-                <p class="gms-note"><FluentIcon Value="@(new Icons.Regular.Size16.Info())" Color="Color.Neutral" /> Tidak ada proses Internal pada routing; tidak ada tarif yang perlu diisi.</p>
+                <p class="gms-note"><AntDesign.Icon Type="info-circle" /> Tidak ada proses Internal pada routing; tidak ada tarif yang perlu diisi.</p>
             }
             else
             {
@@ -58,13 +58,13 @@
                                                    value="@TextOf(key)" @onchange="e => SetCell(key, e.Value?.ToString())" />
                                             @if (error is not null)
                                             {
-                                                <div class="gms-cellmsg error" id="@msgId"><FluentIcon Value="@(new Icons.Regular.Size12.DismissCircle())" Color="Color.Neutral" /> @error</div>
+                                                <div class="gms-cellmsg error" id="@msgId"><AntDesign.Icon Type="close-circle" /> @error</div>
                                             }
                                         </td>
                                     }
                                     @if (CanEdit)
                                     {
-                                        <td><FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Isi semua {step.ProcessName}")" OnClick="() => FillRow(grid, step)">Isi semua ▸</FluentButton></td>
+                                        <td><AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Isi semua {step.ProcessName}")" OnClick="() => FillRow(grid, step)">Isi semua ▸</AntDesign.Button></td>
                                     }
                                 </tr>
                             }
@@ -82,7 +82,7 @@
                 var missing = TariffLogic.Missing(grid, (p, s) => TextOf((p, s)));
                 @if (missing.Count > 0)
                 {
-                    <p class="gms-warn" role="status"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" />
+                    <p class="gms-warn" role="status"><AntDesign.Icon Type="warning" />
                         @missing.Count sel belum diisi (@string.Join(", ", missing.Take(3).Select(m => $"{m.Step.ProcessName} · {m.Size.Code}"))@(missing.Count > 3 ? ", …" : string.Empty))</p>
                 }
 
@@ -90,8 +90,8 @@
                 {
                     <div class="gms-formactions">
                         @if (_dirty) { <span class="gms-note" role="status">● Ada perubahan belum disimpan</span> }
-                        <FluentButton Appearance="Appearance.Neutral" Disabled="@(!_dirty)" OnClick="() => _reload++">Batal</FluentButton>
-                        <FluentButton Appearance="Appearance.Accent" Disabled="@(!_dirty || _saving)" OnClick="() => SaveAsync(grid)">Simpan tarif</FluentButton>
+                        <AntDesign.Button Type="@AntDesign.ButtonType.Default" Disabled="@(!_dirty)" OnClick="() => _reload++">Batal</AntDesign.Button>
+                        <AntDesign.Button Type="@AntDesign.ButtonType.Primary" Disabled="@(!_dirty || _saving)" OnClick="() => SaveAsync(grid)">Simpan tarif</AntDesign.Button>
                     </div>
                 }
             }

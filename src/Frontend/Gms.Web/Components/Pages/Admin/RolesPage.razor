@@ -1,7 +1,7 @@
 @page "/admin/roles"
 @attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.AccessManagement.Role.View)]
 @inject IRolesApi Roles
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 @inject AuthenticationStateProvider Auth
 
 <PageTitle>Role &amp; Hak Akses · GMS</PageTitle>
@@ -10,7 +10,7 @@
     <Actions>
         @if (_user.HasPermission(Permissions.AccessManagement.Role.Create))
         {
-            <FluentAnchor Href="/admin/roles/new" Appearance="Appearance.Accent">Tambah Role</FluentAnchor>
+            <a class="ant-btn ant-btn-primary" href="/admin/roles/new">Tambah Role</a>
         }
     </Actions>
 </PageHeader>
@@ -31,18 +31,17 @@
                     <tr>
                         <th scope="row">
                             <a href="/admin/roles/@role.Id">@role.Name</a>
-                            @if (role.IsSystem) { <FluentIcon Value="@(new Icons.Regular.Size16.LockClosed())" Color="Color.Neutral" Title="Role sistem" /> <span class="gms-sr-only">(role sistem)</span> }
+                            @if (role.IsSystem) { <span title="Role sistem"><AntDesign.Icon Type="lock" /></span> <span class="gms-sr-only">(role sistem)</span> }
                         </th>
                         <td>@role.Description</td>
                         <td class="num">@role.UserCount</td>
                         <td class="num">@role.PermissionCount</td>
                         <td class="gms-rowactions">
-                            <FluentAnchor Href="@($"/admin/roles/{role.Id}")" Appearance="Appearance.Lightweight" aria-label="@($"{(role.IsSystem ? "Lihat" : "Ubah")} {role.Name}")">@(role.IsSystem ? "Lihat" : "Ubah")</FluentAnchor>
+                            <a class="ant-btn ant-btn-link" href="@($"/admin/roles/{role.Id}")" aria-label="@($"{(role.IsSystem ? "Lihat" : "Ubah")} {role.Name}")">@(role.IsSystem ? "Lihat" : "Ubah")</a>
                             @if (_user.HasPermission(Permissions.AccessManagement.Role.Delete) && !role.IsSystem)
                             {
                                 var inUse = role.UserCount > 0;
-                                <FluentButton Appearance="Appearance.Lightweight" Disabled="inUse" aria-label="@($"Hapus {role.Name}")" Title="@(inUse ? $"Dipakai oleh {role.UserCount} pengguna" : null)"
-                                              OnClick="() => _deleting = role">Hapus</FluentButton>
+                                <span title="@(inUse ? $"Dipakai oleh {role.UserCount} pengguna" : null)"><AntDesign.Button Type="@AntDesign.ButtonType.Link" Disabled="inUse" AriaLabel="@($"Hapus {role.Name}")" OnClick="() => _deleting = role">Hapus</AntDesign.Button></span>
                             }
                         </td>
                     </tr>

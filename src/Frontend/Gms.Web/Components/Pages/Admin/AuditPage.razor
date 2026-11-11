@@ -25,7 +25,7 @@
             }
         </select>
     </div>
-    <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent">Terapkan</FluentButton>
+    <AntDesign.Button Type="@AntDesign.ButtonType.Primary" HtmlType="submit">Terapkan</AntDesign.Button>
 </form>
 
 @if (_rangeError is not null)
@@ -58,8 +58,7 @@ else
                             <td>
                                 @if (hasDetail)
                                 {
-                                    <FluentButton Appearance="Appearance.Lightweight" aria-expanded="@(expanded ? "true" : "false")" aria-controls="@($"audit-{item.Id}")"
-                                                  aria-label="@($"Detail {AuditLabels.For(item.EventType)}")" OnClick="() => Toggle(item.Id)">@(expanded ? "Tutup" : "Detail")</FluentButton>
+                                    <button type="button" class="ant-btn ant-btn-link" aria-expanded="@(expanded ? "true" : "false")" aria-controls="@($"audit-{item.Id}")" aria-label="@($"Detail {AuditLabels.For(item.EventType)}")" @onclick="() => Toggle(item.Id)"><span>@(expanded ? "Tutup" : "Detail")</span></button>
                                 }
                             </td>
                         </tr>

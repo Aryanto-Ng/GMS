@@ -225,7 +225,7 @@ public sealed class MasterPageTests : WebTestBase
         SignIn(AllMaster);
     }
 
-    private static IElement DialogConfirm(IRenderedComponent<Microsoft.AspNetCore.Components.IComponent> cut) => cut.FindAll("dialog fluent-button, dialog button.ant-btn").Last();
+    private static IElement DialogConfirm(IRenderedComponent<Microsoft.AspNetCore.Components.IComponent> cut) => cut.FindAll("dialog button.ant-btn").Last();
 
     private static void WaitRows<T>(IRenderedComponent<T> cut, int count) where T : Microsoft.AspNetCore.Components.IComponent =>
         cut.WaitForAssertion(() => Assert.Equal(count, cut.FindAll("tbody tr").Count));
@@ -263,7 +263,7 @@ public sealed class MasterPageTests : WebTestBase
 
         cut.Find("input[type=search]").Change("zzz");
         cut.WaitForAssertion(() => Assert.Contains("Tidak ada hasil", cut.Markup));
-        cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent.Contains("Reset filter")).Click();
+        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Reset filter")).Click();
 
         WaitRows(cut, 3);
     }
@@ -274,7 +274,7 @@ public sealed class MasterPageTests : WebTestBase
         var cut = Render<UomsPage>();
         WaitRows(cut, 3);
 
-        cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent.Contains("Tambah satuan")).Click();
+        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Tambah satuan")).Click();
         Assert.Contains("Tambah satuan", cut.Find("dialog h2").TextContent);
         Assert.True(DialogConfirm(cut).HasAttribute("disabled"));
         cut.FindAll("dialog input")[0].Input("DUS");
@@ -291,7 +291,7 @@ public sealed class MasterPageTests : WebTestBase
     {
         var cut = Render<UomsPage>();
         WaitRows(cut, 3);
-        cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent.Contains("Tambah satuan")).Click();
+        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Tambah satuan")).Click();
         cut.FindAll("dialog input")[0].Input("PCS");
         cut.FindAll("dialog input")[1].Input("Duplikat");
 
@@ -307,7 +307,7 @@ public sealed class MasterPageTests : WebTestBase
         var cut = Render<UomsPage>();
         WaitRows(cut, 3);
 
-        cut.FindAll("tbody fluent-button, tbody button.ant-btn").First(b => b.GetAttribute("aria-label") == "Ubah Meter").Click();
+        cut.FindAll("tbody button.ant-btn").First(b => b.GetAttribute("aria-label") == "Ubah Meter").Click();
         Assert.Equal("MTR", cut.FindAll("dialog input")[0].GetAttribute("value"));
         cut.FindAll("dialog input")[1].Input("Meter Panjang");
         DialogConfirm(cut).Click();
@@ -321,7 +321,7 @@ public sealed class MasterPageTests : WebTestBase
         var cut = Render<UomsPage>();
         WaitRows(cut, 3);
 
-        cut.FindAll("tbody fluent-button, tbody button.ant-btn").First(b => b.GetAttribute("aria-label") == "Nonaktifkan Kilogram").Click();
+        cut.FindAll("tbody button.ant-btn").First(b => b.GetAttribute("aria-label") == "Nonaktifkan Kilogram").Click();
         Assert.Contains("Nonaktifkan Kilogram?", cut.Find("dialog h2").TextContent);
         Assert.Contains("tidak dihapus", cut.Find("dialog").TextContent);
         DialogConfirm(cut).Click();
@@ -335,7 +335,7 @@ public sealed class MasterPageTests : WebTestBase
         var cut = Render<ProcessesPage>();
         WaitRows(cut, 4);
 
-        cut.FindAll("tbody fluent-button, tbody button.ant-btn").First(b => b.GetAttribute("aria-label") == "Nonaktifkan Sewing").Click();
+        cut.FindAll("tbody button.ant-btn").First(b => b.GetAttribute("aria-label") == "Nonaktifkan Sewing").Click();
         DialogConfirm(cut).Click();
 
         cut.WaitForAssertion(() => Assert.Contains("masih ada di routing FG aktif", cut.Find("dialog").TextContent));
@@ -351,7 +351,7 @@ public sealed class MasterPageTests : WebTestBase
 
         WaitRows(cut, 3);
         Assert.DoesNotContain("Tambah satuan", cut.Markup);
-        Assert.Empty(cut.FindAll("tbody fluent-button, tbody button.ant-btn"));
+        Assert.Empty(cut.FindAll("tbody button.ant-btn"));
     }
 
     [Fact]
@@ -362,7 +362,7 @@ public sealed class MasterPageTests : WebTestBase
         var cut = Render<MaterialsPage>();
         WaitRows(cut, 2);
 
-        cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent.Contains("Tambah material")).Click();
+        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Tambah material")).Click();
         var selects = cut.FindAll("dialog select");
         Assert.DoesNotContain("Yard", cut.Find("dialog").TextContent); // satuan nonaktif tidak ditawarkan
         cut.FindAll("dialog input")[0].Input("BTN-1");
@@ -384,7 +384,7 @@ public sealed class MasterPageTests : WebTestBase
 
         Assert.Contains("#1F2A5A", cut.Find("tbody").TextContent);
         Assert.NotEmpty(cut.FindAll(".gms-swatch"));
-        cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent.Contains("Tambah color")).Click();
+        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Tambah color")).Click();
         cut.FindAll("dialog input")[2].Input("#ff0000");
         Assert.Contains("#FF0000", cut.FindAll("dialog").Last().TextContent);
     }
@@ -394,13 +394,13 @@ public sealed class MasterPageTests : WebTestBase
     {
         var customers = Render<CustomersPage>();
         WaitRows(customers, 2);
-        customers.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent.Contains("Tambah customer")).Click();
+        customers.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Tambah customer")).Click();
         Assert.Contains("Otomatis saat disimpan", customers.FindAll("dialog").Last().TextContent);
 
         var workers = Render<WorkersPage>();
         WaitRows(workers, 2);
         Assert.Contains("05 Feb 2024", workers.Markup);
-        workers.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent.Contains("Tambah pekerja")).Click();
+        workers.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Tambah pekerja")).Click();
         Assert.Contains("Otomatis saat disimpan", workers.FindAll("dialog").Last().TextContent);
     }
 
@@ -410,7 +410,7 @@ public sealed class MasterPageTests : WebTestBase
         var cut = Render<ProcessesPage>();
         WaitRows(cut, 4);
 
-        cut.FindAll("tbody fluent-button, tbody button.ant-btn").First(b => b.GetAttribute("aria-label") == "Ubah Sewing").Click();
+        cut.FindAll("tbody button.ant-btn").First(b => b.GetAttribute("aria-label") == "Ubah Sewing").Click();
 
         Assert.True(cut.Find("#proc-type").HasAttribute("disabled"));
         Assert.Contains("terkunci", cut.Find("#proc-type-hint").TextContent);
@@ -423,7 +423,7 @@ public sealed class MasterPageTests : WebTestBase
         WaitRows(cut, 4);
 
         Assert.Equal(["S", "M", "L", "XL"], cut.FindAll("tbody th[scope=row]").Select(t => t.TextContent));
-        cut.FindAll("fluent-button, button.ant-btn").Single(b => b.TextContent.Contains("Tambah size")).Click();
+        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Tambah size")).Click();
         cut.FindAll("dialog input")[0].Input("XXL");
         cut.FindAll("dialog input")[1].Input("Double XL");
         cut.FindAll("dialog input")[2].Input("abc");

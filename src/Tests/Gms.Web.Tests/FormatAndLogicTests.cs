@@ -6,8 +6,6 @@ using Gms.Web.Infrastructure.Auth;
 using Gms.Web.Infrastructure.Format;
 using Gms.Web.Infrastructure.Http;
 using Gms.Shared.Security;
-using Microsoft.FluentUI.AspNetCore.Components;
-using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons;
 
 namespace Gms.Web.Tests;
 

@@ -6,7 +6,7 @@
 @inject ApiErrorHandler Errors
 @inject AuthenticationStateProvider Auth
 @inject IJSRuntime JS
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <PageTitle>@(IsNew ? "Tambah FG" : _fg?.Code ?? "FG") · GMS</PageTitle>
 
@@ -22,12 +22,12 @@
     <Actions>
         @if (_fg is not null && _user.HasPermission(Permissions.MasterData.Routing.Edit) && _user.HasPermission(Permissions.MasterData.Tarif.Edit))
         {
-            <FluentButton Appearance="Appearance.Neutral" OnClick="() => _copyOpen = true">Salin dari FG lain</FluentButton>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _copyOpen = true">Salin dari FG lain</AntDesign.Button>
         }
 
         @if (_fg is not null && _user.HasPermission(Permissions.MasterData.FG.Deactivate))
         {
-            <FluentButton Appearance="Appearance.Neutral" OnClick="() => _toggleOpen = true">@(_fg.IsActive ? "Nonaktifkan" : "Aktifkan")</FluentButton>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _toggleOpen = true">@(_fg.IsActive ? "Nonaktifkan" : "Aktifkan")</AntDesign.Button>
         }
     </Actions>
 </PageHeader>

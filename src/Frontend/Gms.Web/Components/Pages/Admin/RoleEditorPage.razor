@@ -4,7 +4,7 @@
 @inject IRolesApi Roles
 @inject ApiErrorHandler Errors
 @inject NavigationManager Nav
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 @inject AuthenticationStateProvider Auth
 
 <PageTitle>@(IsNew ? "Tambah Role" : _detail?.Name ?? "Role") · GMS</PageTitle>
@@ -31,7 +31,7 @@ else
     @if (_readOnly)
     {
         <div class="gms-banner info" role="status">
-            <FluentIcon Value="@(new Icons.Regular.Size20.LockClosed())" Color="Color.Neutral" />
+            <AntDesign.Icon Type="lock" />
             <div class="gms-banner-body"><p>@(_detail?.IsSystem == true ? "Role sistem tidak dapat diubah." : "Anda hanya dapat melihat role ini.")</p></div>
         </div>
     }
@@ -81,11 +81,11 @@ else
                                 @group.Key
                                 @if (group.All(r => !r.Assignable))
                                 {
-                                    <span><FluentIcon Value="@(new Icons.Regular.Size16.LockClosed())" Color="Color.Neutral" /> Hanya Administrator (tidak dapat diberikan)</span>
+                                    <span><AntDesign.Icon Type="lock" /> Hanya Administrator (tidak dapat diberikan)</span>
                                 }
                                 else if (!_readOnly)
                                 {
-                                    <FluentButton Appearance="Appearance.Lightweight" aria-label="@($"Hanya baca untuk {group.Key}")" OnClick="() => ReadOnlyGroup(group)">Hanya baca</FluentButton>
+                                    <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Hanya baca untuk {group.Key}")" OnClick="() => ReadOnlyGroup(group)">Hanya baca</AntDesign.Button>
                                 }
                             </th>
                         </tr>
@@ -120,10 +120,10 @@ else
         </div>
 
         <div class="gms-formactions">
-            <FluentAnchor Href="/admin/roles" Appearance="Appearance.Neutral">@(_readOnly ? "Kembali" : "Batal")</FluentAnchor>
+            <a class="ant-btn ant-btn-default" href="/admin/roles">@(_readOnly ? "Kembali" : "Batal")</a>
             @if (!_readOnly)
             {
-                <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="@(_saving || _catalog.Count == 0)">Simpan</FluentButton>
+                <AntDesign.Button Type="@AntDesign.ButtonType.Primary" HtmlType="submit" Disabled="@(_saving || _catalog.Count == 0)">Simpan</AntDesign.Button>
             }
         </div>
     </form>

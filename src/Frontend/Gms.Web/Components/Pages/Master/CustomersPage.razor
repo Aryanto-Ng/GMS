@@ -1,7 +1,7 @@
 @page "/master/customers"
 @attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.MasterData.Customer.View)]
 @inject ICustomerApi Customers
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <PageTitle>Customer · GMS</PageTitle>
 

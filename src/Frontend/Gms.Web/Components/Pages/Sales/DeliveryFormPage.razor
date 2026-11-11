@@ -5,7 +5,7 @@
 @inject ApiErrorHandler Errors
 @inject AuthenticationStateProvider Auth
 @inject NavigationManager Nav
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <PageTitle>Buat Surat Jalan · GMS</PageTitle>
 <UnsavedChangesGuard HasChanges="_dirty && !_saved" />
@@ -57,11 +57,11 @@
                                     {
                                         <input type="text" inputmode="numeric" autocomplete="off" aria-label="@($"Qty kirim {l.FgCode} {l.ColorSize.ColorName} {l.ColorSize.SizeCode}")" aria-invalid="@(over ? "true" : null)"
                                                value="@_qty.GetValueOrDefault(key)" @oninput="e => { _qty[key] = e.Value?.ToString() ?? string.Empty; _dirty = true; }" />
-                                        @if (over) { <div class="gms-cellmsg error"><FluentIcon Value="@(new Icons.Regular.Size12.DismissCircle())" Color="Color.Neutral" /> Maks @IdFormat.Qty(l.MaxDeliver)</div> }
+                                        @if (over) { <div class="gms-cellmsg error"><AntDesign.Icon Type="close-circle" /> Maks @IdFormat.Qty(l.MaxDeliver)</div> }
                                     }
                                     else if (l.StockAvailable > 0)
                                     {
-                                        @if (_user.HasPermission(Permissions.CustomerPO.Alokasi.Allocate)) { <FluentButton Appearance="Appearance.Lightweight" OnClick="() => OpenAllocateAsync(l)">Alokasikan stok</FluentButton> }
+                                        @if (_user.HasPermission(Permissions.CustomerPO.Alokasi.Allocate)) { <AntDesign.Button Type="@AntDesign.ButtonType.Link" OnClick="() => OpenAllocateAsync(l)">Alokasikan stok</AntDesign.Button> }
                                         else { <span class="gms-muted">Minta Comfi mengalokasikan stok</span> }
                                     }
                                     else { <span class="gms-muted">Belum ada stok untuk dikirim. Produksi atau serah terima dahulu.</span> }
@@ -75,8 +75,8 @@
         </section>
 
         <div class="gms-formactions">
-            <FluentAnchor Href="/deliveries" Appearance="Appearance.Neutral">Batal</FluentAnchor>
-            <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="_saving">Simpan Surat Jalan</FluentButton>
+            <a class="ant-btn ant-btn-default" href="/deliveries">Batal</a>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Primary" HtmlType="submit" Disabled="_saving">Simpan Surat Jalan</AntDesign.Button>
         </div>
     }
 </form>

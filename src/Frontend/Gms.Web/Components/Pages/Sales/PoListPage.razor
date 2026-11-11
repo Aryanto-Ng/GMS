@@ -13,7 +13,7 @@
     <Actions>
         @if (_user.HasPermission(Permissions.CustomerPO.Create))
         {
-            <FluentAnchor Href="/purchase-orders/new" Appearance="Appearance.Accent">Buat PO</FluentAnchor>
+            <a class="ant-btn ant-btn-primary" href="/purchase-orders/new">Buat PO</a>
         }
     </Actions>
 </PageHeader>
@@ -72,13 +72,13 @@
                         <td>
                             @if (string.IsNullOrEmpty(po.CustomerPoNumber))
                             {
-                                <span class="gms-warn"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Neutral" /> Belum ada</span>
+                                <span class="gms-warn"><AntDesign.Icon Type="warning" /> Belum ada</span>
                             }
                             else { @po.CustomerPoNumber }
                         </td>
                         <td>@po.CustomerName</td>
                         <td>@IdFormat.Date(po.PoDate)</td>
-                        <td><StatusTag Value="@po.Status" /> @if (po.HasLateLines) { <span class="gms-bad"><FluentIcon Value="@(new Icons.Regular.Size16.Clock())" Color="Color.Neutral" /> Terlambat</span> }</td>
+                        <td><StatusTag Value="@po.Status" /> @if (po.HasLateLines) { <span class="gms-bad"><AntDesign.Icon Type="clock-circle" /> Terlambat</span> }</td>
                         <td>
                             <StackedProgress Total="po.TotalQty" Segments="@(new StackedProgress.Segment[] { new("Kirim", po.DeliveredQty, "success"), new("Alok", po.AllocatedQty, "info"), new("Prod", po.InProductionQty, "warning") })" />
                         </td>

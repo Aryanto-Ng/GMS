@@ -4,7 +4,7 @@
 @inject IWorkOrdersApi Wos
 @inject ApiErrorHandler Errors
 @inject NavigationManager Nav
-@inject IToastService Toasts
+@inject IGmsToast Toasts
 
 <PageTitle>Buat Serah Terima FG · GMS</PageTitle>
 <UnsavedChangesGuard HasChanges="_dirty && !_saved" />
@@ -29,7 +29,7 @@
         <section class="gms-card" aria-labelledby="hf-qty">
             <h2 id="hf-qty">Qty diserahterimakan (@_ctx.FgCode · @_ctx.PoCode)</h2>
             <QtyGrid Caption="Qty serah terima" RowHeader="" Rows="_row" Columns="_columns" Values="_values" CellInfo="CellInfo" ShowMax="true" OnChanged="() => { _dirty = true; _preview = null; }" />
-            <FluentButton Appearance="Appearance.Neutral" OnClick="PreviewAsync">Perkiraan alokasi</FluentButton>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="PreviewAsync">Perkiraan alokasi</AntDesign.Button>
             @if (_preview is not null)
             {
                 <p role="status">Perkiraan alokasi otomatis ke @_preview.PoCode: <strong>@IdFormat.Qty(_preview.AutoAllocatedQty) pcs</strong> · Stok bebas (kelebihan produksi): <strong>@IdFormat.Qty(_preview.FreeStockQty) pcs</strong></p>
@@ -37,8 +37,8 @@
         </section>
 
         <div class="gms-formactions">
-            <FluentAnchor Href="/handovers/fg" Appearance="Appearance.Neutral">Batal</FluentAnchor>
-            <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Disabled="@(_saving || _ctx.BlockedReason is not null)">Simpan</FluentButton>
+            <a class="ant-btn ant-btn-default" href="/handovers/fg">Batal</a>
+            <AntDesign.Button Type="@AntDesign.ButtonType.Primary" HtmlType="submit" Disabled="@(_saving || _ctx.BlockedReason is not null)">Simpan</AntDesign.Button>
         </div>
     }
     else
