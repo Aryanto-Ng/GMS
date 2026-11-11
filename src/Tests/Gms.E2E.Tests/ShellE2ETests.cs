@@ -76,4 +76,21 @@ public sealed class ShellE2ETests(StackFixture stack)
         var background = await page.EvaluateAsync<string>("getComputedStyle(document.body).backgroundColor");
         Assert.Equal("rgb(0, 0, 0)", background); // token bg-layout gelap
     }
+
+    [Fact]
+    public async Task CommandPalette_menjaga_fokus_dan_tetap_menutup_dengan_Esc_walau_router_memindahkan_fokus_ke_judul()
+    {
+        var page = await stack.LoginAsAdminAsync();
+        await StackFixture.GotoInteractiveAsync(page, "/");
+        await page.Keyboard.PressAsync("Control+k");
+        var dialog = page.GetByRole(AriaRole.Dialog, new() { Name = "Cari menu" });
+        await Expect(dialog).ToBeVisibleAsync();
+
+        // Meniru FocusOnNavigate: fokus dipindah ke <h1> saat palette terbuka (terjadi pada CI yang lebih lambat setelah navigasi).
+        await page.EvaluateAsync("() => { const h = document.querySelector('h1'); h.setAttribute('tabindex', '-1'); h.focus(); }");
+        await Expect(dialog.GetByRole(AriaRole.Combobox)).ToBeFocusedAsync(); // fokus dikembalikan ke kotak pencarian
+
+        await page.Keyboard.PressAsync("Escape");
+        await Expect(dialog).ToBeHiddenAsync();
+    }
 }

@@ -91,7 +91,7 @@ public sealed class ApiSeeder
     public async Task<(string UserName, string Password)> CreateReadyUserAsync(string roleName = "Administrator")
     {
         var (user, initial) = await CreateUserAsync(roleName);
-        var final = "Siap-" + Guid.NewGuid().ToString("N")[..8];
+        var final = "Siap-" + Guid.NewGuid().ToString("N")[..8] + "7"; // selalu memuat angka (aturan password)
         using var http = new HttpClient { BaseAddress = _http.BaseAddress };
         var login = await http.PostAsJsonAsync("/api/v1/auth/login", new LoginRequest(user, initial), Json);
         await EnsureAsync(login, "login pengguna siap pakai");

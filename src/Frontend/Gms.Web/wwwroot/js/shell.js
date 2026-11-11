@@ -233,6 +233,16 @@
         else { window.location.href = e.h; }
     }
 
+    // Selama palette terbuka: Esc ditangani di tingkat dokumen dan fokus dijaga di dalam dialog. Router Blazor (FocusOnNavigate)
+    // dapat memindahkan fokus ke judul halaman tepat setelah navigasi; tanpa penjaga ini Esc tidak sampai ke palette.
+    function trapFocus(e) {
+        if (root && !root.hidden && input && !root.contains(e.target)) { input.focus(); }
+    }
+
+    function docEscape(e) {
+        if (e.key === 'Escape' && root && !root.hidden) { e.preventDefault(); e.stopPropagation(); close(); }
+    }
+
     function open() {
         var cat = readCatalog();
         if (cat === null) { return; }
@@ -243,6 +253,8 @@
         active = 0;
         input.value = '';
         root.hidden = false;
+        document.addEventListener('focusin', trapFocus);
+        document.addEventListener('keydown', docEscape, true);
         render();
         input.focus();
     }
@@ -250,6 +262,8 @@
     function close(restoreFocus) {
         if (!root || root.hidden) { return; }
         root.hidden = true;
+        document.removeEventListener('focusin', trapFocus);
+        document.removeEventListener('keydown', docEscape, true);
         if (restoreFocus !== false && trigger && trigger.focus) { trigger.focus(); }
     }
 
