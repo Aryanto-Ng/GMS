@@ -5,7 +5,7 @@ Alur branch: pengembangan di branch **`uat`** → UAT lulus dan disetujui → me
 | Branch | Workflow | Tujuan | Tag image |
 |---|---|---|---|
 | PR, `uat`, `main` | `.github/workflows/ci.yml` | Build + semua tes (unit, bUnit, integrasi API, E2E Playwright) | tidak ada |
-| `uat` | `render.yaml` (Render Blueprint, `autoDeployTrigger: checksPass`) | UAT di **Render + Supabase**: Render membangun image dan deploy hanya bila `ci.yml` lulus. Panduan: [`Deployment-Render-Supabase.md`](Deployment-Render-Supabase.md) | dibangun Render |
+| `uat` | `.github/workflows/deploy-uat.yml` | Tes → image GHCR → deploy ke server UAT | `uat`, `<sha12>` |
 | `main` | `.github/workflows/deploy-prod.yml` | Tes → image GHCR → deploy ke VPS Production (Environment `production` dengan required reviewers) | `latest`, `<sha12>` |
 
 ## Arsitektur
@@ -19,7 +19,7 @@ Hanya Web yang publik. API tidak dipublikasikan dan tidak memakai JWT: Web menyi
 Berkas:
 - `deploy/Dockerfile.api`, `deploy/Dockerfile.web`: image (konteks build: root repo).
 - `deploy/prod/docker-compose.prod.yml` + `.env.example`: Traefik + Let's Encrypt, Web, API, backup, dan PostgreSQL opsional (profil `with-db`).
-- `render.yaml`: Blueprint UAT di Render (dua layanan Docker, database Supabase). `deploy/uat/docker-compose.uat.yml` + `.env.example`: alternatif UAT di VPS sendiri (tanpa workflow deploy otomatis; jalankan `docker compose` manual).
+- `deploy/uat/docker-compose.uat.yml` + `.env.example`: Web + API, database eksternal (`UAT_DB_CONNECTION`), data demo otomatis.
 - `deploy/backup/`: `backup.sh`, `restore.sh`, cron harian (container `backup`).
 - Konfigurasi non-sensitif: `src/Backend/Gms.Api/appsettings.{UAT,Production}.json` dan `src/Frontend/Gms.Web/appsettings.{UAT,Production}.json` (termasuk `Api:BaseUrl`). Rahasia hanya lewat `.env` di server atau GitHub Secrets (`docs/Secrets-Checklist.md`).
 
