@@ -10,11 +10,9 @@ Tidak ada kredensial, IP server, atau kunci SSH di repository.
 ## GitHub Secrets
 
 ### Environment: `uat`
-- [ ] `UAT_VPS_HOST`: alamat server UAT
-- [ ] `UAT_VPS_USER`: user SSH khusus deploy
-- [ ] `UAT_VPS_SSH_KEY`: private key SSH khusus deploy
-- [ ] `UAT_VPS_PATH`: folder tujuan di server (mis. `/opt/gms`)
-- [ ] `UAT_VPS_PORT`: (opsional) port SSH bila bukan 22
+- [ ] `RENDER_DEPLOY_HOOK_API`: URL Deploy Hook layanan API (Render > layanan > Settings > Deploy Hook)
+- [ ] `RENDER_DEPLOY_HOOK_WEB`: URL Deploy Hook layanan Web
+- Rahasia aplikasi UAT (connection string Supabase, `Seed__AdminPassword`) diisi di Render > layanan > Environment, bukan di GitHub.
 
 ### Environment: `production`
 - [ ] `PROD_VPS_HOST`

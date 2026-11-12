@@ -5,7 +5,7 @@ Alur branch: pengembangan di branch **`uat`** → UAT lulus dan disetujui → me
 | Branch | Workflow | Tujuan | Tag image |
 |---|---|---|---|
 | PR, `uat`, `main` | `.github/workflows/ci.yml` | Build + semua tes (unit, bUnit, integrasi API, E2E Playwright) | tidak ada |
-| `uat` | `.github/workflows/deploy-uat.yml` | Tes → image GHCR → deploy ke server UAT | `uat`, `<sha12>` |
+| `uat` | `.github/workflows/deploy-uat.yml` | Tes → Deploy Hook Render (API lalu Web); Render membangun image dari Dockerfile. Database Supabase | dibangun Render |
 | `main` | `.github/workflows/deploy-prod.yml` | Tes → image GHCR → deploy ke VPS Production (Environment `production` dengan required reviewers) | `latest`, `<sha12>` |
 
 ## Arsitektur
