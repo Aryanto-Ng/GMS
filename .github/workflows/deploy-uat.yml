@@ -70,6 +70,21 @@ jobs:
       REMOTE_PATH: ${{ secrets.UAT_VPS_PATH }}
     steps:
       - uses: actions/checkout@v4
+      - name: Periksa GitHub Secrets deploy
+        run: |
+          missing=""
+          for v in UAT_VPS_HOST UAT_VPS_USER UAT_VPS_PATH UAT_VPS_SSH_KEY; do
+            if [ -z "$(printenv "$v")" ]; then missing="$missing $v"; fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::GitHub Secrets belum diisi:$missing. Lihat docs/Secrets-Checklist.md (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+        env:
+          UAT_VPS_HOST: ${{ secrets.UAT_VPS_HOST }}
+          UAT_VPS_USER: ${{ secrets.UAT_VPS_USER }}
+          UAT_VPS_PATH: ${{ secrets.UAT_VPS_PATH }}
+          UAT_VPS_SSH_KEY: ${{ secrets.UAT_VPS_SSH_KEY }}
       - name: Siapkan SSH
         run: |
           install -m 700 -d ~/.ssh
