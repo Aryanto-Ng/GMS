@@ -9,12 +9,15 @@ Tidak ada kredensial, IP server, atau kunci SSH di repository.
 
 ## GitHub Secrets
 
-### Environment: `uat`
-- [ ] `UAT_VPS_HOST`: alamat server UAT
-- [ ] `UAT_VPS_USER`: user SSH khusus deploy
-- [ ] `UAT_VPS_SSH_KEY`: private key SSH khusus deploy
-- [ ] `UAT_VPS_PATH`: folder tujuan di server (mis. `/opt/gms`)
-- [ ] `UAT_VPS_PORT`: (opsional) port SSH bila bukan 22
+### UAT di Render + Supabase
+Tidak ada GitHub Secret untuk UAT: Render mengambil kode dari GitHub langsung. Rahasia diisi di dashboard Render (variabel `sync: false` pada `render.yaml`), lihat `docs/Deployment-Render-Supabase.md`:
+- [ ] API `ConnectionStrings__Default`: string Session pooler Supabase (format Npgsql)
+- [ ] API `Seed__AdminPassword`: password awal admin
+- [ ] API `Gateway__Key` dan Web `Api__GatewayKey`: kunci gerbang acak, nilai sama
+- [ ] Web `Api__BaseUrl`, `AllowedHosts`: URL/host layanan (non-rahasia)
+
+### Environment: `uat` (hanya bila UAT di VPS sendiri; tidak ada workflow otomatis lagi)
+- [ ] `UAT_VPS_*`: tidak diperlukan kecuali Anda menambahkan workflow SSH sendiri
 
 ### Environment: `production`
 - [ ] `PROD_VPS_HOST`

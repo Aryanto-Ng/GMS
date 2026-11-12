@@ -140,6 +140,7 @@ public static class ApiHost
         app.UseStatusCodePages(async statusContext =>
             await ProblemWriter.WriteAsync(statusContext.HttpContext, ProblemWriter.ForStatus(statusContext.HttpContext.Response.StatusCode)));
 
+        app.UseMiddleware<GatewayKeyMiddleware>();
         app.UseAuthentication();
         app.UseMiddleware<MustChangePasswordMiddleware>();
         app.UseAuthorization();

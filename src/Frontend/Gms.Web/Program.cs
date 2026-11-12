@@ -88,6 +88,10 @@ services.AddHttpClient(GmsApiClient.HttpClientName, (sp, client) =>
     var options = sp.GetRequiredService<IOptions<ApiOptions>>().Value;
     client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
     client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+    if (!string.IsNullOrEmpty(options.GatewayKey))
+    {
+        client.DefaultRequestHeaders.Add("X-Gms-Gateway-Key", options.GatewayKey);
+    }
 });
 services.AddScoped<ISessionTokenProvider, ClaimsSessionTokenProvider>();
 services.AddScoped<GmsApiClient>();

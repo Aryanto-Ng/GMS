@@ -1,0 +1,54 @@
+# Render Blueprint untuk UAT (Supabase PostgreSQL + dua layanan Docker di Render). Panduan: docs/Deployment-Render-Supabase.md
+# Rahasia TIDAK ada di berkas ini: nilai `sync: false` diisi di dashboard Render saat Blueprint dibuat.
+# Ganti SUFFIX pada kedua `name` dengan akhiran unik Anda (nama menjadi subdomain onrender.com dan harus unik se-Render).
+# Deploy otomatis hanya setelah cek GitHub Actions (ci.yml) pada commit tersebut lulus (autoDeployTrigger: checksPass).
+services:
+  - type: web
+    name: gms-uat-api-SUFFIX
+    runtime: docker
+    dockerfilePath: ./deploy/Dockerfile.api
+    dockerContext: .
+    branch: uat
+    plan: free
+    region: singapore          # samakan dengan region project Supabase (Southeast Asia / Singapore)
+    autoDeployTrigger: checksPass
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: UAT
+      - key: PORT
+        value: "8080"
+      - key: Database__MigrateOnStartup
+        value: "true"
+      - key: Database__SeedOnStartup
+        value: "true"
+      - key: Seed__DemoData
+        value: "true"            # data contoh khusus UAT; jangan di produksi
+      - key: ConnectionStrings__Default
+        sync: false              # string "Session pooler" Supabase, format Npgsql (lihat panduan)
+      - key: Seed__AdminPassword
+        sync: false              # password awal akun admin (wajib diganti saat login pertama)
+      - key: Gateway__Key
+        sync: false              # kunci gerbang Web-API; nilai HARUS sama dengan Api__GatewayKey pada Web
+
+  - type: web
+    name: gms-uat-web-SUFFIX
+    runtime: docker
+    dockerfilePath: ./deploy/Dockerfile.web
+    dockerContext: .
+    branch: uat
+    plan: free
+    region: singapore
+    autoDeployTrigger: checksPass
+    healthCheckPath: /healthz
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: UAT
+      - key: PORT
+        value: "8080"
+      - key: Api__BaseUrl
+        sync: false              # https://gms-uat-api-SUFFIX.onrender.com
+      - key: Api__GatewayKey
+        sync: false              # sama dengan Gateway__Key pada API
+      - key: AllowedHosts
+        sync: false              # gms-uat-web-SUFFIX.onrender.com
