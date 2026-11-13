@@ -25,7 +25,7 @@ Dokumen ini **tidak menyebut library UI**. Daftar komponen mengikuti `Design.md`
 | Konteks kerja | Satu halaman per navigasi | Satu **tab** per dokumen (maks 10), state dipertahankan per tab |
 | Status | Cyan/biru/hijau/merah per komponen | **Satu peta 6 warna** (bagian 4). Cancelled/Void **abu-abu, bukan merah** |
 | Bahasa | Indonesia tetap | **ID/EN** lewat resource, pemilih di header dan form masuk |
-| Notifikasi | Tidak ada | Lonceng di header (butuh FSD sendiri, lihat bagian 12) |
+| Notifikasi | Tidak ada | Lonceng di header + panel 380px, **berlaku di fase 1** (butuh FSD Notifikasi, bagian 12) |
 | Kerapatan | Compact/Comfortable bebas | Tinggi kontrol 32px, jarak skala 4px; Compact hanya untuk grid input |
 | Form masuk | Kartu polos | Halaman penuh bergaris latar SVG bergerak + kartu 420px di tengah |
 
@@ -94,7 +94,7 @@ Hanya Main Workspace yang menggulir. Satu layout untuk semua halaman setelah log
 - Tengah: **pencarian halaman dan aksi** (menggantikan CommandPalette). Maks **7** hasil; tiap hasil: label, jalur menu, tag "Aksi" bila berupa aksi. Sumber: katalog navigasi yang sama dengan Top Navigation (disaring izin). Panah ↑↓ memilih, Enter membuka (di tab), Esc menutup.
 - Kanan, urutan tetap: **Bahasa → Notifikasi → Pengguna**.
   - **Bahasa:** ikon globe + `ID`/`EN`; menu dua pilihan + centang.
-  - **Notifikasi:** lonceng + lencana (maks `9+`, hilang bila nol); panel 380px. *Lihat bagian 12 (DEVIASI-3): fase 1 tidak dirender karena belum ada FSD Notifikasi.*
+  - **Notifikasi (fase 1, butuh FSD Notifikasi):** ikon lonceng; lencana jumlah belum dibaca di sudut kanan atas (maks `9+`, hilang bila nol, tinggi 12px, angka 9px, latar `--badge-dot`). Label tombol memuat jumlah ("Notifikasi, 3 belum dibaca"). Panel 380px: judul, ringkasan "N belum dibaca", "Tandai semua dibaca", daftar (belum dibaca: titik biru + latar `--brand-t` + teks tebal; tiap item: judul, satu baris keterangan, waktu relatif, badge jenis bila perlu), "Lihat semua notifikasi". Klik item = tandai terbaca lalu **buka dokumen terkait di tab** (fokus ke tab bila sudah terbuka). Keadaan: memuat (skeleton 3 baris), kosong ("Tidak ada notifikasi"), galat (MessageBar + Coba lagi). Item hanya untuk peristiwa yang boleh dilihat pengguna (izin dicek server).
   - **Pengguna:** avatar, nama, menu (**Ganti Password**, **Keluar**). Peran ditampilkan di baris pertama menu.
 - Satu panel header terbuka pada satu waktu; klik di luar menutup.
 
@@ -238,7 +238,7 @@ Nama status dokumen tetap Inggris (FSD). Kondisi turunan memakai bahasa UI. Badg
 | Angka / qty | `1.240` | `1,240` | `id-ID` / `en-US` eksplisit di UI; konversi ke Invariant sebelum ke API |
 | Satuan qty | `1.240 pcs` | | Qty material: hingga 3 desimal (`120,500 MTR`) |
 | Uang | `Rp 18.420.500` | | Total tanpa desimal |
-| **Tarif per unit** | `Rp 1.250,5` | | **DEVIASI-2:** hingga 5 desimal tanpa nol ekor (FSD Payroll/Master Data) |
+| **Tarif per unit** | `Rp 1.250,5` | | Jumlah desimal **mengikuti FSD** (saat ini hingga 5 digit, tanpa nol ekor). Aturan umum Design.md "uang tanpa desimal" berlaku untuk total |
 | Tanggal (teks) | `14 Nov 2026` | `Nov 14, 2026` | **Berubah dari v2.0** (sebelumnya `08 Nov 2026`: tanpa nol di depan) |
 | Tanggal (input) | `DD/MM/YYYY` | | |
 | Waktu | `HH:mm` | | Zona aplikasi (WIB) |
@@ -346,8 +346,8 @@ Sesuai Design.md bagian 15, hal berikut **menunggu persetujuan Ary**. Frontend t
 | **K-1** | Keputusan | Design.md 13: pustaka Fluent 2 (`Microsoft.FluentUI.AspNetCore.Components`) butuh **izin eksplisit**; bila ditolak, komponen dibangun sendiri dengan token. Aplikasi saat ini memakai AntDesign Blazor (CLAUDE.md dan CHECKPOINT menyebutnya). | **Bangun komponen sendiri** dengan CSS token (`tokens.css`) agar identik dengan mock-up dan tidak mewarisi gaya Ant. Fluent UI Blazor boleh dipakai sebagai alternatif bila Ary memberi izin. | Menunggu |
 | **K-2** | Keputusan | i18n ID/EN (Design.md 12) berarti seluruh teks lewat `.resx`. Aplikasi sekarang berbahasa Indonesia tertulis di komponen. | Fase 1: seluruh chrome (header, nav, tombol, status, pesan sistem) dua bahasa; teks per-halaman ID dulu dengan resource key siap diisi EN. Perlu keputusan apakah master data diterjemahkan. | Menunggu |
 | **U-1 / DEVIASI-1** | Usulan komponen | Dialog **480px** terlalu sempit untuk pratinjau dampak (tabel 5–6 kolom: Void/Koreksi Output, Serah Terima, Pengiriman) dan grid qty. | Tambah varian **Dialog lebar 720px** khusus pratinjau dampak. **Sampai disetujui:** tetap 480px dengan tabel dampak bergulir horizontal di dalam dialog; grid qty tidak dimasukkan ke dialog (halaman/tab). | Menunggu |
-| **DEVIASI-2** | Deviasi format | Design.md: uang tanpa desimal. FSD: tarif per unit presisi hingga 5 desimal. | Tarif ditampilkan dengan koma desimal tanpa nol ekor (`Rp 1.250,5`); **total** tetap tanpa desimal. Tinjau ulang: bila FSD berubah. | Berlaku |
-| **DEVIASI-3** | Deviasi sementara | Header wajib memuat lonceng notifikasi, tetapi Design.md 13.7 menyatakan notifikasi butuh FSD sendiri; belum ada. | Lonceng **tidak dirender** di fase 1 (panel dan komponen disiapkan). Muncul setelah FSD Notifikasi disetujui. Tinjau ulang: saat FSD itu dibuat. | Berlaku |
+| ~~DEVIASI-2~~ | Diputuskan | Presisi desimal tarif. | **Keputusan Ary (2026-11-13):** tarif mengikuti FSD; Design.md akan mengikuti jumlah desimal yang ditetapkan FSD. Bukan deviasi. | **Selesai** |
+| **N-1** | Keputusan | Lonceng notifikasi harus berlaku di fase 1, tetapi belum ada FSD, API, maupun penyimpanan notifikasi. | **Keputusan Ary (2026-11-13): diterapkan langsung di fase 1.** Prasyarat: System Analyst menulis `docs/FSD/Notifikasi.md` (peristiwa pemicu, penerima per role/izin, retensi, polling vs real-time), lalu Architect/Backend menyediakan kontrak dan penyimpanan. UI sudah dirancang (bagian 3.1) dan ada di mock-up. | Menunggu FSD |
 | **U-2** | Usulan | Alert ikon pada tab (bagian 4.1) baru mencakup layar yang diketahui (Design.md 16). | Daftar di bagian 4.1 dipakai sebagai awal. | Berlaku sementara |
 | **I-1** | Informasi | `CLAUDE.md` masih menyebut "AntDesign Blazor 1.x, gaya Ant Design Enterprise" dan agen 5 melarang Fluent/Ant. | Perbarui `CLAUDE.md` setelah K-1 diputuskan. UI/UX tidak mengubah CLAUDE.md. | Menunggu |
 

@@ -226,7 +226,7 @@ Tombol (ikon kiri): `Segarkan` (**ikon saja**, `aria-label` + tooltip), `Ekspor 
 Ringkasan label-nilai (rentang, pekerja, total), peringatan `warn` (pekerja bertotal negatif, tanggal selesai di masa depan), catatan "Penutupan PERMANEN. Koreksi lewat Penyesuaian periode berikutnya.", kolom **ketik kode periode** (berlabel), tombol `Tutup Periode` (brand/primary, bukan bahaya karena bukan penghapusan data) nonaktif sampai kode sesuai. `role="alertdialog"`. Dialog Buat Periode dan Opsi Slip: 480px.
 
 ### Format
-Total dan rupiah tanpa desimal (`Rp 18.450.000`); **tarif** `Rp 2.500` / `Rp 1.250,5` mengikuti DEVIASI-2; angka rata kanan `tabular-nums`. Tarif/rupiah tidak boleh dikirim ke klien tanpa `Payroll.View`.
+Total dan rupiah tanpa desimal (`Rp 18.450.000`); **tarif** `Rp 2.500` / `Rp 1.250,5` mengikuti desimal yang ditetapkan FSD; angka rata kanan `tabular-nums`. Tarif/rupiah tidak boleh dikirim ke klien tanpa `Payroll.View`.
 
 ### PDF Slip Gaji
 Tidak berubah (Fondasi bagian 13).
@@ -241,4 +241,4 @@ Acuan: `docs/Design.md` v2.0 dan `docs/Design/_Foundation-UI.md` v3.0. Nama komp
 - **Komponen umum:** `AppHeader` (pencarian, bahasa, pengguna), `TopNav`, `TabManager`, `Workspace`, `PageHeader`, `MessageBar`, `StatusBadge`, `DataList` (cari, filter chip, footer "Menampilkan X dari Y"), `ToastHost`, `Dialog` (480px).
 - **Khusus modul:** `Stepper` (Open → Closed), `StatTile`, inner tabs, tabel Rincian/Rincian Harian (Compact) + baris yang dapat diperluas, grid Matriks Harian (baca saja, lengket), `Dialog` dengan konfirmasi ketik kode periode, menu `Ekspor`/`Slip Gaji`, `StatusBadge` Open/Closed/Belum final/Negatif.
 - **Token yang dipakai:** `--brand`, `--brand-t`, `--s2`/`--s3`, `--fg1`/`--fg2`, badge `t-prog`/`t-ok`/`t-warn`/`t-err`. Tidak ada hex/px mentah.
-- **Deviasi:** tarif per unit dengan desimal = DEVIASI-2 (FSD); total tetap tanpa desimal.
+- **Deviasi:** tidak ada (tarif mengikuti FSD; total tanpa desimal).

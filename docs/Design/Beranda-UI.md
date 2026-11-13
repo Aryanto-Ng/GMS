@@ -164,7 +164,7 @@ Kartu = kartu interaktif Design.md bagian 10: hover terangkat 2px + bayangan pan
 Semua chart: tooltip nilai, hover menyorot, `role="img"` + `aria-label`, **angka tertulis**, tinggi bar 120px. Kartu bernilai nol = nilai netral dengan ikon centang hijau + teks ("0 PO terlambat"), bukan state kosong.
 
 ### Notifikasi
-Lonceng header tidak dirender di fase 1 (DEVIASI-3, Fondasi bagian 12).
+Lonceng header **berlaku di fase 1** (Fondasi bagian 3.1; menunggu FSD Notifikasi, N-1). Peristiwa yang relevan dengan widget Beranda (PO/WO terlambat, jatuh tempo, akun terkunci, periode gaji) dapat menjadi kandidat peristiwa notifikasi; keputusan akhir di FSD Notifikasi.
 
 
 ---
@@ -176,4 +176,4 @@ Acuan: `docs/Design.md` v2.0 dan `docs/Design/_Foundation-UI.md` v3.0. Nama komp
 - **Komponen umum:** `AppHeader` (pencarian, bahasa, pengguna), `TopNav`, `TabManager`, `Workspace`, `PageHeader`, `MessageBar`, `StatusBadge`, `DataList` (cari, filter chip, footer "Menampilkan X dari Y"), `ToastHost`, `Dialog` (480px).
 - **Khusus modul:** `StatTile`, `ChartStack`, `ChartBars`, kartu interaktif `DashboardCard` (tile ikon + "Buka detail"), hero satu baris + chip ringkasan, strip Aksi Cepat, `EmptyState` bila peran tanpa widget, panduan instalasi (fase 2).
 - **Token yang dipakai:** `--brand` (aksen atas StatTile 3px), `--brand-t` (tile ikon), `--sh2`/`--sh16` (kartu dan hover), `--fg3` (satuan), warna chart `k1`/`k8`/`k5` mengikuti peta status. Tidak ada hex/px mentah.
-- **Deviasi:** tidak ada. (Lonceng notifikasi dirender nanti: DEVIASI-3.)
+- **Deviasi:** tidak ada.

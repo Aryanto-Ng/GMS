@@ -54,7 +54,14 @@
   </div>
   <div class="hdr-r">
     <button class="hbtn" aria-label="Bahasa: Indonesia"><svg class="ic"><use href="#i-globe"/></svg>ID<svg class="ic s12"><use href="#i-chev"/></svg></button>
-    <!-- Lonceng notifikasi tidak dirender di fase 1 (DEVIASI-3). -->
+    <div style="position:relative">
+      <button class="hbtn" id="bellb" aria-label="Notifikasi, 3 belum dibaca" aria-expanded="false" onclick="toggleBell()"><svg class="ic s20"><use href="#i-bell"/></svg><span class="badge" id="bcnt">3</span></button>
+      <div class="npanel" id="np" role="dialog" aria-label="Notifikasi">
+        <div class="nh"><b>Notifikasi</b><span class="sub" id="nsum">3 belum dibaca</span><button class="btn" style="margin-left:auto;height:24px" onclick="readAll()">Tandai semua dibaca</button></div>
+        <div id="nl"></div>
+        <div class="nf"><a href="#" onclick="return false">Lihat semua notifikasi</a></div>
+      </div>
+    </div>
     <button class="hbtn" aria-label="Menu pengguna Budi Santoso, Admin Produksi"><span class="avatar">BS</span>Budi Santoso<svg class="ic s12"><use href="#i-chev"/></svg></button>
   </div>
 </header>
@@ -75,6 +82,20 @@
 </div></div>
 
 <script>
+const NOTIF = [
+  { t: 'PO-202611-0001 terlambat', d: 'Baris KMJ-001 / Navy / M melewati tanggal kirim 20 Nov.', w: '5 menit lalu', tab: 'po-0001', u: 1 },
+  { t: 'WO-202611-0002 terlambat', d: 'Target selesai 10 Nov sudah lewat.', w: '1 jam lalu', tab: 'wo-list', u: 1 },
+  { t: 'Periode GJ-20261102-20261108 perlu ditutup', d: 'Tanggal selesai periode jatuh 2 hari lagi.', w: 'Kemarin', tab: 'pay-list', u: 1 },
+  { t: 'Akun siti terkunci', d: '5 percobaan login gagal.', w: '12 Nov 2026', tab: 'u-list', u: 0 },
+];
+function drawNotif() {
+  const n = NOTIF.filter(x => x.u).length;
+  $('#bcnt').style.display = n ? '' : 'none'; $('#bcnt').textContent = n > 9 ? '9+' : n;
+  $('#bellb').setAttribute('aria-label', 'Notifikasi, ' + n + ' belum dibaca'); $('#nsum').textContent = n + ' belum dibaca';
+  $('#nl').innerHTML = NOTIF.map((x, i) => `<button class="ni ${x.u ? 'un' : ''}" onclick="NOTIF[${i}].u=0;drawNotif();$('#np').classList.remove('open');openTab('${x.tab}','${x.t.replace(/'/g, '')}')">${x.u ? '<span class="udot" aria-hidden="true"></span>' : '<span style="width:8px"></span>'}<span style="flex:1"><b>${x.t}</b><span class="d">${x.d}</span><span class="w">${x.w}</span></span></button>`).join('');
+}
+function toggleBell() { const p = $('#np'); p.classList.toggle('open'); $('#bellb').setAttribute('aria-expanded', p.classList.contains('open')); }
+function readAll() { NOTIF.forEach(x => x.u = 0); drawNotif(); }
 const $ = s => document.querySelector(s);
 const ic = (n, c = '') => `<svg class="ic ${c}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
 const bd = (t, k, i) => `<span class="bd t-${k}">${i ? ic(i, 's12') : ''}${t}</span>`;
@@ -149,8 +170,8 @@ function toggleMega(id) {
   $('#mega').classList.add('open'); drawNav();
 }
 function closeMega() { navOpen = null; $('#mega').classList.remove('open'); drawNav(); }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeMega(); closeModal(); $('#sres').style.display = 'none'; } });
-document.addEventListener('click', e => { if (!e.target.closest('#nav,#mega')) closeMega(); if (!e.target.closest('.search')) $('#sres').style.display = 'none'; });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { $('#np').classList.remove('open'); closeMega(); closeModal(); $('#sres').style.display = 'none'; } });
+document.addEventListener('click', e => { if (!e.target.closest('#nav,#mega')) closeMega(); if (!e.target.closest('.search')) $('#sres').style.display = 'none'; if (!e.target.closest('#np,#bellb')) $('#np').classList.remove('open'); });
 
 /* pencarian header: maks 7 hasil, label + jalur + tag Aksi */
 $('#q').addEventListener('input', e => {
@@ -303,7 +324,7 @@ function outInput() {
 }
 
 { const h = location.hash.slice(1); if (TABS[h] && open.includes(h)) active = h; }  // tautan langsung ke tab: index.html#po-0001
-draw();
+drawNotif(); draw();
 </script>
 </body>
 </html>

@@ -180,7 +180,7 @@ PageHeader: judul + jumlah, primary `⊕ Tambah {entitas}`; Impor tersedia sebag
 ### Detail FG
 PageHeader: kode + nama, badge **Siap Produksi** (hijau) / **Belum Siap** (oranye), tombol `Salin dari FG lain` (default) dan `Nonaktifkan` (bahaya). **Tidak ada primary di header**; tiap inner tab punya primary di footer-nya (Simpan routing / Simpan tarif / Simpan). Inner tabs: Umum · Size Berlaku · Routing · Tarif · Kesiapan (state tab dalam per tab).
 - **Routing:** urutan dengan tombol ↑ ↓ (drag-drop = fase 2). Tag Internal/Vendor netral.
-- **Tarif:** grid input; sel invalid = border + garis bawah merah, latar tint merah, pesan 12px di bawah sel ("Maksimal 5 digit desimal", "Harus lebih dari 0"); sel kosong = oranye + ikon. Format tarif DEVIASI-2 (`Rp 1.250,5`). Titik **belum disimpan** pada tab. Pengguna tanpa `MasterData.Tarif.Edit`: hanya baca.
+- **Tarif:** grid input; sel invalid = border + garis bawah merah, latar tint merah, pesan 12px di bawah sel ("Maksimal 5 digit desimal", "Harus lebih dari 0"); sel kosong = oranye + ikon. Format tarif mengikuti FSD (`Rp 1.250,5`). Titik **belum disimpan** pada tab. Pengguna tanpa `MasterData.Tarif.Edit`: hanya baca.
 - **Kesiapan:** butir ✓/✗ + teks ("Terpenuhi"/"Belum terpenuhi"); butir gagal memiliki tautan ke tab/sel.
 
 ### Wizard
@@ -196,4 +196,4 @@ Acuan: `docs/Design.md` v2.0 dan `docs/Design/_Foundation-UI.md` v3.0. Nama komp
 - **Komponen umum:** `AppHeader` (pencarian, bahasa, pengguna), `TopNav`, `TabManager`, `Workspace`, `PageHeader`, `MessageBar`, `StatusBadge`, `DataList` (cari, filter chip, footer "Menampilkan X dari Y"), `ToastHost`, `Dialog` (480px).
 - **Khusus modul:** `MasterList<T>` + `Dialog` form untuk semua entitas selain FG; FG detail dengan inner tabs; grid tarif (`QtyGrid` mode desimal); `ImportWizard` + `Stepper`; `StatusBadge` Aktif/Nonaktif/Siap Produksi/Belum Siap; tag tipe proses netral.
 - **Token yang dipakai:** `--brand` (primary, tab aktif), `--s1`/`--fg3` (input), tint merah (sel invalid), `--s3`, `--fg2`, badge `t-ok`/`t-obs`/`t-warn`/`t-err`. Tidak ada hex/px mentah.
-- **Deviasi:** dialog Salin dari FG lain menampilkan tabel tarif dalam 480px dengan gulir horizontal (menunggu U-1). Tarif 5 desimal = DEVIASI-2.
+- **Deviasi:** dialog Salin dari FG lain menampilkan tabel tarif dalam 480px dengan gulir horizontal (menunggu U-1). Tarif: desimal mengikuti FSD (bukan deviasi).
