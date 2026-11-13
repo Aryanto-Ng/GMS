@@ -2,7 +2,7 @@
 
 - **Ditemukan:** 2026-11-14, uji manual Ary di lingkungan lokal (Gms.Api profil `http` :5222, Gms.Web :5263, Postgres native `localhost:5432`, DB `gms`).
 - **Pelapor:** Ary. **Penguji:** QA. **Keparahan:** Tinggi (API menolak semua permintaan sampai koneksi bebas).
-- **Status:** Terbuka. **Akar masalah terkonfirmasi (2026-11-14):** `max_connections` server lokal = **7** (bawaan 100). Lihat "Hasil diagnosis".
+- **Status:** Terbuka. **Akar masalah BELUM terkonfirmasi.** Dugaan `max_connections=7` DICABUT (2026-11-14): Ary memastikan `postgresql.conf` = 100, dan angka "7" di hasil query tidak terverifikasi sebagai `max_connections`.
 
 ## Gejala
 ```
@@ -23,11 +23,19 @@ Belum ada langkah pasti. Terjadi "waktu manual test" (rincian layar/aksi belum d
 5. **Koneksi khusus pekerja latar.** `NotificationJob` menahan satu koneksi selama pemeriksaan (advisory lock sesi), dibuka/ditutup dengan `try/finally`; tidak ditemukan kebocoran. Berjalan paling cepat tiap 5 menit.
 6. Tidak ditemukan `DbContext`/koneksi yang dibuat tanpa dibuang (semua lewat DI scoped atau `await using`).
 
-## Hasil diagnosis (data dari Ary, 2026-11-14)
-- `SHOW max_connections` = **7**.
+## Hasil diagnosis sementara (data dari Ary, 2026-11-14) — TIDAK KONKLUSIF
+- Baris pertama hasil = `7` (tidak jelas apa; BUKAN dipastikan `max_connections` karena `postgresql.conf` = 100).
 - `pg_stat_activity`: 3 sesi pgAdmin (role `postgres`: DB postgres idle, CONN aktif, DB gms idle) + 1 proses latar (tanpa usename). Tidak ada sesi `gms` saat dicek.
-- Dengan `superuser_reserved_connections` bawaan 3, role non-superuser seperti `gms` hanya boleh memakai **7 − 3 = 4** slot, dan sesi pgAdmin (tiap tab/DB membuka sesi sendiri) memakan sebagian jatah itu. Pool Npgsql bawaan (hingga 100) dan beberapa permintaan paralel dari UI (banyak tab, lonceng, chip) melewati batas ini dengan cepat. Jadi penyebab utamanya adalah konfigurasi server, bukan kebocoran koneksi di kode; kode sudah diperiksa dan tidak ada kebocoran.
-- **Perbaikan lingkungan (bukan kode):** naikkan `max_connections` di `postgresql.conf` ke 100 lalu restart layanan Postgres (`SHOW max_connections;` untuk verifikasi). Batas pool aplikasi tetap disarankan (lihat Saran) agar tidak bergantung pada pengaturan server.
+- (DICABUT, hanya berlaku bila batas efektif memang 7) Dengan `superuser_reserved_connections` bawaan 3, role non-superuser seperti `gms` hanya boleh memakai **7 − 3 = 4** slot, dan sesi pgAdmin (tiap tab/DB membuka sesi sendiri) memakan sebagian jatah itu. Pool Npgsql bawaan (hingga 100) dan beberapa permintaan paralel dari UI (banyak tab, lonceng, chip) melewati batas ini dengan cepat. Jadi penyebab utamanya adalah konfigurasi server, bukan kebocoran koneksi di kode; kode sudah diperiksa dan tidak ada kebocoran.
+- Pada saat dicek hanya 4 sesi aktif, jadi server tidak sedang penuh; error bersifat sesaat (lonjakan) atau batas efektif berbeda dari isi `postgresql.conf`.
+- **Data lanjutan yang diminta** (batas efektif bisa berbeda dari file: `postgresql.auto.conf`/`ALTER SYSTEM`, perubahan belum direstart, atau ada lebih dari satu instance Postgres):
+```sql
+SELECT name, setting, source, sourcefile, pending_restart FROM pg_settings
+WHERE name IN ('max_connections','superuser_reserved_connections');
+SELECT version(), inet_server_port(), current_setting('data_directory');
+SELECT rolname, rolconnlimit FROM pg_roles WHERE rolname='gms';
+```
+Batas pool aplikasi tetap disarankan (lihat Saran).
 
 ## (Arsip) Data yang diminta sebelumnya
 Tanpa kredensial DB, QA tidak dapat melihat `pg_stat_activity`. Jalankan saat error terulang (atau sekarang) sebagai superuser:
