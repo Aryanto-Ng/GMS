@@ -58,3 +58,8 @@ Hasilnya menentukan: (a) apakah sesi `gms` yang menumpuk (state `idle`/`idle in 
 
 ## Kriteria lulus uji ulang
 Membuka 10 tab dan menjalankan alur PO→WO→Output tanpa error 53300; `pg_stat_activity` untuk role `gms` tidak melebihi batas pool yang ditetapkan.
+
+## Pengukuran QA (2026-11-14)
+- `max_connections` = 100 (dikonfirmasi Ary lewat `pg_settings`); slot untuk non-superuser = 100 − `superuser_reserved_connections` (bawaan 3) = 97. Pada saat error sekitar 97 sesi terpakai; sampel `pg_stat_activity` Ary diambil setelah lonjakan lewat (hanya 4 sesi pgAdmin).
+- Uji: seluruh E2E (48 tes, 1 pengguna berurutan, Postgres 17 Testcontainers, API tanpa batas pool) dengan sampling `pg_stat_activity` tiap ~0,5–1,5 dtk: **puncak 28 sesi klien bersamaan** (terukur minimal; lonjakan singkat bisa lebih tinggi). Satu pengguna saja sudah memakai sepertiga jatah; pool Npgsql menyimpan koneksi menganggur hingga ±5 menit sehingga angka ini menumpuk.
+- Kesimpulan sementara: error terjadi ketika beberapa tab/sesi terbuka bersamaan memicu banyak permintaan paralel dan pool tak terbatas (bawaan 100 > 97 slot) menghabiskan slot. Belum dibuktikan secara langsung pada mesin Ary; akan terbukti bila uji ulang dengan batas pool tidak lagi memunculkan 53300.
