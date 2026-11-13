@@ -1,0 +1,28 @@
+@* Stepper siklus status (Design.md 8): lingkaran di atas, label dan keterangan di bawah. Selesai = lingkaran putih bergaris hijau + centang + "Selesai" dan garis hijau;
+   aktif: biru (Draft/Released/Confirmed), kuning (In Progress/Open), hijau (status akhir Completed); berikutnya abu-abu bernomor + "Belum". Status selalu bersama teks. *@
+<ol class="gms-stp" aria-label="@AriaLabel">
+    @for (var i = 0; i < Steps.Count; i++)
+    {
+        var state = Finished || i < Current ? "done" : i == Current ? $"cur {Tone}" : string.Empty;
+        <li class="@state" aria-current="@(!Finished && i == Current ? "step" : null)">
+            <div class="c" aria-hidden="true">@if (state == "done") { <GmsIcon Name="check" /> } else { @(i + 1) }</div>
+            <b>@Steps[i]</b>
+            @(state == "done" ? "Selesai" : i == Current ? "Berjalan" : "Belum")
+        </li>
+    }
+</ol>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<string> Steps { get; set; } = [];
+
+    /// <summary>Indeks langkah aktif (berbasis 0).</summary>
+    [Parameter] public int Current { get; set; }
+
+    /// <summary>Warna lingkaran aktif: <c>blue</c>, <c>yel</c>, atau <c>grn</c>.</summary>
+    [Parameter] public string Tone { get; set; } = "blue";
+
+    /// <summary>Semua langkah selesai (status akhir terakhir seperti Closed).</summary>
+    [Parameter] public bool Finished { get; set; }
+
+    [Parameter] public string AriaLabel { get; set; } = "Siklus status";
+}

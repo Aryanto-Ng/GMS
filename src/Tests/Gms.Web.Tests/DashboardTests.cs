@@ -216,7 +216,7 @@ public sealed class DashboardPageTests : WebTestBase
         var cut = Render<Home>();
         cut.WaitForAssertion(() => Assert.Contains("PO Terlambat", cut.Markup));
 
-        cut.FindAll(".gms-pageheader-actions button.gms-btn").Single(b => b.TextContent.Trim() == "Segarkan").Click();
+        cut.Find("button[aria-label='Segarkan Beranda']").Click(); // tombol ikon saja (Design.md 7)
 
         Assert.Equal("Beranda diperbarui", cut.Find("[role=status][aria-live=polite].gms-sr-only").TextContent);
         cut.WaitForAssertion(() => Assert.Contains("PO", cut.Find("[aria-label='PO Terlambat']").TextContent));

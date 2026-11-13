@@ -24,19 +24,21 @@ else
                 Breadcrumbs="@(new[] { new PageHeader.Crumb("Periode Gaji", "/payroll"), new PageHeader.Crumb(_period.Code) })">
         <Chips><StatusBadge Value="@_period.Status" /> @if (_period.IsProvisional) { <span class="gms-warn"><GmsIcon Name="warning" /> BELUM FINAL</span> }</Chips>
         <Actions>
-            <GmsButton Type="@BtnKind.Default" OnClick="RefreshAsync">Segarkan</GmsButton>
+            <GmsButton Type="@BtnKind.Default" Icon="refresh" AriaLabel="Segarkan" Title="Segarkan" OnClick="RefreshAsync" />
             @if (_user.HasPermission(Permissions.Payroll.Export))
             {
-                <GmsButton Type="@BtnKind.Default" OnClick="() => ExportAsync(PayrollExportFormat.Xlsx)">Excel (.xlsx)</GmsButton>
-                <GmsButton Type="@BtnKind.Default" OnClick="() => ExportAsync(PayrollExportFormat.CsvSummary)">CSV Ringkasan</GmsButton>
-                <GmsButton Type="@BtnKind.Default" OnClick="() => ExportAsync(PayrollExportFormat.CsvDaily)">CSV Harian</GmsButton>
+                <GmsButton Type="@BtnKind.Default" Icon="download" OnClick="() => ExportAsync(PayrollExportFormat.Xlsx)">Excel (.xlsx)</GmsButton>
+                <GmsButton Type="@BtnKind.Default" Icon="download" OnClick="() => ExportAsync(PayrollExportFormat.CsvSummary)">CSV Ringkasan</GmsButton>
+                <GmsButton Type="@BtnKind.Default" Icon="download" OnClick="() => ExportAsync(PayrollExportFormat.CsvDaily)">CSV Harian</GmsButton>
             }
 
-            @if (_user.HasPermission(Permissions.Payroll.PrintSlip)) { <GmsButton Type="@BtnKind.Default" OnClick="() => _slipOpen = true">Slip Gaji</GmsButton> }
-            @if (_period.CanEdit && _user.HasPermission(Permissions.Payroll.CreatePeriod)) { <GmsButton Type="@BtnKind.Default" OnClick="StartEdit">Ubah</GmsButton> }
-            @if (_period.CanClose && _user.HasPermission(Permissions.Payroll.ClosePeriod)) { <GmsButton Type="@BtnKind.Primary" OnClick="StartClose">Tutup Periode</GmsButton> }
+            @if (_user.HasPermission(Permissions.Payroll.PrintSlip)) { <GmsButton Type="@BtnKind.Default" Icon="print" OnClick="() => _slipOpen = true">Slip Gaji</GmsButton> }
+            @if (_period.CanEdit && _user.HasPermission(Permissions.Payroll.CreatePeriod)) { <GmsButton Type="@BtnKind.Default" Icon="edit" OnClick="StartEdit">Ubah</GmsButton> }
+            @if (_period.CanClose && _user.HasPermission(Permissions.Payroll.ClosePeriod)) { <GmsButton Type="@BtnKind.Primary" Icon="lock" OnClick="StartClose">Tutup Periode</GmsButton> }
         </Actions>
     </PageHeader>
+
+    <div class="gms-card" style="padding:0"><Stepper Steps="@(new[] { "Open", "Closed" })" Current="@(_period.Status == PayrollStatus.Open ? 0 : 1)" Tone="yel" Finished="@(_period.Status == PayrollStatus.Closed)" AriaLabel="Siklus status periode gaji" /></div>
 
     @if (_actionProblem is not null) { <ProblemBanner Problem="_actionProblem" /> }
     @if (_period.IsProvisional) { <div class="gms-banner warning" role="status"><div class="gms-banner-body"><p>Angka bersifat sementara dan berubah mengikuti input produksi.</p></div></div> }
@@ -229,7 +231,14 @@ else
         await LoadAsync();
     }
 
-    private async Task LoadAsync() => _loadProblem = await Errors.RunAsync(async () => _period = await Payroll.GetPeriodAsync(Id));
+    [CascadingParameter] private TabContext? TabCtx { get; set; }
+
+    private async Task LoadAsync()
+    {
+        _loadProblem = await Errors.RunAsync(async () => _period = await Payroll.GetPeriodAsync(Id));
+        var today = DateOnly.FromDateTime(DateTime.UtcNow + IdFormat.Offset);
+        TabCtx?.SetAlert(_period is { Status: PayrollStatus.Open } p && p.EndDate < today ? TabAlertKind.Warning : TabAlertKind.None, "Periode perlu ditutup");
+    }
 
     private async Task RefreshAsync()
     {

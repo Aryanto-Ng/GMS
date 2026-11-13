@@ -26,13 +26,16 @@ Acuan visual TUNGGAL: `docs/Design.md` v2.0 (Microsoft Fluent 2) dan `docs/Desig
 `GmsButton` (Default/Primary/Link, `Danger`, `Loading`, `Icon`, `AriaLabel`), `GmsIcon` (set SVG sendiri `GmsIcons`; nama alias Ant dipertahankan), `StatusBadge` + `StatusPresentation` (peta 6 warna `t-proc/t-prog/t-ok/t-obs/t-err/t-warn`; Cancelled/Void abu), `StatTile`, `PageHeader`, `ProblemBanner`/`FormSummary` (MessageBar), `ConfirmDialog` (Dialog 480px; **lebar 720px** otomatis bila ada pratinjau dampak; fokus terkurung + Esc lewat `ConfirmDialog.razor.js`; `CancelText`), `ToastHost` + `IGmsToast`/`GmsToast`, `EmptyState`/`ErrorState`/`SkeletonRows`, `PagerBar`, `QtyGrid`, `ProgressMatrix`, `StackedProgress`, `ImportWizard`, `MasterList<T>`, `TextField`/`LookupSelect`, `AsyncContent`. Tabel memakai kelas `gms-table`.
 
 ## Tes
-- bUnit: 448 lulus (`dotnet test --project src/Tests/Gms.Web.Tests`). Pemilih: tombol `button.gms-btn`; dialog `.gms-dialog-wrap`, `.gms-dialog-body`, `.gms-dialog-footer`; badge `.gms-tag.t-*`.
+- bUnit: 448 lulus; E2E: 47 lulus (`dotnet test --project src/Tests/Gms.Web.Tests`). Pemilih: tombol `button.gms-btn`; dialog `.gms-dialog-wrap`, `.gms-dialog-body`, `.gms-dialog-footer`; badge `.gms-tag.t-*`.
 - E2E: Playwright terhadap Postgres + API + Web nyata (`ShellE2ETests`: panel navigasi, pencarian header, tab menjaga isi form dan konfirmasi tutup, tema terang saja). `ScreenshotE2ETests` menangkap layar bila `GMS_SHOTS_DIR` diisi (peninjauan visual).
 - Bila `Gms.Api`/`Gms.Web` sedang berjalan dan mengunci `bin/`, bangun dan uji ke jalur lain: `-p:UseArtifactsOutput=true -p:ArtifactsPath=<folder>` (E2E mencari keluaran dengan tata letak itu).
 
 ## Notifikasi (FSD Notifikasi v1.0, `docs/Design/Notifikasi-UI.md`)
 - `Services/Api/NotificationApis.cs` (Http + Mock), `Services/Notifications/NotificationText.cs` (kunci resource + parameter → kalimat dalam bahasa aktif; `NotificationLinks` memetakan tujuan klik ke rute), `Layout/NotificationBell.razor`, `Pages/Notifications/{NotificationsPage,NotificationSettingsPage}.razor`.
 - i18n: `Resources/NotificationResource.resx` (Indonesia, bawaan) dan `.en.resx`; menambah jenis notifikasi = tambah 3 kunci (`{TypeCode}.Title/Body/Badge`) di kedua berkas. Culture dipilih lewat cookie (`/account/language`).
+
+## Penyempurnaan halaman (2026-11-14)
+`Stepper` dipakai di detail PO/WO/Periode Gaji; `ChartStack`/`ChartBars` di Beranda (tanpa donut); header halaman berikon dengan satu primary per status; `TabContext.SetAlert` dipakai detail PO/WO/Periode (variabel konteks di halaman bernama `TabCtx` karena `Tab` adalah enum bagian halaman).
 
 ## Status migrasi Fluent 2
 - **Selesai (2026-11-14):** token + CSS, ikon, tombol, toast, dialog, status/badge, shell 4 zona, Tab Manager, form masuk, penghapusan AntDesign, tes bUnit dan E2E.

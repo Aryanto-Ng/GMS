@@ -5,10 +5,14 @@
 @if (_allowed)
 {
     <section class="gms-dcard @SizeClass" role="region" aria-label="@Title">
-        <h3>@if (Href is not null) { <a href="@Href">@Title</a> } else { @Title }</h3>
+        <h3><span class="gms-tile t" aria-hidden="true"><GmsIcon Name="@Icon" /></span>@if (Href is not null) { <a href="@Href">@Title</a> } else { @Title }</h3>
         <AsyncContent T="T" Key="Refresh" Loader="Loader" Skeleton="Skeleton">
             <ChildContent Context="data">@ChildContent(data)</ChildContent>
         </AsyncContent>
+        @if (Href is not null)
+        {
+            <a class="gms-btn gms-btn-default more" style="align-self:flex-start;margin-top:auto" href="@Href" aria-label="@($"Buka detail {Title}")">Buka detail</a>
+        }
     </section>
 }
 
@@ -41,6 +45,9 @@
 
     /// <summary>Naikkan untuk memuat ulang (tombol Segarkan).</summary>
     [Parameter] public int Refresh { get; set; }
+
+    /// <summary>Ikon area pada tile di header kartu (Design.md 10).</summary>
+    [Parameter] public string Icon { get; set; } = "list";
 
     protected override async Task OnInitializedAsync() => _allowed = (await Auth.GetAuthenticationStateAsync()).User.HasPermission(Permission);
 }

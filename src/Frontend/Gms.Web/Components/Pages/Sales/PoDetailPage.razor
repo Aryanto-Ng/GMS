@@ -23,13 +23,21 @@ else
                 Breadcrumbs="@(new[] { new PageHeader.Crumb("Customer PO", "/purchase-orders"), new PageHeader.Crumb(_po.Code) })">
         <Chips><StatusBadge Value="@_po.Status" /></Chips>
         <Actions>
-            @if (Can(PoActions.Edit, Permissions.CustomerPO.Edit)) { <a class="gms-btn gms-btn-default" href="@($"/purchase-orders/{_po.Id}/edit")">Ubah</a> }
-            @if (Can(PoActions.Confirm, Permissions.CustomerPO.Confirm)) { <GmsButton Type="@BtnKind.Primary" OnClick="() => _dialog = Dialog.Confirm">Konfirmasi</GmsButton> }
-            @if (Can(PoActions.CreateWorkOrder, Permissions.WorkOrder.Create)) { <a class="gms-btn gms-btn-default" href="@($"/work-orders/new?poId={_po.Id}")">Buat WO</a> }
-            @if (Can(PoActions.CreateDelivery, Permissions.Pengiriman.Create)) { <a class="gms-btn gms-btn-default" href="@($"/deliveries/new?poId={_po.Id}")">Buat Pengiriman</a> }
-            @if (Can(PoActions.Cancel, Permissions.CustomerPO.Cancel)) { <GmsButton Type="@BtnKind.Default" OnClick="() => _dialog = Dialog.Cancel">Batalkan</GmsButton> }
+            @if (Can(PoActions.Edit, Permissions.CustomerPO.Edit)) { <a class="gms-btn gms-btn-default" href="@($"/purchase-orders/{_po.Id}/edit")"><GmsIcon Name="edit" />Ubah</a> }
+            @if (Can(PoActions.CreateDelivery, Permissions.Pengiriman.Create)) { <a class="gms-btn gms-btn-default" href="@($"/deliveries/new?poId={_po.Id}")"><GmsIcon Name="truck" />Buat Pengiriman</a> }
+            @if (Can(PoActions.Cancel, Permissions.CustomerPO.Cancel)) { <GmsButton Type="@BtnKind.Default" Danger="true" Icon="ban" OnClick="() => _dialog = Dialog.Cancel">Batalkan</GmsButton> }
+            @* Satu primary per status (Design.md 7): Draft = Konfirmasi; Confirmed/In Progress = Buat WO. *@
+            @if (Can(PoActions.Confirm, Permissions.CustomerPO.Confirm)) { <GmsButton Type="@BtnKind.Primary" Icon="check" OnClick="() => _dialog = Dialog.Confirm">Konfirmasi</GmsButton> }
+            @if (Can(PoActions.CreateWorkOrder, Permissions.WorkOrder.Create)) { <a class="gms-btn gms-btn-primary" href="@($"/work-orders/new?poId={_po.Id}")"><GmsIcon Name="plus" />Buat WO</a> }
         </Actions>
     </PageHeader>
+
+    @if (_po.Status != PoStatus.Cancelled)
+    {
+        <div class="gms-card" style="padding:0">
+            <Stepper Steps="@PoSteps" Current="@PoCurrent" Tone="@PoTone" Finished="@(_po.Status == PoStatus.Completed)" AriaLabel="Siklus status PO" />
+        </div>
+    }
 
     @if (_po.Status == PoStatus.Completed)
     {
@@ -158,6 +166,12 @@ else
     private int _allocVersion;
     private System.Security.Claims.ClaimsPrincipal _user = new();
 
+    private static readonly string[] PoSteps = ["Draft", "Confirmed", "In Progress", "Completed"];
+
+    private int PoCurrent => _po?.Status switch { PoStatus.Draft => 0, PoStatus.Confirmed => 1, PoStatus.InProgress => 2, _ => 3 };
+
+    private string PoTone => _po?.Status == PoStatus.InProgress ? "yel" : "blue";
+
     private bool Can(string action, string permission) => _po is not null && _po.AllowedActions.Contains(action) && _user.HasPermission(permission);
 
     private static string SourceLabel(AllocationSource s) => s switch
@@ -172,9 +186,15 @@ else
         await LoadAsync();
     }
 
+    [CascadingParameter] private TabContext? TabCtx { get; set; }
+
     private async Task LoadAsync()
     {
         _loadProblem = await Errors.RunAsync(async () => _po = await Pos.GetAsync(Id));
+        if (_po is not null)
+        {
+            TabCtx?.SetAlert(_po.Lines.Any(l => l.IsLate) && _po.Status is PoStatus.Confirmed or PoStatus.InProgress ? TabAlertKind.Error : TabAlertKind.None, "Ada baris PO terlambat");
+        }
     }
 
     private void Open(PoLineDto line, bool allocate) { _allocate = allocate; _line = line; }

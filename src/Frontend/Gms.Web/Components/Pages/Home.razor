@@ -4,19 +4,24 @@
 
 <PageTitle>Beranda · GMS</PageTitle>
 
-<PageHeader Title="@($"Selamat datang, {_name}")" Subtitle="@($"Diperbarui {_updated}")">
-    <Actions>
-        <GmsButton Type="@BtnKind.Default" OnClick="RefreshAsync">Segarkan</GmsButton>
-    </Actions>
-</PageHeader>
+@* Hero Beranda (Design.md 10): satu baris = sapaan, waktu pembaruan, chip ringkasan yang dapat diklik; Segarkan = ikon saja. Beranda tidak punya tombol primary. *@
+<div class="gms-hero">
+    <h1>Selamat datang, @_name</h1>
+    <span class="when">Diperbarui @_updated</span>
+    @foreach (var chip in _chips)
+    {
+        <a class="gms-herochip @chip.Tone" href="@chip.Href"><GmsIcon Name="@chip.Icon" Class="s12" />@chip.Text</a>
+    }
+    <span style="margin-left:auto"><GmsButton Type="@BtnKind.Default" Icon="refresh" AriaLabel="Segarkan Beranda" Title="Segarkan" OnClick="RefreshAsync" /></span>
+</div>
 <p class="gms-sr-only" role="status" aria-live="polite">@_announce</p>
 
 @if (_quick.Count > 0)
 {
-    <section class="gms-dcard wide" role="region" aria-label="Aksi Cepat">
-        <h3>Aksi Cepat</h3>
-        <div class="gms-inline">
-            @foreach (var (label, href) in _quick.Take(6)) { <a class="gms-btn gms-btn-default" href="@href">@label</a> }
+    <section class="gms-card" role="region" aria-label="Aksi Cepat" style="padding:var(--space-3) 14px">
+        <h3 class="gms-sr-only">Aksi Cepat</h3>
+        <div class="gms-quick">
+            @foreach (var (label, href) in _quick.Take(6)) { <a class="gms-btn gms-btn-default" href="@href"><GmsIcon Name="plus" />@label</a> }
         </div>
     </section>
 }
@@ -33,18 +38,18 @@
         @switch (area)
         {
             case "Produksi":
-                <DashboardCard T="OutputTodayWidget" Title="Output Hari Ini" Permission="@Permissions.ProductionOutput.View" Loader="Dashboard.GetOutputTodayAsync" Href="/production/history" Refresh="_refresh" SizeClass="medium">
+                <DashboardCard T="OutputTodayWidget" Title="Output Hari Ini" Permission="@Permissions.ProductionOutput.View" Loader="Dashboard.GetOutputTodayAsync" Href="/production/history" Icon="chart" Refresh="_refresh" SizeClass="medium">
                     <p class="gms-big">@IdFormat.Qty(context.TotalQty) <small>pcs</small></p>
                     @if (context.TotalQty == 0) { <p class="gms-ok"><GmsIcon Name="check-circle" /> Belum ada output hari ini</p> }
-                    <ul>@foreach (var p in context.ByProcess) { <li>@p.ProcessName @IdFormat.Qty(p.Qty)</li> }</ul>
+                    @if (context.ByProcess.Count > 0) { <ChartBars AriaLabel="Output hari ini per proses" Rows="@(context.ByProcess.Select(p => new ChartBars.Row(p.ProcessName, p.Qty, "/production/history?hariIni=true")).ToList())" /> }
                 </DashboardCard>
-                <DashboardCard T="WoRunningWidget" Title="WO Berjalan" Permission="@Permissions.WorkOrder.View" Loader="Dashboard.GetWoRunningAsync" Href="/work-orders" Refresh="_refresh" SizeClass="wide">
-                    <p>Released <strong>@context.Released</strong> · In Progress <strong>@context.InProgress</strong> · Selesai menunggu Close <strong>@context.CompletedAwaitingClose</strong></p>
+                <DashboardCard T="WoRunningWidget" Title="WO Berjalan" Permission="@Permissions.WorkOrder.View" Loader="Dashboard.GetWoRunningAsync" Href="/work-orders" Icon="task" Refresh="_refresh" SizeClass="wide">
+                    <ChartStack AriaLabel="WO berjalan per status" Segments="@(new[] { new ChartStack.Seg("Released", context.Released, "--k1"), new ChartStack.Seg("In Progress", context.InProgress, "--k8"), new ChartStack.Seg("Completed", context.CompletedAwaitingClose, "--k5") })" />
                     <ul class="gms-wolist">
                         @foreach (var w in context.Items)
                         {
                             <li><a href="/work-orders/@w.Id">@w.Code</a> @w.FgCode
-                                <span role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@Math.Min(100, (int)w.ProgressPercent)" aria-valuetext="@($"{IdFormat.Number(w.ProgressPercent, 1)} persen")" class="gms-stack-bar" style="display:inline-flex;width:90px"><span class="gms-seg success" style="width:@Math.Min(100m, w.ProgressPercent)%"></span></span>
+                                <span role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@Math.Min(100, (int)w.ProgressPercent)" aria-valuetext="@($"{IdFormat.Number(w.ProgressPercent, 1)} persen")" class="gms-pbar @(w.ProgressPercent >= 100 ? "done" : w.TargetDate is { } t && t < DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)) ? "late" : "prog")" style="display:inline-block;width:90px;vertical-align:middle"><i style="width:@Math.Min(100m, w.ProgressPercent)%"></i></span>
                                 @IdFormat.Number(w.ProgressPercent, 1)% · Target @IdFormat.Date(w.TargetDate)</li>
                         }
                     </ul>
@@ -53,7 +58,7 @@
                     <p class="gms-big">@IdFormat.Qty(context.TotalQty) <small>pcs</small></p>
                     <ul>@foreach (var v in context.ByVendor) { <li>@v.VendorName @IdFormat.Qty(v.Qty)</li> }</ul>
                 </DashboardCard>
-                <DashboardCard T="UnhandedOverWidget" Title="Belum Diserahterimakan" Permission="@Permissions.SerahTerimaFG.View" Loader="Dashboard.GetUnhandedOverAsync" Href="/handovers/fg" Refresh="_refresh" SizeClass="wide">
+                <DashboardCard T="UnhandedOverWidget" Title="Belum Diserahterimakan" Permission="@Permissions.SerahTerimaFG.View" Loader="Dashboard.GetUnhandedOverAsync" Href="/handovers/fg" Icon="box" Refresh="_refresh" SizeClass="wide">
                     <p class="gms-big">@IdFormat.Qty(context.TotalQty) <small>pcs</small></p>
                     @if (context.TotalQty == 0) { <p class="gms-ok"><GmsIcon Name="check-circle" /> Semua output sudah diserahterimakan</p> }
                     <ul>@foreach (var i in context.Items) { <li><a href="/work-orders/@i.WoId">@i.WoCode</a> · @IdFormat.Qty(i.Qty)</li> }</ul>
@@ -64,7 +69,7 @@
                 </DashboardCard>
                 break;
             case "Penjualan":
-                <DashboardCard T="PoLateWidget" Title="PO Terlambat" Permission="@Permissions.CustomerPO.View" Loader="Dashboard.GetPoLateAsync" Href="/purchase-orders?terlambat=true" Refresh="_refresh" SizeClass="medium">
+                <DashboardCard T="PoLateWidget" Title="PO Terlambat" Permission="@Permissions.CustomerPO.View" Loader="Dashboard.GetPoLateAsync" Href="/purchase-orders?terlambat=true" Icon="clock" Refresh="_refresh" SizeClass="medium">
                     @if (context.PoCount == 0) { <p class="gms-ok"><GmsIcon Name="check-circle" /> 0 PO terlambat</p> }
                     else { <p class="gms-big gms-bad"><GmsIcon Name="clock-circle" /> @context.PoCount PO terlambat · @IdFormat.Qty(context.ShortageQty) pcs</p> }
                     <ul>@foreach (var i in context.Items) { <li><a href="/purchase-orders/@i.PoId">@i.Code</a> @i.CustomerName −@(i.DaysLate)h</li> }</ul>
@@ -81,13 +86,14 @@
                 </DashboardCard>
                 break;
             case "Gudang":
-                <DashboardCard T="StockSummaryWidget" Title="Stok FG" Permission="@Permissions.StokFG.View" Loader="Dashboard.GetStockSummaryAsync" Href="/stock" Refresh="_refresh" SizeClass="wide">
-                    <p>Fisik <strong>@IdFormat.Qty(context.OnHand)</strong> · Teralokasi <strong>@IdFormat.Qty(context.Allocated)</strong> · Tersedia <strong>@IdFormat.Qty(context.Available)</strong></p>
-                    <ul>@foreach (var f in context.TopFgs) { <li>@f.FgCode · @IdFormat.Qty(f.Available)</li> }</ul>
+                <DashboardCard T="StockSummaryWidget" Title="Stok FG" Permission="@Permissions.StokFG.View" Loader="Dashboard.GetStockSummaryAsync" Href="/stock" Icon="box" Refresh="_refresh" SizeClass="wide">
+                    <p class="gms-big">@IdFormat.Qty(context.OnHand) <small>pcs fisik</small></p>
+                    <ChartStack AriaLabel="Stok FG: teralokasi dan tersedia" Segments="@(new[] { new ChartStack.Seg("Teralokasi", context.Allocated, "--k1"), new ChartStack.Seg("Tersedia", context.Available, "--k5") })" />
+                    @if (context.TopFgs.Count > 0) { <ChartBars AriaLabel="Stok tersedia per FG" Rows="@(context.TopFgs.Select(f => new ChartBars.Row(f.FgCode, f.Available, "/stock")).ToList())" /> }
                 </DashboardCard>
                 break;
             case "Penggajian":
-                <DashboardCard T="PayrollPeriodWidget" Title="Periode Gaji" Permission="@Permissions.Payroll.View" Loader="Dashboard.GetPayrollPeriodAsync" Href="/payroll" Refresh="_refresh" SizeClass="medium">
+                <DashboardCard T="PayrollPeriodWidget" Title="Periode Gaji" Permission="@Permissions.Payroll.View" Loader="Dashboard.GetPayrollPeriodAsync" Href="/payroll" Icon="money" Refresh="_refresh" SizeClass="medium">
                     @if (!context.HasOpenPeriod)
                     {
                         <p>Belum ada periode terbuka.@(context.SuggestedNextStart is { } next ? $" Mulai periode berikutnya mulai {IdFormat.Date(next)}." : string.Empty)</p>
@@ -95,14 +101,15 @@
                     }
                     else
                     {
-                        <p><strong>@context.Code</strong> · Open <span class="gms-warn">(BELUM FINAL)</span></p>
+                        <p class="doc-number">@context.Code</p>
+                        <div class="gms-inline"><StatusBadge Value="@PayrollStatus.Open" /><StatusBadge Value="@("provisional")" /></div>
                         <p>@context.WorkerCount pekerja · Rp @IdFormat.Number(context.ProvisionalTotal)* · sisa @context.DaysLeft hari</p>
                         <a class="gms-btn gms-btn-default" href="@($"/payroll/{context.PeriodId}")">Buka</a>
                     }
                 </DashboardCard>
                 break;
             default:
-                <DashboardCard T="SecurityWidget" Title="Keamanan Akun" Permission="@Permissions.AccessManagement.AuditLog.View" Loader="Dashboard.GetSecurityAsync" Href="/admin/audit" Refresh="_refresh" SizeClass="small">
+                <DashboardCard T="SecurityWidget" Title="Keamanan Akun" Permission="@Permissions.AccessManagement.AuditLog.View" Loader="Dashboard.GetSecurityAsync" Href="/admin/audit" Icon="shield" Refresh="_refresh" SizeClass="small">
                     <p><GmsIcon Name="lock" /> <strong>@context.LockedAccounts</strong> akun terkunci · <strong>@context.FailedLogins24h</strong> login gagal (24 jam)</p>
                     <a href="/admin/users">Lihat pengguna</a>
                 </DashboardCard>
@@ -125,6 +132,7 @@
     private List<string> _areas = [];
     private List<(string Label, string Href)> _quick = [];
     private int _widgetCount, _refresh;
+    private List<(string Text, string Href, string Tone, string Icon)> _chips = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -143,6 +151,44 @@
             ("Buat PO", "/purchase-orders/new", Permissions.CustomerPO.Create), ("Buat Surat Jalan", "/deliveries/new", Permissions.Pengiriman.Create),
             ("Buat WO", "/work-orders/new", Permissions.WorkOrder.Create),
         }.Where(q => user.HasPermission(q.Item3)).Select(q => (q.Item1, q.Item2)).ToList();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadChipsAsync();
+        }
+    }
+
+    /// <summary>Chip ringkasan (keterlambatan, dll.) dari widget yang boleh dilihat; kegagalan diabaikan (kartu menampilkan galatnya sendiri).</summary>
+    private async Task LoadChipsAsync()
+    {
+        var user = (await Auth.GetAuthenticationStateAsync()).User;
+        var chips = new List<(string, string, string, string)>();
+        try
+        {
+            if (user.HasPermission(Permissions.CustomerPO.View))
+            {
+                var late = await Dashboard.GetPoLateAsync(CancellationToken.None);
+                if (late.PoCount > 0) { chips.Add(($"{late.PoCount} PO terlambat", "/purchase-orders?terlambat=true", "t-err", "clock")); }
+                var none = await Dashboard.GetPoNoCustomerNumberAsync(CancellationToken.None);
+                if (none.PoCount > 0) { chips.Add(($"{none.PoCount} PO belum ada No. Customer", "/purchase-orders?poCustomerKosong=true", "t-warn", "alert")); }
+            }
+
+            if (user.HasPermission(Permissions.WorkOrder.View))
+            {
+                var wo = await Dashboard.GetWoLateAsync(CancellationToken.None);
+                if (wo.Count > 0) { chips.Add(($"{wo.Count} WO terlambat", "/work-orders?terlambat=true", "t-err", "clock")); }
+            }
+        }
+        catch (Exception ex) when (ex is ApiException or HttpRequestException or TaskCanceledException)
+        {
+            // ringkasan bersifat tambahan
+        }
+
+        _chips = chips;
+        StateHasChanged();
     }
 
     private async Task RefreshAsync()

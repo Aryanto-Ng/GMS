@@ -22,16 +22,25 @@ else
     <PageHeader Title="@_wo.Code" Subtitle="@($"{_wo.PoCode} · {_wo.CustomerName} · {_wo.FgCode}")" Breadcrumbs="@(new[] { new PageHeader.Crumb("Work Order", "/work-orders"), new PageHeader.Crumb(_wo.Code) })">
         <Chips><StatusBadge Value="@_wo.Status" /></Chips>
         <Actions>
-            @if (Can(WoActions.Edit, Permissions.WorkOrder.Edit)) { <a class="gms-btn gms-btn-default" href="@($"/work-orders/{_wo.Id}/edit")">Ubah</a> }
-            @if (Can(WoActions.EditQuantities, Permissions.WorkOrder.Edit)) { <GmsButton Type="@BtnKind.Default" OnClick="OpenQty">Ubah Qty</GmsButton> }
-            @if (Can(WoActions.Release, Permissions.WorkOrder.Release)) { <GmsButton Type="@BtnKind.Primary" OnClick="() => OpenAsync(Act.Release)">Rilis</GmsButton> }
-            @if (Can(WoActions.Complete, Permissions.WorkOrder.Complete)) { <GmsButton Type="@BtnKind.Primary" OnClick="() => OpenAsync(Act.Complete)">Tandai Selesai</GmsButton> }
-            @if (Can(WoActions.Resume, Permissions.WorkOrder.Complete)) { <GmsButton Type="@BtnKind.Default" OnClick="() => OpenAsync(Act.Resume)">Buka Kembali</GmsButton> }
-            @if (Can(WoActions.Close, Permissions.WorkOrder.Close)) { <GmsButton Type="@BtnKind.Primary" OnClick="() => OpenAsync(Act.Close)">Close</GmsButton> }
-            @if (Can(WoActions.Reopen, Permissions.WorkOrder.Reopen)) { <GmsButton Type="@BtnKind.Default" OnClick="() => OpenAsync(Act.Reopen)">Reopen</GmsButton> }
-            @if (Can(WoActions.Cancel, Permissions.WorkOrder.Cancel)) { <GmsButton Type="@BtnKind.Default" OnClick="() => OpenAsync(Act.Cancel)">Batalkan</GmsButton> }
+            @if (Can(WoActions.Edit, Permissions.WorkOrder.Edit)) { <a class="gms-btn gms-btn-default" href="@($"/work-orders/{_wo.Id}/edit")"><GmsIcon Name="edit" />Ubah</a> }
+            @if (Can(WoActions.EditQuantities, Permissions.WorkOrder.Edit)) { <GmsButton Type="@BtnKind.Default" Icon="edit" OnClick="OpenQty">Ubah Qty</GmsButton> }
+            @if (Can(WoActions.Resume, Permissions.WorkOrder.Complete)) { <GmsButton Type="@BtnKind.Default" Icon="refresh" OnClick="() => OpenAsync(Act.Resume)">Buka Kembali</GmsButton> }
+            @if (Can(WoActions.Reopen, Permissions.WorkOrder.Reopen)) { <GmsButton Type="@BtnKind.Default" Icon="refresh" OnClick="() => OpenAsync(Act.Reopen)">Reopen</GmsButton> }
+            @if (Can(WoActions.Cancel, Permissions.WorkOrder.Cancel)) { <GmsButton Type="@BtnKind.Default" Danger="true" Icon="ban" OnClick="() => OpenAsync(Act.Cancel)">Batalkan</GmsButton> }
+            @* Satu primary per status (Design.md 7): Draft = Rilis; In Progress = Serah Terima FG; Completed = Close (Comfi) atau Serah Terima FG (Konveksi). *@
+            @if (CanHandover) { <a class="@($"gms-btn {(HandoverIsPrimary ? "gms-btn-primary" : "gms-btn-default")}")" href="@($"/handovers/fg/new?woId={_wo.Id}")"><GmsIcon Name="box" />Serah Terima FG</a> }
+            @if (Can(WoActions.Complete, Permissions.WorkOrder.Complete)) { <GmsButton Type="@BtnKind.Default" Icon="check" OnClick="() => OpenAsync(Act.Complete)">Tandai Selesai</GmsButton> }
+            @if (Can(WoActions.Release, Permissions.WorkOrder.Release)) { <GmsButton Type="@BtnKind.Primary" Icon="check" OnClick="() => OpenAsync(Act.Release)">Rilis</GmsButton> }
+            @if (Can(WoActions.Close, Permissions.WorkOrder.Close)) { <GmsButton Type="@BtnKind.Primary" Icon="lock" OnClick="() => OpenAsync(Act.Close)">Close</GmsButton> }
         </Actions>
     </PageHeader>
+
+    @if (_wo.Status != WoStatus.Cancelled)
+    {
+        <div class="gms-card" style="padding:0">
+            <Stepper Steps="@WoSteps" Current="@WoCurrent" Tone="@WoTone" Finished="@(_wo.Status == WoStatus.Closed)" AriaLabel="Siklus status WO" />
+        </div>
+    }
 
     @if (_wo.Status == WoStatus.Cancelled && !string.IsNullOrEmpty(_wo.CancelReason))
     {
@@ -181,6 +190,18 @@ else
     private readonly Dictionary<Guid, string> _qty = [];
     private System.Security.Claims.ClaimsPrincipal _user = new();
 
+    private static readonly string[] WoSteps = ["Draft", "Released", "In Progress", "Completed", "Closed"];
+
+    private int WoCurrent => _wo?.Status switch { WoStatus.Draft => 0, WoStatus.Released => 1, WoStatus.InProgress => 2, WoStatus.Completed => 3, _ => 4 };
+
+    private string WoTone => _wo?.Status switch { WoStatus.InProgress => "yel", WoStatus.Completed => "grn", _ => "blue" };
+
+    /// <summary>Serah Terima FG hanya untuk WO In Progress/Completed bagi yang berizin Create.</summary>
+    private bool CanHandover => _wo is { Status: WoStatus.InProgress or WoStatus.Completed } && _user.HasPermission(Permissions.SerahTerimaFG.Create);
+
+    /// <summary>Primary: In Progress; pada Completed hanya bila pengguna tidak memegang izin Close (Close adalah primary bagi Comfi).</summary>
+    private bool HandoverIsPrimary => _wo?.Status == WoStatus.InProgress || !Can(WoActions.Close, Permissions.WorkOrder.Close);
+
     private bool Can(string action, string permission) => _wo is not null && _wo.AllowedActions.Contains(action) && _user.HasPermission(permission);
 
     private IEnumerable<(Tab Tab, string Label)> Tabs()
@@ -197,7 +218,15 @@ else
         await LoadAsync();
     }
 
-    private async Task LoadAsync() => _loadProblem = await Errors.RunAsync(async () => _wo = await Wos.GetAsync(Id));
+    [CascadingParameter] private TabContext? TabCtx { get; set; }
+
+    private async Task LoadAsync()
+    {
+        _loadProblem = await Errors.RunAsync(async () => _wo = await Wos.GetAsync(Id));
+        var today = DateOnly.FromDateTime(DateTime.UtcNow + IdFormat.Offset);
+        var late = _wo is { Status: WoStatus.Draft or WoStatus.Released or WoStatus.InProgress, TargetDate: { } target } && target < today;
+        TabCtx?.SetAlert(late ? TabAlertKind.Error : TabAlertKind.None, "WO melewati target selesai");
+    }
 
     private void Closed(bool open)
     {

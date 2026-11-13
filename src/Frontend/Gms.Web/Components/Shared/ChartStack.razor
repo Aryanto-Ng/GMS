@@ -1,0 +1,28 @@
+@* ChartStack (Design.md 10): bar tumpuk satu baris + legenda dengan ANGKA tertulis; warna chart mengikuti peta status. Tanpa donut. role="img" + aria-label. *@
+@{
+    var total = Segments.Sum(s => s.Value);
+}
+<div class="gms-cstack" role="img" aria-label="@AriaLabel">
+    @foreach (var s in Segments.Where(x => x.Value > 0))
+    {
+        <i style="width:@Pct(s.Value, total)%;background:var(@s.Token)" title="@s.Label @IdFormat.Qty(s.Value)"></i>
+    }
+</div>
+<div class="gms-legend">
+    @foreach (var s in Segments)
+    {
+        <span style="--c:var(@s.Token)">@s.Label @IdFormat.Qty(s.Value)</span>
+    }
+</div>
+
+@code {
+    /// <summary>Satu segmen: label, nilai, dan nama token warna chart (mis. <c>--k5</c>).</summary>
+    public sealed record Seg(string Label, int Value, string Token);
+
+    [Parameter, EditorRequired] public IReadOnlyList<Seg> Segments { get; set; } = [];
+
+    [Parameter] public string AriaLabel { get; set; } = string.Empty;
+
+    private static string Pct(int value, int total) =>
+        total <= 0 ? "0" : (value * 100d / total).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+}

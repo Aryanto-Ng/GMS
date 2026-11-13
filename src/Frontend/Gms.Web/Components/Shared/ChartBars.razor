@@ -1,0 +1,26 @@
+@* ChartBars (Design.md 10): daftar bar horizontal per kategori (label, bar, jumlah, persen); baris dapat diklik bila punya tujuan. Angka tertulis sehingga tidak bergantung warna. *@
+@{
+    var total = Rows.Sum(r => r.Value);
+}
+<div role="img" aria-label="@AriaLabel">
+    @foreach (var r in Rows)
+    {
+        var pct = total <= 0 ? 0 : (int)Math.Round(r.Value * 100d / total);
+        @if (r.Href is not null)
+        {
+            <a class="gms-cbar" href="@r.Href"><span>@r.Label</span><span class="track"><i style="width:@pct%"></i></span><span class="num">@IdFormat.Qty(r.Value)</span><span class="pct">@pct%</span></a>
+        }
+        else
+        {
+            <div class="gms-cbar"><span>@r.Label</span><span class="track"><i style="width:@pct%"></i></span><span class="num">@IdFormat.Qty(r.Value)</span><span class="pct">@pct%</span></div>
+        }
+    }
+</div>
+
+@code {
+    public sealed record Row(string Label, int Value, string? Href = null);
+
+    [Parameter, EditorRequired] public IReadOnlyList<Row> Rows { get; set; } = [];
+
+    [Parameter] public string AriaLabel { get; set; } = string.Empty;
+}

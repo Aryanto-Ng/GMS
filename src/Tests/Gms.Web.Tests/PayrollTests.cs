@@ -308,7 +308,8 @@ public sealed class PayrollPageTests : WebTestBase
         var cut = Render<PayrollPeriodDetailPage>(x => x.Add(y => y.Id, p.Id));
 
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("tbody tr")));
-        Assert.Equal(["Segarkan"], cut.FindAll(".gms-pageheader-actions button.gms-btn").Select(b => b.TextContent.Trim()));
+        Assert.Equal(["Segarkan"], cut.FindAll(".gms-pageheader-actions button.gms-btn").Select(b => b.GetAttribute("aria-label"))); // hanya Segarkan (ikon saja)
+        Assert.Empty(cut.FindAll(".gms-pageheader-actions .gms-btn-primary")); // tanpa izin Tutup tidak ada primary
     }
 
     [Fact]
