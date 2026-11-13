@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GMS — Mock-up Form Masuk</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { font: 400 14px/20px var(--font); color: var(--fg1); background: var(--brand-p); overflow: hidden; }
+  .bg { position: fixed; inset: 0; width: 100vw; height: 100vh; }
+  .stage { position: relative; min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+  .lang { position: fixed; top: 16px; right: 16px; display: flex; gap: 4px; background: rgba(255,255,255,.16); border-radius: var(--r-ctl); padding: 2px; }
+  .lang button { border: 0; background: transparent; color: var(--on-brand); height: 28px; padding: 0 10px; border-radius: var(--r-ctl); font-weight: 600; cursor: pointer; }
+  .lang button[aria-pressed="true"] { background: var(--bg1); color: var(--brand); }
+  .card { width: 420px; max-width: 100%; background: var(--bg1); border-radius: var(--r-card); box-shadow: var(--sh16); padding: 32px; position: relative; }
+  .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+  .logo i { width: 36px; height: 36px; border-radius: var(--r-ctl); background: var(--brand); color: var(--on-brand); display: grid; place-items: center; font: 700 18px var(--font); font-style: normal; }
+  .logo b { display: block; font-size: 16px; line-height: 20px; } .logo span { font-size: 12px; color: var(--fg3); }
+  h1 { margin: 0 0 16px; font-size: 20px; line-height: 28px; font-weight: 600; }
+  label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+  .f { margin-bottom: 14px; position: relative; }
+  .in { width: 100%; height: 32px; border: 1px solid var(--s1); border-bottom-color: var(--fg3); border-radius: var(--r-ctl); padding: 0 10px; font: inherit; background: var(--bg1); }
+  .in:focus { outline: 0; border-bottom: 2px solid var(--brand); padding-bottom: 0; }
+  .eye { position: absolute; right: 2px; bottom: 2px; height: 28px; border: 0; background: transparent; color: var(--brand); font-weight: 600; padding: 0 8px; cursor: pointer; border-radius: var(--r-ctl); }
+  .btn { width: 100%; height: 32px; border: 0; border-radius: var(--r-ctl); background: var(--brand); color: var(--on-brand); font: 600 14px var(--font); cursor: pointer; }
+  .btn:hover { background: var(--brand-h); } .btn:active { background: var(--brand-p); }
+  .btn[aria-busy="true"] { background: var(--s3); color: var(--fg3); cursor: progress; }
+  .mb { display: flex; gap: 8px; padding: 10px 12px; border: 1px solid var(--t-err-bd); background: var(--t-err-bg); border-radius: var(--r-card); margin-bottom: 14px; color: var(--fg1); }
+  .help { margin-top: 14px; text-align: center; font-size: 12px; color: var(--fg3); }
+  a { color: var(--brand); } :focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+  .foot { position: fixed; left: 0; right: 0; bottom: 12px; text-align: center; color: rgba(255,255,255,.85); font-size: 12px; }
+  .ic { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  /* latar bergerak — redup, mati pada reduced-motion */
+  .bar { animation: rise 5s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: bottom; }
+  .b2 { animation-duration: 6.5s; animation-delay: -1s; } .b3 { animation-duration: 4.2s; animation-delay: -2s; } .b4 { animation-duration: 7s; } .b5 { animation-duration: 5.6s; animation-delay: -3s; }
+  @keyframes rise { from { transform: scaleY(.55); } to { transform: scaleY(1); } }
+  .trend { stroke-dasharray: 1400; stroke-dashoffset: 1400; animation: draw 9s ease-in-out infinite alternate; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .float { animation: bob 9s ease-in-out infinite alternate; } .f2 { animation-duration: 12s; animation-delay: -4s; }
+  @keyframes bob { from { transform: translateY(0); } to { transform: translateY(-24px); } }
+  .wave { animation: slide 14s linear infinite; } @keyframes slide { to { transform: translateX(-200px); } }
+  @media (prefers-reduced-motion: reduce) { .bar, .trend, .float, .wave { animation: none !important; } .trend { stroke-dashoffset: 0; } }
+</style>
+</head>
+<body>
+<svg class="bg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--brand-p)"/><stop offset="1" stop-color="var(--brand)"/></linearGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#fff" stroke-opacity=".07"/></pattern>
+  </defs>
+  <rect width="1600" height="900" fill="url(#g)"/><rect width="1600" height="900" fill="url(#grid)"/>
+  <g fill="#fff" fill-opacity=".10">
+    <rect class="bar" x="120" y="520" width="46" height="300"/><rect class="bar b2" x="190" y="440" width="46" height="380"/><rect class="bar b3" x="260" y="580" width="46" height="240"/><rect class="bar b4" x="330" y="400" width="46" height="420"/><rect class="bar b5" x="400" y="500" width="46" height="320"/>
+    <rect class="bar b3" x="1160" y="560" width="46" height="260"/><rect class="bar" x="1230" y="470" width="46" height="350"/><rect class="bar b5" x="1300" y="520" width="46" height="300"/><rect class="bar b2" x="1370" y="410" width="46" height="410"/><rect class="bar b4" x="1440" y="480" width="46" height="340"/>
+  </g>
+  <polyline class="trend" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="3" points="80,700 260,610 420,650 620,470 820,520 1020,330 1220,390 1420,220 1540,260"/>
+  <g fill="#fff" fill-opacity=".35"><circle cx="260" cy="610" r="5"/><circle cx="620" cy="470" r="5"/><circle cx="1020" cy="330" r="5"/><circle cx="1420" cy="220" r="5"/></g>
+  <g class="wave" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width="2"><path d="M-200 780 q100 -40 200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0"/><path d="M-200 820 q100 -30 200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0"/></g>
+  <g fill="#fff" fill-opacity=".08"><circle class="float" cx="1250" cy="160" r="70"/><rect class="float f2" x="180" y="120" width="90" height="90" rx="14" transform="rotate(18 225 165)"/><circle class="float f2" cx="720" cy="130" r="26"/></g>
+</svg>
+
+<div class="stage">
+  <div class="lang" role="group" aria-label="Bahasa"><button aria-pressed="true">ID</button><button aria-pressed="false">EN</button></div>
+  <main class="card">
+    <div class="logo"><i>G</i><div><b>GMS</b><span>Garment Management System</span></div></div>
+    <h1>Masuk</h1>
+    <div class="mb" role="alert"><svg class="ic" style="color:var(--err)" aria-hidden="true"><use href="#e"/></svg><span>Nama pengguna atau kata sandi salah.</span></div>
+    <form onsubmit="return go(event)">
+      <div class="f"><label for="u">Nama pengguna</label><input class="in" id="u" autocomplete="username" autofocus></div>
+      <div class="f"><label for="p">Kata sandi</label><input class="in" id="p" type="password" autocomplete="current-password" style="padding-right:64px"><button class="eye" type="button" aria-pressed="false" onclick="var p=document.getElementById('p');var s=p.type==='password';p.type=s?'text':'password';this.textContent=s?'Sembunyi':'Tampil';this.setAttribute('aria-pressed',s)">Tampil</button></div>
+      <button class="btn" id="b">Masuk</button>
+    </form>
+    <div class="help">Lupa kata sandi? Hubungi Administrator.</div>
+  </main>
+  <div class="foot">© 2026 Garment Management System. Hak cipta dilindungi.</div>
+</div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="e" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.8v4M8 11h.01"/></symbol></svg>
+<script>function go(e){e.preventDefault();var b=document.getElementById('b');b.setAttribute('aria-busy','true');b.textContent='Memproses…';setTimeout(function(){b.removeAttribute('aria-busy');b.textContent='Masuk'},1200);return false}</script>
+</body>
+</html>

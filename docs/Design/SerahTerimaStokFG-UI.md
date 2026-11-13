@@ -3,7 +3,7 @@
 | Atribut | Nilai |
 |---|---|
 | FSD | `docs/FSD/SerahTerimaStokFG.md` v1.0 |
-| Fondasi | `docs/Design/_Foundation-UI.md` |
+| Fondasi | `docs/Design/_Foundation-UI.md` **v3.0 (Fluent 2)** |
 | Render Mode | Semua **Interactive Server** |
 
 ---
@@ -21,7 +21,7 @@
 | Daftar Serah Terima Material | `/gudang/material` | `SerahTerimaMaterial.View` |
 | Buat Serah Terima Material | `/gudang/material/baru` | `SerahTerimaMaterial.Create` |
 
-Dialog: Void, Koreksi, Penyesuaian Stok.
+Dialog: Void, Penyesuaian Stok. Koreksi: hanya API pada fase 1 (lihat Revisi Fluent 2).
 
 ---
 
@@ -145,11 +145,46 @@ Baris:
 
 ---
 
+## Revisi Fluent 2 (v3.0, 2026-11-13)
+
+Bagian ini **menggantikan** wireframe, pola, dan istilah lama yang bertentangan. Acuan: `docs/Design.md` v2.0 (Fluent 2) dan `docs/Design/_Foundation-UI.md` v3.0. Mock-up visual: `docs/Design/mockup/index.html`.
+
+> Glyph pada wireframe di dokumen ini (⏰ ⚠ ✓ ◔ ⛔ 🔒 ⋯ ▾) hanyalah **notasi**. UI memakai ikon Fluent 16px + teks, tanpa emoji (Design.md bagian 12).
+
+### Tab Manager
+`fg:list` · `fg:{id}` · `fg:baru:{WO-…}` · `stock` · `stock:ledger:{FG}:{Color}:{Size}` · `stock:import` · `mat:list` · `mat:{id}` · `mat:baru`. Titik belum disimpan pada form Buat (grid dan material).
+
+### Status
+Serah Terima FG / Material: **Aktif** hijau, **Voided** abu (teks dicoret pada qty). Stok FG: baris **Tersedia = 0** dengan Fisik > 0 = ikon info biru + teks "Seluruhnya dialokasikan". Qty negatif (kartu stok, penyesuaian) = teks merah + tanda **−** (badge **Negatif** merah pada saldo yang negatif). Kesiapan WO/FG sudah dibahas di modul lain.
+
+### Daftar Serah Terima
+PageHeader + **primary `⊕ Buat Serah Terima FG`**. `DataList`: pencarian (No. dokumen / WO / PO / FG), dropdown WO/PO/FG/Tanggal, chip **Aktif · Voided** dengan jumlah, footer "Menampilkan X dari Y".
+
+### Buat Serah Terima FG
+Kartu header form + `QtyGrid` (baris "Dapat diserahkan" sebagai batas, sel melebihi = merah + "Maks N"). Panel "Perkiraan alokasi otomatis" = `MessageBar` info (dapat ditutup) dengan angka dari server. Footer: [Batal] [Simpan] (primary). Setelah simpan: `MessageBar` sukses di detail ("140 pcs dialokasikan ke PO-…; 35 pcs menjadi stok bebas").
+
+### Stok FG
+PageHeader (tanpa primary): tombol default berikon `Penyesuaian` dan `Impor Saldo Awal`. Ringkasan = 3 `StatTile`: **Fisik · Teralokasi · Tersedia** (angka 24/32). `DataList`: pencarian FG, dropdown Color/Size/Customer, chip **Ada stok · Seluruhnya dialokasikan** dengan jumlah. Kolom Qty rata kanan `tabular-nums`; menu `⋯`: Kartu Stok, Penyesuaian.
+
+### Kartu Stok
+Header FG · Color · Size + 3 StatTile saldo. Tabel: Tanggal, Jenis, Dokumen sumber (tautan, mono), Qty ±, **Saldo berjalan**. Chip jenis (Penerimaan, Pembalikan, Pengiriman, Penyesuaian, Saldo Awal) dengan jumlah; filter rentang tanggal; pencarian dokumen.
+
+### Dialog (480px)
+- **Penyesuaian Stok:** field tersusun satu kolom (FG, Color, Size, Qty ±, Tanggal, Alasan wajib). Hasil "Fisik 110 · Tersedia 80 ✓" sebagai baris ringkasan; tombol nonaktif bila Tersedia < 0 dengan pesan "Lepas alokasi terlebih dahulu".
+- **Void serah terima:** ringkasan + pratinjau dampak stok sebagai daftar per baris (FG · Color · Size, Fisik sebelum→sesudah, Teralokasi, Tersedia) dan "Alokasi otomatis yang akan dilepas"; alasan wajib; tombol bahaya nonaktif bila ada ✗ dengan langkah ("Batalkan pengiriman SJ-… terlebih dahulu", tertaut). Tabel penuh bergulir di dalam dialog (menunggu **U-1**).
+- **Koreksi** serah terima: fase 1 hanya via API (diterima 2026-11-10). Bila diaktifkan nanti, berbentuk tab halaman seperti Koreksi Output.
+
+### Impor Saldo Awal dan Serah Terima Material
+Impor = `Stepper` 3 langkah (sama dengan Master Data); peringatan saldo awal ganda = `MessageBar` peringatan (oranye). Serah Terima Material: baris material pada kartu form (kolom Material, Qty 3 desimal, Satuan terkunci, Keterangan); `MessageBar` info "Ini hanya pencatatan; tidak memengaruhi stok."
+
+
+---
+
 ## Komponen dan Token (Design.md)
 
-Acuan: `docs/Design.md` dan `docs/Design/_Foundation-UI.md` v2.0. Nama komponen mengikuti kontrak Design.md; implementasi di `docs/Frontend/README.md`.
+Acuan: `docs/Design.md` v2.0 dan `docs/Design/_Foundation-UI.md` v3.0. Nama komponen mengikuti kontrak Design.md bagian 13 (pemetaan dari nama lama: Fondasi bagian 8). Pustaka UI ditentukan oleh keputusan **K-1** (Fondasi bagian 12); spesifikasi ini tidak bergantung pada pustaka.
 
-- **Komponen umum:** AppShell (header + MegaMenu + CommandPalette), `PageHeader`, tabel `gms-table` + `PagerBar` (DataTable), `StatusTag`, `ProblemBanner` (Alert), `EmptyState` / `ErrorState` / `SkeletonRows`, `AntDesign.Button` (satu `Primary` per area), `IGmsToast`.
-- **Khusus modul:** `QtyGrid` (qty serah terima dan alokasi), `ConfirmDialog` + `ImpactPreviewTable` (Void, penyesuaian stok), tabel Stok FG dan Kartu Stok (kolom qty rata kanan, negatif bertanda `danger-text`), `ImportWizard` saldo awal, `StatusTag` `voided`.
-- **Token yang dipakai:** `danger-text` (qty negatif), `fill-alter` (baris total), `border-secondary`, `space-3`.
-- **Deviasi:** tidak ada.
+- **Komponen umum:** `AppHeader` (pencarian, bahasa, pengguna), `TopNav`, `TabManager`, `Workspace`, `PageHeader`, `MessageBar`, `StatusBadge`, `DataList` (cari, filter chip, footer "Menampilkan X dari Y"), `ToastHost`, `Dialog` (480px).
+- **Khusus modul:** `QtyGrid` (Dapat diserahkan), `StatTile` (Fisik/Teralokasi/Tersedia dan saldo kartu stok), `Stepper` + `ImportWizard`, `Dialog` + `ImpactPreview` (Void, Penyesuaian), tabel Stok FG dan Kartu Stok (qty rata kanan, negatif merah + minus), `StatusBadge` Aktif/Voided/Negatif.
+- **Token yang dipakai:** `--brand`, `--s1`/`--fg3`, `--s3`, `--fg1`/`--fg2`, badge `t-ok`/`t-obs`/`t-err`/`t-proc` (info). Tidak ada hex/px mentah.
+- **Deviasi:** pratinjau dampak Void dalam 480px menunggu U-1. Koreksi hanya API (diterima 2026-11-10).

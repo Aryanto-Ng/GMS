@@ -3,14 +3,14 @@
 | Atribut | Nilai |
 |---|---|
 | FSD | `docs/FSD/MasterData.md` v1.0 |
-| Fondasi | `docs/Design/_Foundation-UI.md` |
+| Fondasi | `docs/Design/_Foundation-UI.md` **v3.0 (Fluent 2)** |
 | Render Mode | Semua **Interactive Server** |
 
 ---
 
 ## 1. Halaman dan Rute
 
-Grup navigasi **Master Data**. Setiap entitas memiliki daftar dan form (pola 4.1 dan 4.2 Fondasi).
+Grup navigasi **Master Data**. Setiap entitas memiliki daftar dan form (pola Daftar dan Form, Fondasi bagian 5.1).
 
 | Entitas | Rute daftar | Catatan UI |
 |---|---|---|
@@ -162,11 +162,38 @@ Import FG: kolom Size Berlaku memakai pemisah `|` (contoh `S|M|L|XL`), ditampilk
 
 ---
 
+## Revisi Fluent 2 (v3.0, 2026-11-13)
+
+Bagian ini **menggantikan** wireframe, pola, dan istilah lama yang bertentangan. Acuan: `docs/Design.md` v2.0 (Fluent 2) dan `docs/Design/_Foundation-UI.md` v3.0. Mock-up visual: `docs/Design/mockup/index.html`.
+
+> Glyph pada wireframe di dokumen ini (⏰ ⚠ ✓ ◔ ⛔ 🔒 ⋯ ▾) hanyalah **notasi**. UI memakai ikon Fluent 16px + teks, tanpa emoji (Design.md bagian 12).
+
+### Tab Manager
+`master:{entitas}` (daftar) · `master:fg:{kode}` (detail FG) · `master:{entitas}:import`. Titik belum disimpan pada tab FG bila Umum/Routing/Tarif berubah. Alert tab **oranye** pada FG **Belum Siap**.
+
+### Form entitas = Dialog 480px
+Semua entitas (Satuan, Kategori Material, Material, Size, Color, Customer, Process, Vendor, Pekerja) memakai **dialog form satu kolom** di atas daftar. Ini mengonfirmasi keputusan fase 1 sebelumnya (form Material/Customer/Vendor/Pekerja berupa dialog) dan menyederhanakan Tab Manager (tidak ada tab "baru" per entitas). **Pengecualian:** FG = halaman detail bertab. Footer dialog: [Batal] [Simpan] (primary, tanpa ikon).
+
+### Daftar entitas
+PageHeader: judul + jumlah, primary `⊕ Tambah {entitas}`; Impor tersedia sebagai tombol default berikon `Impor` bila berhak. `DataList`: pencarian (kode/nama), **chip dengan jumlah: Semua · Aktif · Nonaktif**; Daftar FG menambah chip **Siap Produksi · Belum Siap**. Footer "Menampilkan X dari Y". Status: **Aktif** hijau, **Nonaktif** abu. Tipe proses **Internal/Vendor** = tag netral (garis `--s1`, teks `--fg2`), bukan badge status. Kode terkunci = ikon gembok + tooltip "Sudah dipakai, tidak dapat diubah". Penolakan nonaktif (mis. Process di routing aktif) = `MessageBar` error + daftar pemakai tertaut.
+
+### Detail FG
+PageHeader: kode + nama, badge **Siap Produksi** (hijau) / **Belum Siap** (oranye), tombol `Salin dari FG lain` (default) dan `Nonaktifkan` (bahaya). **Tidak ada primary di header**; tiap inner tab punya primary di footer-nya (Simpan routing / Simpan tarif / Simpan). Inner tabs: Umum · Size Berlaku · Routing · Tarif · Kesiapan (state tab dalam per tab).
+- **Routing:** urutan dengan tombol ↑ ↓ (drag-drop = fase 2). Tag Internal/Vendor netral.
+- **Tarif:** grid input; sel invalid = border + garis bawah merah, latar tint merah, pesan 12px di bawah sel ("Maksimal 5 digit desimal", "Harus lebih dari 0"); sel kosong = oranye + ikon. Format tarif DEVIASI-2 (`Rp 1.250,5`). Titik **belum disimpan** pada tab. Pengguna tanpa `MasterData.Tarif.Edit`: hanya baca.
+- **Kesiapan:** butir ✓/✗ + teks ("Terpenuhi"/"Belum terpenuhi"); butir gagal memiliki tautan ke tab/sel.
+
+### Wizard
+Impor CSV = `Stepper` (Unggah → Periksa → Konfirmasi). Hasil validasi = tabel dengan badge ✓ hijau / ✗ merah per baris. "Salin dari FG lain" (3 langkah): langkah 2 menampilkan pratinjau grid tarif; pada dialog 480px tabel tarif bergulir horizontal di dalam dialog sampai **U-1** diputuskan.
+
+
+---
+
 ## Komponen dan Token (Design.md)
 
-Acuan: `docs/Design.md` dan `docs/Design/_Foundation-UI.md` v2.0. Nama komponen mengikuti kontrak Design.md; implementasi di `docs/Frontend/README.md`.
+Acuan: `docs/Design.md` v2.0 dan `docs/Design/_Foundation-UI.md` v3.0. Nama komponen mengikuti kontrak Design.md bagian 13 (pemetaan dari nama lama: Fondasi bagian 8). Pustaka UI ditentukan oleh keputusan **K-1** (Fondasi bagian 12); spesifikasi ini tidak bergantung pada pustaka.
 
-- **Komponen umum:** AppShell (header + MegaMenu + CommandPalette), `PageHeader`, tabel `gms-table` + `PagerBar` (DataTable), `StatusTag`, `ProblemBanner` (Alert), `EmptyState` / `ErrorState` / `SkeletonRows`, `AntDesign.Button` (satu `Primary` per area), `IGmsToast`.
-- **Khusus modul:** `MasterList<T>` (daftar entitas) + dialog form untuk entitas sederhana; FG detail memakai tab (`gms-tabs`) dan input tarif (`gms-tariff`); `ImportWizard` untuk impor CSV; `StatusTag` `ready`/`not-ready` untuk kesiapan FG; `QtyGrid` bila ada matriks.
-- **Token yang dipakai:** `primary` (tab aktif), `border-control` (input), `warning-bg`/`danger-bg` (sel tarif bermasalah), `space-4`, `radius-md`.
-- **Deviasi:** tidak ada.
+- **Komponen umum:** `AppHeader` (pencarian, bahasa, pengguna), `TopNav`, `TabManager`, `Workspace`, `PageHeader`, `MessageBar`, `StatusBadge`, `DataList` (cari, filter chip, footer "Menampilkan X dari Y"), `ToastHost`, `Dialog` (480px).
+- **Khusus modul:** `MasterList<T>` + `Dialog` form untuk semua entitas selain FG; FG detail dengan inner tabs; grid tarif (`QtyGrid` mode desimal); `ImportWizard` + `Stepper`; `StatusBadge` Aktif/Nonaktif/Siap Produksi/Belum Siap; tag tipe proses netral.
+- **Token yang dipakai:** `--brand` (primary, tab aktif), `--s1`/`--fg3` (input), tint merah (sel invalid), `--s3`, `--fg2`, badge `t-ok`/`t-obs`/`t-warn`/`t-err`. Tidak ada hex/px mentah.
+- **Deviasi:** dialog Salin dari FG lain menampilkan tabel tarif dalam 480px dengan gulir horizontal (menunggu U-1). Tarif 5 desimal = DEVIASI-2.

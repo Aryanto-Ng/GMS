@@ -1,0 +1,23 @@
+/* tokens.css — Design.md v2.0 (Fluent 2) bagian 8 dan 9. Satu-satunya berkas yang boleh berisi nilai mentah. */
+:root {
+  --brand: #0F6CBD; --brand-h: #115EA3; --brand-p: #0F548C; --brand-t: #EBF3FC;
+  --fg1: #242424; --fg2: #424242; --fg3: #616161;
+  --bg3: #F5F5F5; --bg2: #FAFAFA; --bg1: #FFFFFF;
+  --s1: #D1D1D1; --s2: #E0E0E0; --s3: #F0F0F0;
+  --err: #B10E1C; --err-bg: #FDF3F4; --badge-dot: #C50F1F; --tab-bar: #EBEBEB;
+  --sh2: 0 0 2px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.14);
+  --sh16: 0 0 2px rgba(0,0,0,.12), 0 8px 16px rgba(0,0,0,.14);
+  --sh64: 0 0 8px rgba(0,0,0,.12), 0 32px 64px rgba(0,0,0,.14);
+  --r-ctl: 4px; --r-card: 8px; --r-pill: 10px;
+  --k1: #0F6CBD; --k7: #6CB0F0; --k8: #D9A400; --k5: #107C10; --k2: #038387; --k3: #BC4B09; --k4: #8A8A8A; --k6: #B10E1C;
+  --bar-prog: #AD7A00; --on-brand: #FFFFFF; --disabled-fg: #A0A0A0;
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, Roboto, sans-serif;
+  --mono: "Cascadia Mono", Consolas, monospace;
+  /* badge (teks / latar / garis) */
+  --t-proc-fg: #0F548C; --t-proc-bg: #EBF3FC; --t-proc-bd: #A6C8EB;
+  --t-prog-fg: #6B4E00; --t-prog-bg: #FFF6D1; --t-prog-bd: #F0D367;
+  --t-ok-fg: #0E700E;   --t-ok-bg: #F1FAF1;   --t-ok-bd: #9FD89F;
+  --t-obs-fg: #616161;  --t-obs-bg: #F0F0F0;  --t-obs-bd: #D1D1D1;
+  --t-err-fg: #B10E1C;  --t-err-bg: #FDF3F4;  --t-err-bd: #EEACB2;
+  --t-warn-fg: #9A3B06; --t-warn-bg: #FFF9F5; --t-warn-bd: #FDCFB4;
+}

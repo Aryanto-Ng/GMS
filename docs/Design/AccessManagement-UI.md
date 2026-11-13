@@ -3,8 +3,8 @@
 | Atribut | Nilai |
 |---|---|
 | FSD | `docs/FSD/AccessManagement.md` v1.0 |
-| Fondasi | `docs/Design/_Foundation-UI.md` (pola daftar/form/detail/dialog, state, a11y berlaku) |
-| Platform | Web, AntDesign Blazor (Design.md). Mobile N/A. |
+| Fondasi | `docs/Design/_Foundation-UI.md` **v3.0 (Fluent 2)** (pola daftar/form/detail/dialog, state, a11y berlaku) |
+| Platform | Web (Fluent 2, Design.md v2.0). Mobile N/A. |
 | Render Mode | Login, Logout, Ganti Password, 403 = **Static SSR**. Lainnya = **Interactive Server**. |
 
 ---
@@ -27,7 +27,7 @@
 
 ## 2. Wireframe
 
-### 2.1 Login (layout tanpa navigasi)
+### 2.1 Login (SUDAH DIGANTI: lihat "Form masuk" di Revisi Fluent 2, di bawah)
 ```
               ┌────────────────────────────────────┐
               │  GMS                               │
@@ -167,11 +167,59 @@ Judul "Anda tidak memiliki akses ke halaman ini", penjelasan singkat, tombol [Ke
 
 ---
 
+## Revisi Fluent 2 (v3.0, 2026-11-13)
+
+Bagian ini **menggantikan** wireframe, pola, dan istilah lama yang bertentangan. Acuan: `docs/Design.md` v2.0 (Fluent 2) dan `docs/Design/_Foundation-UI.md` v3.0. Mock-up visual: `docs/Design/mockup/index.html`.
+
+> Glyph pada wireframe di dokumen ini (⏰ ⚠ ✓ ◔ ⛔ 🔒 ⋯ ▾) hanyalah **notasi**. UI memakai ikon Fluent 16px + teks, tanpa emoji (Design.md bagian 12).
+
+### Tab Manager
+| Layar | ID tab |
+|---|---|
+| Daftar Pengguna | `admin:users` |
+| Detail/Ubah Pengguna | `admin:user:{username}` (Tambah: `admin:user:baru`) |
+| Daftar Role | `admin:roles` |
+| Editor Role | `admin:role:{nama}` (Tambah: `admin:role:baru`) |
+| Audit Log | `admin:audit` |
+
+Form Pengguna, editor Role (matriks izin), dan form Ganti Password sukarela menandai tab **belum disimpan** (titik oranye) saat ada perubahan.
+
+### Form masuk (menggantikan 2.1)
+Halaman penuh di luar layout 4 zona, **mock-up `docs/Design/mockup/login.html`**:
+- Latar SVG bergerak bertema bisnis (`position: fixed`, 100vw×100vh), redup, **mati pada `prefers-reduced-motion`**.
+- Kartu putih **420px** di tengah layar, bayangan panel. Isi: logo "G" + "GMS" + nama aplikasi, judul **Masuk**, **Nama pengguna**, **Kata sandi** (tombol tampil/sembunyi, `aria-pressed`), tombol **Masuk** (status memuat, nonaktif saat proses), tautan "Lupa kata sandi? Hubungi Administrator".
+- Toggle **ID/EN** di pojok kanan atas, footer copyright di dasar layar.
+- Galat = `MessageBar` error `role="alert"`, tidak dapat ditutup. Pesan generik: "Nama pengguna atau kata sandi salah." (juga untuk akun nonaktif). Terkunci: "Terlalu banyak percobaan. Coba lagi dalam 15 menit atau hubungi Administrator." Sesi digantikan: `MessageBar` peringatan "Akun Anda digunakan di perangkat lain. Silakan masuk kembali."
+- Fokus awal pada Nama pengguna; Enter mengirim; `returnUrl` dipertahankan. Label teks mengikuti Design.md ("Nama pengguna", "Kata sandi"), menggantikan "Username/Password".
+
+### Ganti Password dan Akses Ditolak (Static SSR)
+Memakai latar dan kartu 420px yang sama dengan form masuk (tanpa 4 zona). Ganti password **wajib**: tanpa navigasi, tanpa Batal, hanya tombol Keluar. **Sukarela** (dari menu pengguna): halaman kartu yang sama dengan tombol Batal dan tautan kembali ke Beranda. *Catatan Frontend:* karena halaman Static SSR membuat sirkuit baru, state Tab Manager tidak terbawa; bila terasa mengganggu, Frontend mengajukan versi dialog 480px (interaktif) sebagai usulan. Aturan password: daftar ikon centang/silang + teks, `aria-live="polite"`.
+
+### Daftar Pengguna (menggantikan 2.3)
+- PageHeader: "Pengguna" + jumlah, tombol **primary** `⊕ Tambah Pengguna` (ikon kiri).
+- `DataList`: **pencarian** (username/nama), dropdown Role, **filter chip dengan jumlah**: Semua · Aktif · Terkunci · Nonaktif. Footer "Menampilkan X dari Y".
+- Kolom Status = `StatusBadge`: **Aktif** hijau, **Terkunci** merah, **Nonaktif** abu. Menu `⋯`: Lihat/Ubah, Reset Password, Buka Kunci (hanya bila terkunci), Akhiri Sesi (hanya bila sedang login), Nonaktifkan/Aktifkan.
+
+### Detail/Ubah Pengguna
+Badge status di PageHeader. Kartu "Status Akun": tombol `Reset Password`, `Akhiri Sesi` (default), **`Nonaktifkan` = bahaya** (hanya aksi merusak). Footer form: [Batal] [Simpan] (primary, tanpa ikon). Pesan penahan Administrator terakhir tampil sebagai `MessageBar` peringatan.
+
+### Editor Role + Matriks Izin
+Grid input: tab belum disimpan saat sel berubah. Baris grup **Administrasi** terkunci (ikon gembok + teks "Hanya Administrator, tidak dapat diberikan"), sel "–" tidak fokus. Role sistem: `MessageBar` info "Role sistem tidak dapat diubah" (dapat ditutup), halaman hanya baca. Ringkasan sebelum Simpan = Dialog 480px ("Tambah 3, lepas 1 permission. Berlaku untuk 2 pengguna pada aksi berikutnya"). Hapus Role: tombol bahaya nonaktif dengan tooltip bila dipakai pengguna.
+
+### Audit Log
+Rentang tanggal wajib (default 7 hari). **Tambah pencarian** (pelaku, objek) dan chip kategori peristiwa dengan jumlah (Login · Pengguna · Role · Lainnya). Baris dapat diperluas (nilai sebelum/sesudah). Footer "Menampilkan X dari Y". Tidak ada tombol ubah/hapus.
+
+### Dialog dan sesi
+Dialog Reset Password, Akhiri Sesi, Nonaktifkan: 480px. Peringatan sesi habis (2 menit sebelum timeout 30 menit): Dialog `role="alertdialog"` dengan hitung mundur dan [Tetap masuk] primary; berlaku di seluruh shell dan semua tab.
+
+
+---
+
 ## Komponen dan Token (Design.md)
 
-Acuan: `docs/Design.md` dan `docs/Design/_Foundation-UI.md` v2.0. Nama komponen mengikuti kontrak Design.md; implementasi di `docs/Frontend/README.md`.
+Acuan: `docs/Design.md` v2.0 dan `docs/Design/_Foundation-UI.md` v3.0. Nama komponen mengikuti kontrak Design.md bagian 13 (pemetaan dari nama lama: Fondasi bagian 8). Pustaka UI ditentukan oleh keputusan **K-1** (Fondasi bagian 12); spesifikasi ini tidak bergantung pada pustaka.
 
-- **Komponen umum:** AppShell (header + MegaMenu + CommandPalette), `PageHeader`, tabel `gms-table` + `PagerBar` (DataTable), `StatusTag`, `ProblemBanner` (Alert), `EmptyState` / `ErrorState` / `SkeletonRows`, `AntDesign.Button` (satu `Primary` per area), `IGmsToast`.
-- **Khusus modul:** `TextField`/`LookupSelect` (FormField) untuk form pengguna dan role; `ConfirmDialog` untuk reset password, nonaktifkan/aktifkan, buka kunci, dan hapus role; matriks izin berupa tabel `gms-perm` dengan checkbox; daftar aturan password dengan ikon centang/silang.
-- **Token yang dipakai:** `bg-container`, `fill-alter` (header tabel), `border-secondary`, `success-text`/`danger-text` (aturan password), `space-4`/`space-6`, `radius-lg`.
-- **Deviasi:** tidak ada.
+- **Komponen umum:** `AppHeader` (pencarian, bahasa, pengguna), `TopNav`, `TabManager`, `Workspace`, `PageHeader`, `MessageBar`, `StatusBadge`, `DataList` (cari, filter chip, footer "Menampilkan X dari Y"), `ToastHost`, `Dialog` (480px).
+- **Khusus modul:** `TextField`/`LookupSelect` (FormField) untuk form pengguna dan role; `Dialog` untuk Reset Password, Nonaktifkan/Aktifkan, Buka Kunci, Hapus Role, ringkasan perubahan matriks; matriks izin berupa grid `role="grid"` dengan checkbox; daftar aturan password (ikon centang/silang); halaman Form masuk (`LoginLayout`, latar SVG).
+- **Token yang dipakai:** `--brand` (primary, fokus), `--s1` (input), `--fg3` (garis bawah input), `--sh16` (kartu login), kelas `t-ok` (Aktif), `t-err` (Terkunci), `t-obs` (Nonaktif), `t-warn` (peringatan sesi). Tidak ada hex/px mentah.
+- **Deviasi:** tidak ada. Catatan: Ganti Password sukarela sebagai halaman penuh (Static SSR) tidak mempertahankan state tab; diajukan sebagai catatan Frontend, bukan deviasi desain.

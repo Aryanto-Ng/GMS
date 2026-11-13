@@ -3,7 +3,7 @@
 | Atribut | Nilai |
 |---|---|
 | FSD | `docs/FSD/PayrollBorongan.md` v1.0 |
-| Fondasi | `docs/Design/_Foundation-UI.md` |
+| Fondasi | `docs/Design/_Foundation-UI.md` **v3.0 (Fluent 2)** |
 | Render Mode | **Interactive Server**; Excel/CSV/PDF via endpoint unduhan |
 | Catatan | Halaman ini menampilkan **tarif dan rupiah**. Hanya `Payroll.View`. |
 
@@ -63,7 +63,7 @@ PKJ-0012  Budi Santoso                                  940      2.118.200,25   
 PKJ-0019  Andi ⚠ total negatif                          −20        −52.500,00             −52.500
                                                                       Total periode:     18.450.000
 ```
-Klik baris → panel detail pekerja (Rincian).
+Klik baris → detail pekerja diperluas inline (Rincian).
 
 #### Tab Rincian (dua tampilan: ◉ Per WO/Proses/Size ○ Per Hari)
 **Per WO/Proses/Size**
@@ -191,11 +191,54 @@ Slip Gaji PDF
 
 ---
 
+## Revisi Fluent 2 (v3.0, 2026-11-13)
+
+Bagian ini **menggantikan** wireframe, pola, dan istilah lama yang bertentangan. Acuan: `docs/Design.md` v2.0 (Fluent 2) dan `docs/Design/_Foundation-UI.md` v3.0. Mock-up visual: `docs/Design/mockup/index.html`.
+
+> Glyph pada wireframe di dokumen ini (⏰ ⚠ ✓ ◔ ⛔ 🔒 ⋯ ▾) hanyalah **notasi**. UI memakai ikon Fluent 16px + teks, tanpa emoji (Design.md bagian 12).
+
+### Tab Manager
+`pay:list` · `pay:{GJ-…}` (inner tabs Ringkasan · Rincian · Rincian Harian · Matriks Harian · Penyesuaian). Alert tab **oranye** bila periode **Open** dan tanggal selesainya sudah lewat ("Periode perlu ditutup").
+
+### Status dan Stepper
+| Status | Badge |
+|---|---|
+| Open | kuning `t-prog` |
+| Closed | hijau `t-ok` |
+| Belum final (angka sementara) | oranye `t-warn` |
+| Total pekerja negatif | merah `t-err` + teks **Negatif** + tanda − |
+
+`Stepper` di Detail: **Open → Closed**. Total Open berasterisk (`*`) + badge Belum final.
+
+### Daftar Periode
+PageHeader + **primary `⊕ Buat Periode`** (nonaktif + tooltip bila ada periode Open). `DataList`: pencarian (kode / catatan), chip **Open · Closed** dengan jumlah, footer "Menampilkan X dari Y". Bila tidak ada periode Open: `MessageBar` info "Belum ada periode terbuka. Mulai periode berikutnya mulai 09 Nov 2026" + tombol `Buat Periode`.
+
+### Detail Periode — aksi header
+Tombol (ikon kiri): `Segarkan` (**ikon saja**, `aria-label` + tooltip), `Ekspor ▾`, `Slip Gaji ▾`, `Ubah` (hanya Open), **`Tutup Periode` (primary, hanya Open)**. Penutupan bukan aksi "merusak" tetapi permanen: tombol brand; keparahannya di Dialog. Periode Closed: tanpa Tutup/Ubah.
+
+- `MessageBar` peringatan (dapat ditutup) pada Open: "Angka bersifat sementara dan berubah mengikuti input produksi." Closed: `MessageBar` info "Periode ditutup pada … oleh …. Angka final."
+- Ringkasan = `StatTile`: **Pekerja · Total Qty · Total Dibayarkan (Rp)** (berasterisk bila Open).
+- **Ringkasan per pekerja:** klik baris memperluas **detail pekerja inline** (menggantikan "panel detail"). Pencarian pekerja pada tab Ringkasan dan Rincian Harian.
+- **Rincian Harian:** filter rentang tanggal, pekerja, WO, proses; footer "Menampilkan X dari Y".
+- **Matriks Harian:** grid baca-saja lebar, gulir horizontal **di dalam kartu**, kolom pekerja dan header lengket, toggle Qty/Rupiah/Keduanya.
+
+### Dialog Tutup Periode (480px)
+Ringkasan label-nilai (rentang, pekerja, total), peringatan `warn` (pekerja bertotal negatif, tanggal selesai di masa depan), catatan "Penutupan PERMANEN. Koreksi lewat Penyesuaian periode berikutnya.", kolom **ketik kode periode** (berlabel), tombol `Tutup Periode` (brand/primary, bukan bahaya karena bukan penghapusan data) nonaktif sampai kode sesuai. `role="alertdialog"`. Dialog Buat Periode dan Opsi Slip: 480px.
+
+### Format
+Total dan rupiah tanpa desimal (`Rp 18.450.000`); **tarif** `Rp 2.500` / `Rp 1.250,5` mengikuti DEVIASI-2; angka rata kanan `tabular-nums`. Tarif/rupiah tidak boleh dikirim ke klien tanpa `Payroll.View`.
+
+### PDF Slip Gaji
+Tidak berubah (Fondasi bagian 13).
+
+
+---
+
 ## Komponen dan Token (Design.md)
 
-Acuan: `docs/Design.md` dan `docs/Design/_Foundation-UI.md` v2.0. Nama komponen mengikuti kontrak Design.md; implementasi di `docs/Frontend/README.md`.
+Acuan: `docs/Design.md` v2.0 dan `docs/Design/_Foundation-UI.md` v3.0. Nama komponen mengikuti kontrak Design.md bagian 13 (pemetaan dari nama lama: Fondasi bagian 8). Pustaka UI ditentukan oleh keputusan **K-1** (Fondasi bagian 12); spesifikasi ini tidak bergantung pada pustaka.
 
-- **Komponen umum:** AppShell (header + MegaMenu + CommandPalette), `PageHeader`, tabel `gms-table` + `PagerBar` (DataTable), `StatusTag`, `ProblemBanner` (Alert), `EmptyState` / `ErrorState` / `SkeletonRows`, `AntDesign.Button` (satu `Primary` per area), `IGmsToast`.
-- **Khusus modul:** Tab (Rincian, Harian, Matriks) dengan tabel `gms-table` rapat (`compact`), `ConfirmDialog` dengan konfirmasi ketik kode periode (Tutup Periode, permanen), `StatusTag` `provisional`/Open/Closed, ekspor dan unduh slip lewat tombol `Default`.
-- **Token yang dipakai:** `warning-*` (Belum final), `primary-bg` (Open), `border-secondary` (Closed), `danger-text` (total negatif), `fill-alter` (baris total), `space-3`.
-- **Deviasi:** tidak ada.
+- **Komponen umum:** `AppHeader` (pencarian, bahasa, pengguna), `TopNav`, `TabManager`, `Workspace`, `PageHeader`, `MessageBar`, `StatusBadge`, `DataList` (cari, filter chip, footer "Menampilkan X dari Y"), `ToastHost`, `Dialog` (480px).
+- **Khusus modul:** `Stepper` (Open → Closed), `StatTile`, inner tabs, tabel Rincian/Rincian Harian (Compact) + baris yang dapat diperluas, grid Matriks Harian (baca saja, lengket), `Dialog` dengan konfirmasi ketik kode periode, menu `Ekspor`/`Slip Gaji`, `StatusBadge` Open/Closed/Belum final/Negatif.
+- **Token yang dipakai:** `--brand`, `--brand-t`, `--s2`/`--s3`, `--fg1`/`--fg2`, badge `t-prog`/`t-ok`/`t-warn`/`t-err`. Tidak ada hex/px mentah.
+- **Deviasi:** tarif per unit dengan desimal = DEVIASI-2 (FSD); total tetap tanpa desimal.

@@ -3,7 +3,7 @@
 | Atribut | Nilai |
 |---|---|
 | FSD | `docs/FSD/WorkOrder.md` v1.0 |
-| Fondasi | `docs/Design/_Foundation-UI.md` |
+| Fondasi | `docs/Design/_Foundation-UI.md` **v3.0 (Fluent 2)** |
 | Render Mode | Semua **Interactive Server** |
 
 ---
@@ -17,7 +17,7 @@
 | Detail WO (progres) | `/wo/{id}` (tab `?tab=`) | `WorkOrder.View` |
 | Ubah Draft / Qty | `/wo/{id}/ubah` | `WorkOrder.Edit` |
 
-Dialog: Rilis, Complete, Buka Kembali (ke In Progress), Close, Reopen, Cancel, Ubah Qty.
+Dialog: Rilis, Complete, Buka Kembali (ke In Progress), Close, Reopen, Cancel. **Ubah Qty = mode halaman** (lihat Revisi Fluent 2).
 
 ---
 
@@ -97,7 +97,7 @@ Linimasa status (dari → ke, alasan, pelaku, waktu) dan audit perubahan Qty.
 | **Close** | Ringkasan: Dalam Produksi menjadi 0, sisa kebutuhan kembali ke PO (n pcs). Peringatan tak memblokir bila ada output belum diserahterimakan (per Color × Size). [Close WO] |
 | **Reopen (Closed → Completed)** | Alasan wajib. Bila Sisa Rencana PO tidak cukup: pesan penahan + tombol nonaktif |
 | **Cancel** | Alasan wajib. Hanya muncul bila belum ada aktivitas |
-| **Ubah Qty** | Grid Qty dengan batas minimum (output proses pertama) dan maksimum (Sisa Rencana) per sel |
+| ~~Ubah Qty~~ | **Dipindah ke mode halaman** (`/wo/{id}/ubah`): grid Qty dengan batas minimum (output proses pertama) dan maksimum (Sisa Rencana) per sel |
 
 ---
 
@@ -146,11 +146,59 @@ Aksi hanya tampil bagi pengguna yang punya permission dan status yang sesuai.
 
 ---
 
+## Revisi Fluent 2 (v3.0, 2026-11-13)
+
+Bagian ini **menggantikan** wireframe, pola, dan istilah lama yang bertentangan. Acuan: `docs/Design.md` v2.0 (Fluent 2) dan `docs/Design/_Foundation-UI.md` v3.0. Mock-up visual: `docs/Design/mockup/index.html`.
+
+> Glyph pada wireframe di dokumen ini (⏰ ⚠ ✓ ◔ ⛔ 🔒 ⋯ ▾) hanyalah **notasi**. UI memakai ikon Fluent 16px + teks, tanpa emoji (Design.md bagian 12).
+
+### Tab Manager
+`wo:list` · `wo:{WO-…}` (detail dan Ubah berbagi tab) · `wo:baru`. Alert tab: **merah** bila WO terlambat; **oranye** pada WO Draft dengan FG Belum Siap. Titik belum disimpan pada form Buat/Ubah (termasuk mode Ubah Qty).
+
+### Status dan Stepper
+| Status | Badge |
+|---|---|
+| Draft, Released | biru `t-proc` |
+| In Progress | kuning `t-prog` |
+| Completed, Closed | hijau `t-ok` |
+| Cancelled | abu `t-obs` |
+| Terlambat | merah `t-err` |
+| Langkah matriks: Belum Mulai / Berjalan / Selesai | biru / kuning / hijau |
+| FG Belum Siap / Siap Produksi | oranye / hijau |
+
+`Stepper`: Draft → Released → In Progress → Completed → Closed (status akhir hijau). Cancelled: badge abu, stepper disembunyikan.
+
+### Daftar WO
+Primary `⊕ Buat WO`. Pencarian (kode WO / PO / customer), dropdown Status/FG/Tanggal, chip dengan jumlah: **Terlambat · Menunggu Close** (`terlambat`, `menungguClose`), footer "Menampilkan X dari Y". Progres: bar **kuning** (berjalan), **hijau** (≥ 100%), **merah** (terlambat); > 100% tampil apa adanya (bar penuh + angka + "+").
+
+### Detail WO — aksi header (satu primary)
+| Status | Tombol (ikon kiri) | Primary |
+|---|---|---|
+| Draft | Ubah · Batalkan (bahaya) · Rilis | **Rilis** |
+| Released | Ubah Qty · Batalkan (bahaya, selama belum ada aktivitas) | – |
+| In Progress | Ubah Qty · Tandai Selesai · Serah Terima FG | **Serah Terima FG** |
+| Completed | Buka Kembali (Konveksi) · Serah Terima FG · Close (Comfi) | **Close** bagi Comfi, **Serah Terima FG** bagi Konveksi |
+| Closed | Reopen (Comfi) | – |
+| Cancelled | – | – |
+
+Ringkasan = `StatTile` (Qty WO, Progres %, Diserahterimakan, Belum diserahterimakan, Sisa di vendor). Inner tabs: Progres · Baris · Tarif (tidak dirender bila tanpa `WorkOrder.Tarif.View`) · Output · Serah Terima · Material · Riwayat.
+
+### Matriks Progres
+`ProgressMatrix`: sel `output/Qty` + bar tipis (kuning/hijau), langkah Vendor = tiga angka (Terkirim · Diterima · Sisa). Kolom pertama dan header lengket; **header dua tingkat Color → Size** (jangan memberi `position: sticky` pada kedua baris sekaligus sehingga baris Color tertutup). Status langkah = badge teks.
+
+### Dialog (semua 480px)
+Rilis (daftar periksa ✓/✗ dari server + ringkasan snapshot), Tandai Selesai (ringkasan progres per langkah sebagai **daftar**, bukan tabel lebar), Close (pratinjau sisa kebutuhan), Reopen/Buka Kembali/Cancel (alasan wajib, tombol bahaya).
+
+**Perubahan:** **Ubah Qty bukan dialog lagi.** Grid Qty dengan batas min/maks per sel tidak muat di 480px (usulan U-1, Fondasi bagian 12), sehingga Ubah Qty = **mode Ubah di tab WO** (`/wo/{id}/ubah`), footer [Batal] [Simpan Perubahan].
+
+
+---
+
 ## Komponen dan Token (Design.md)
 
-Acuan: `docs/Design.md` dan `docs/Design/_Foundation-UI.md` v2.0. Nama komponen mengikuti kontrak Design.md; implementasi di `docs/Frontend/README.md`.
+Acuan: `docs/Design.md` v2.0 dan `docs/Design/_Foundation-UI.md` v3.0. Nama komponen mengikuti kontrak Design.md bagian 13 (pemetaan dari nama lama: Fondasi bagian 8). Pustaka UI ditentukan oleh keputusan **K-1** (Fondasi bagian 12); spesifikasi ini tidak bergantung pada pustaka.
 
-- **Komponen umum:** AppShell (header + MegaMenu + CommandPalette), `PageHeader`, tabel `gms-table` + `PagerBar` (DataTable), `StatusTag`, `ProblemBanner` (Alert), `EmptyState` / `ErrorState` / `SkeletonRows`, `AntDesign.Button` (satu `Primary` per area), `IGmsToast`.
-- **Khusus modul:** `QtyGrid` untuk Qty per Color × Size, `ProgressMatrix` dan `StackedProgress` (progres per langkah), `ConfirmDialog` (Rilis dengan daftar periksa server, Cancel, Close dengan pratinjau sisa, Reopen), `StatusTag` WO.
-- **Token yang dipakai:** `cyan-*` (Released), `primary` (bar progres normal), `danger-text` (terlambat), `fill-hover` (track progres), `space-4`.
-- **Deviasi:** tidak ada.
+- **Komponen umum:** `AppHeader` (pencarian, bahasa, pengguna), `TopNav`, `TabManager`, `Workspace`, `PageHeader`, `MessageBar`, `StatusBadge`, `DataList` (cari, filter chip, footer "Menampilkan X dari Y"), `ToastHost`, `Dialog` (480px).
+- **Khusus modul:** `Stepper`, `ProgressMatrix`, `StackedProgress`, `QtyGrid` (Buat WO dan Ubah Qty), `StatTile`, `Dialog` (Rilis dengan daftar periksa server, Tandai Selesai, Close, Reopen, Cancel), `StatusBadge` WO.
+- **Token yang dipakai:** `--brand`, `--brand-t`, `--s3` (track progres), warna bar progres dari variabel chart (kuning berjalan, hijau selesai, merah terlambat); badge `t-proc`/`t-prog`/`t-ok`/`t-obs`/`t-err`/`t-warn`. Tidak ada hex/px mentah.
+- **Deviasi:** Ubah Qty dari dialog menjadi mode halaman (akibat U-1). Tidak ada deviasi lain.

@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GMS — Mock-up Fluent 2 (Shell + Layar)</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<!-- Sprite ikon: garis 1.4px, kotak 16px, ujung bulat (set Fluent regular, disederhanakan untuk mock-up) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-home" viewBox="0 0 16 16"><path d="M2 7.5 8 2.5l6 5M3.5 6.5V13.5h9V6.5M6.5 13.5v-4h3v4"/></symbol>
+    <symbol id="i-cart" viewBox="0 0 16 16"><path d="M1.5 2.5h2l1.4 7h6.7l1.4-5H4.2M6 13.2h.01M11 13.2h.01"/></symbol>
+    <symbol id="i-build" viewBox="0 0 16 16"><path d="M2 14V6l4 2V6l4 2V3h4v11zM5 11h1M8 11h1M11 11h1"/></symbol>
+    <symbol id="i-box" viewBox="0 0 16 16"><path d="M2 5l6-3 6 3v6l-6 3-6-3zM2 5l6 3 6-3M8 8v6"/></symbol>
+    <symbol id="i-money" viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="1.5"/><circle cx="8" cy="8" r="1.8"/></symbol>
+    <symbol id="i-db" viewBox="0 0 16 16"><ellipse cx="8" cy="4" rx="5" ry="2"/><path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 16 16"><path d="M8 1.5 13 3v4.5c0 3-2 5.2-5 7-3-1.8-5-4-5-7V3zM6 8l1.5 1.5L10.5 6"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 16 16"><path d="m4 6 4 4 4-4"/></symbol>
+    <symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3.5 3.5"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M1.8 8h12.4M8 1.8c2 2 2 10.4 0 12.4M8 1.8c-2 2-2 10.4 0 12.4"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></symbol>
+    <symbol id="i-x" viewBox="0 0 16 16"><path d="m4 4 8 8M12 4l-8 8"/></symbol>
+    <symbol id="i-check" viewBox="0 0 16 16"><path d="m3.5 8.5 3 3 6-7"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 16 16"><path d="M8 2 14.5 13.5h-13zM8 6.5v3.5M8 12h.01"/></symbol>
+    <symbol id="i-err" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.8v4M8 11h.01"/></symbol>
+    <symbol id="i-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.2v4M8 5h.01"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 16 16"><path d="M10.5 3 13 5.5 5.5 13H3v-2.5zM9 4.5 11.5 7"/></symbol>
+    <symbol id="i-ban" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="m3.6 3.6 8.8 8.8"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 16 16"><path d="M4 1.8h5.5L13 5.3v8.9H4zM9.5 1.8v3.5H13M6 8h5M6 10.5h5"/></symbol>
+    <symbol id="i-truck" viewBox="0 0 16 16"><path d="M1.5 4h8v7h-8zM9.5 6.5h3l2 2.5v2h-5M4.5 12.5h.01M11.5 12.5h.01"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 16 16"><path d="M13 7a5 5 0 0 0-9-2M3 2.5V5h2.5M3 9a5 5 0 0 0 9 2M13 13.5V11h-2.5"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 16 16"><path d="M4 11V7a4 4 0 0 1 8 0v4l1.2 1.5H2.8zM6.5 14h3"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 16 16"><rect x="3.5" y="7" width="9" height="6.5" rx="1.2"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.5V8l2.5 1.5"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 16 16"><path d="M3 13V8M7 13V3M11 13V6M14 13H2"/></symbol>
+    <symbol id="i-list" viewBox="0 0 16 16"><path d="M5 4h9M5 8h9M5 12h9M2 4h.01M2 8h.01M2 12h.01"/></symbol>
+    <symbol id="i-task" viewBox="0 0 16 16"><rect x="3" y="2.5" width="10" height="11.5" rx="1.5"/><path d="M5.5 6.5l1 1 2-2M5.5 11h5"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 16 16"><path d="m8 2 6 3-6 3-6-3zM2 8l6 3 6-3M2 11l6 3 6-3"/></symbol>
+    <symbol id="i-people" viewBox="0 0 16 16"><circle cx="6" cy="5.5" r="2.3"/><path d="M1.8 13c.3-2.2 2-3.5 4.2-3.5s3.9 1.3 4.2 3.5M11 4.2a2.2 2.2 0 0 1 0 4.3M12.5 10c1 .6 1.6 1.5 1.7 3"/></symbol>
+    <symbol id="i-print" viewBox="0 0 16 16"><path d="M4.5 6V2h7v4M4.5 11.5h-2v-5h11v5h-2M4.5 9.5h7v4.5h-7z"/></symbol>
+    <symbol id="i-down" viewBox="0 0 16 16"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10"/></symbol>
+  </defs>
+</svg>
+
+<header class="hdr" role="banner">
+  <div class="logo"><i>G</i><span>GMS</span><small>Garment Management System</small></div>
+  <div class="search" role="search">
+    <svg class="ic"><use href="#i-search"/></svg>
+    <input id="q" type="search" placeholder="Cari halaman atau aksi…" aria-label="Cari halaman atau aksi" autocomplete="off">
+    <div id="sres" class="card" style="position:absolute;top:36px;left:0;right:0;margin:0;display:none;color:var(--fg1);z-index:40;box-shadow:var(--sh16)"></div>
+  </div>
+  <div class="hdr-r">
+    <button class="hbtn" aria-label="Bahasa: Indonesia"><svg class="ic"><use href="#i-globe"/></svg>ID<svg class="ic s12"><use href="#i-chev"/></svg></button>
+    <!-- Lonceng notifikasi tidak dirender di fase 1 (DEVIASI-3). -->
+    <button class="hbtn" aria-label="Menu pengguna Budi Santoso, Admin Produksi"><span class="avatar">BS</span>Budi Santoso<svg class="ic s12"><use href="#i-chev"/></svg></button>
+  </div>
+</header>
+
+<nav class="nav" id="nav" aria-label="Navigasi utama"></nav>
+<div class="mega" id="mega"></div>
+<div class="tabs" id="tabs" role="tablist" aria-label="Tab dokumen"></div>
+<main class="ws" id="ws" tabindex="-1"></main>
+
+<div class="toast" id="toast" role="status"></div>
+<div class="modal-bg" id="modal"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dt">
+  <h2 id="dt">Batalkan PO-202611-0001?</h2>
+  <div class="b">
+    <dl class="kv"><dt>Customer</dt><dd>PT Jaya</dd><dt>Dampak</dt><dd>Alokasi 40 pcs akan dilepas.</dd></dl>
+    <div class="fld"><label for="rs">Alasan<span class="req" aria-hidden="true">*</span></label><input class="in bad" id="rs" aria-required="true" aria-describedby="rse"><div class="err-t" id="rse"><svg class="ic s12"><use href="#i-err"/></svg>Alasan wajib diisi.</div></div>
+  </div>
+  <div class="f"><button class="btn" onclick="closeModal()">Batal</button><button class="btn dng" disabled>Batalkan PO</button></div>
+</div></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const ic = (n, c = '') => `<svg class="ic ${c}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const bd = (t, k, i) => `<span class="bd t-${k}">${i ? ic(i, 's12') : ''}${t}</span>`;
+
+/* ---------- katalog navigasi (satu sumber: Top Navigation + pencarian header) ---------- */
+const NAV = [
+  { id: 'home', label: 'Beranda', icon: 'home', direct: 'home' },
+  { id: 'jual', label: 'Penjualan', icon: 'cart', groups: [
+    { t: 'Customer PO', i: 'doc', items: [['Daftar PO', 'Cari dan pantau semua PO', 'list', 'po-list'], ['Buat PO', 'Catat pesanan customer baru', 'plus', 'po-new', 1]] },
+    { t: 'Pengiriman', i: 'truck', items: [['Daftar Surat Jalan', 'Riwayat pengiriman', 'doc', 'sj-list'], ['Buat Surat Jalan', 'Kirim barang ke customer', 'plus', 'sj-new', 1]] } ] },
+  { id: 'prod', label: 'Produksi', icon: 'build', groups: [
+    { t: 'Work Order', i: 'task', items: [['Daftar WO', 'Progres tiap Work Order', 'list', 'wo-list'], ['Buat WO', 'Rencanakan produksi dari PO', 'plus', 'wo-new', 1]] },
+    { t: 'Production Output', i: 'chart', items: [['Riwayat Output', 'Catatan output produksi', 'list', 'out-hist'], ['Input Output', 'Catat hasil kerja pekerja', 'plus', 'out-input', 1]] },
+    { t: 'Vendor', i: 'people', items: [['Kirim/Terima Vendor', 'Pekerjaan di luar pabrik', 'plus', 'out-vendor', 1]] } ] },
+  { id: 'gudang', label: 'Gudang', icon: 'box', groups: [
+    { t: 'Finished Goods', i: 'box', items: [['Stok FG', 'Fisik, teralokasi, tersedia', 'list', 'stock'], ['Serah Terima FG', 'Terima barang jadi dari produksi', 'plus', 'fg-new', 1]] },
+    { t: 'Material', i: 'layers', items: [['Serah Terima Material', 'Catat material ke produksi', 'list', 'mat-list']] } ] },
+  { id: 'gaji', label: 'Penggajian', icon: 'money', groups: [{ t: 'Payroll Borongan', i: 'money', items: [['Periode Gaji', 'Rekap upah borongan', 'list', 'pay-list'], ['Buat Periode', 'Mulai periode berikutnya', 'plus', 'pay-new', 1]] }] },
+  { id: 'master', label: 'Master Data', icon: 'db', groups: [
+    { t: 'Produk', i: 'doc', items: [['Finished Goods', 'FG, routing, tarif', 'list', 'm-fg'], ['Material', 'Bahan baku', 'list', 'm-mat']] },
+    { t: 'Mitra dan SDM', i: 'people', items: [['Customer', 'Daftar customer', 'list', 'm-cus'], ['Pekerja', 'Pekerja borongan', 'list', 'm-pkj']] } ] },
+  { id: 'adm', label: 'Administrasi', icon: 'shield', groups: [{ t: 'Hak Akses', i: 'lock', items: [['Pengguna', 'Akun dan peran', 'list', 'u-list'], ['Role dan Hak Akses', 'Matriks izin', 'list', 'r-list'], ['Audit Log', 'Jejak aktivitas', 'list', 'audit']] }] },
+];
+
+/* ---------- Tab Manager ---------- */
+const TABS = {
+  'home':   { title: 'Beranda', pinned: true, render: home },
+  'po-list': { title: 'Daftar PO', render: poList },
+  'po-0001': { title: 'PO-202611-0001', alert: 'err', alertText: 'Ada baris PO terlambat', render: poDetail },
+  'out-input': { title: 'Input Output WO-…0004', dirty: true, alert: 'err', alertText: 'Ada sel melebihi batas', render: outInput },
+};
+let open = ['home', 'po-list', 'po-0001', 'out-input'], active = 'home';
+const MAX = 10;
+
+function openTab(id, title) {
+  if (!TABS[id]) TABS[id] = { title: title || id, render: () => placeholder(title || id) };
+  if (!open.includes(id)) {
+    if (open.length >= MAX) { toast('Batas 10 tab tercapai. Tutup satu tab untuk membuka dokumen baru.', 'info'); return; }
+    open.push(id);
+  }
+  active = id; closeMega(); draw();
+}
+function closeTab(id, e) {
+  e && e.stopPropagation();
+  if (TABS[id].dirty && !confirm('Perubahan belum disimpan. Tutup tanpa menyimpan?')) return;
+  const i = open.indexOf(id); open.splice(i, 1);
+  if (active === id) active = open[Math.max(0, i - 1)];
+  draw();
+}
+function drawTabs() {
+  $('#tabs').innerHTML = open.map(id => {
+    const t = TABS[id], on = id === active;
+    const al = t.alert === 'err' ? `<span class="alert-err" title="${t.alertText}">${ic('err')}<span class="sr">${t.alertText}</span></span>` : t.alert === 'warn' ? `<span class="alert-warn" title="${t.alertText}">${ic('alert')}<span class="sr">${t.alertText}</span></span>` : '';
+    return `<div class="tab ${on ? 'on' : ''}"><button class="lbl" role="tab" aria-selected="${on}" onclick="openTab('${id}')">${id === 'home' ? ic('home') : al}<span class="tt">${t.title}</span>${t.dirty ? '<span class="dirty" aria-hidden="true"></span><span class="sr">belum disimpan</span>' : ''}</button>${t.pinned ? '' : `<button class="x" aria-label="Tutup ${t.title}" onclick="closeTab('${id}',event)">${ic('x', 's12')}</button>`}</div>`;
+  }).join('') + `<button class="all">Semua tab (${open.length}/${MAX})${ic('chev', 's12')}</button>`;
+}
+function draw() {
+  drawNav(); drawTabs();
+  $('#ws').innerHTML = TABS[active].render() + `<div class="foot">© 2026 Garment Management System. Hak cipta dilindungi.</div>`;
+  $('#ws').scrollTop = 0;
+}
+
+/* ---------- navigasi ---------- */
+let navOpen = null;
+function drawNav() {
+  $('#nav').innerHTML = NAV.map(c => `<button class="${(navOpen === c.id) ? 'on' : (!navOpen && ((c.direct === active) || (c.id === 'jual' && active.startsWith('po')) || (c.id === 'prod' && active.startsWith('out')))) ? 'on' : ''}" aria-expanded="${navOpen === c.id}" onclick="${c.direct ? `openTab('${c.direct}')` : `toggleMega('${c.id}')`}">${ic(c.icon)}${c.label}${c.groups ? ic('chev', 's12') : ''}</button>`).join('');
+}
+function toggleMega(id) {
+  if (navOpen === id) return closeMega();
+  navOpen = id; const c = NAV.find(x => x.id === id);
+  $('#mega').innerHTML = c.groups.map(g => `<section class="mgrp"><h4><span class="tile b">${ic(g.i)}</span>${g.t}</h4>${g.items.map(it => `<button class="mitem" onclick="openTab('${it[3]}','${it[0]}')"><span class="tile ${it[4] ? 't' : ''}">${ic(it[2])}</span><span><b>${it[0]}${it[4] ? ' +' : ''}</b><span class="d">${it[1]}</span></span></button>`).join('')}</section>`).join('');
+  $('#mega').classList.add('open'); drawNav();
+}
+function closeMega() { navOpen = null; $('#mega').classList.remove('open'); drawNav(); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeMega(); closeModal(); $('#sres').style.display = 'none'; } });
+document.addEventListener('click', e => { if (!e.target.closest('#nav,#mega')) closeMega(); if (!e.target.closest('.search')) $('#sres').style.display = 'none'; });
+
+/* pencarian header: maks 7 hasil, label + jalur + tag Aksi */
+$('#q').addEventListener('input', e => {
+  const v = e.target.value.trim().toLowerCase(); const r = [];
+  NAV.forEach(c => (c.groups || []).forEach(g => g.items.forEach(it => { if (v && (it[0] + ' ' + it[1]).toLowerCase().includes(v)) r.push({ it, path: c.label + ' / ' + g.t }); })));
+  const el = $('#sres'); el.style.display = v ? 'block' : 'none';
+  el.innerHTML = r.slice(0, 7).map(x => `<button class="mitem" onclick="openTab('${x.it[3]}','${x.it[0]}');$('#sres').style.display='none'"><span class="tile ${x.it[4] ? 't' : ''}">${ic(x.it[2])}</span><span style="flex:1"><b>${x.it[0]}</b><span class="d">${x.path}</span></span>${x.it[4] ? bd('Aksi', 'proc') : ''}</button>`).join('') || '<div style="padding:12px;color:var(--fg3)">Tidak ada hasil untuk pencarian ini.</div>';
+});
+
+function toast(m, k = 'ok') { const t = $('#toast'); t.className = 'toast show ' + (k === 'ok' ? '' : k); t.innerHTML = ic(k === 'err' ? 'x' : k === 'info' ? 'info' : 'check') + m; clearTimeout(t._t); t._t = setTimeout(() => t.className = 'toast', k === 'err' ? 4000 : 2800); }
+function openModal() { $('#modal').classList.add('open'); $('#rs').focus(); }
+function closeModal() { $('#modal').classList.remove('open'); }
+const placeholder = t => `<div class="crumb">GMS</div><div class="ph"><h1>${t}</h1></div><div class="mb info">${ic('info')}<div class="t">Layar ini belum dibuat di mock-up. Pola yang sama berlaku: PageHeader, MessageBar, DataList, aksi form.</div></div>`;
+
+/* ---------- komponen ---------- */
+const stat = (l, v, d, u = '') => `<button class="st" onclick="toast('Membuka daftar terkait di tab…','info')"><div class="l">${l}</div><div class="v">${v}${u ? ' <small>' + u + '</small>' : ''}</div>${d ? `<div class="d">${d}</div>` : ''}</button>`;
+const sp = (a, b, c, tot) => `<div class="sp" role="img" aria-label="Terkirim ${a}, dialokasikan ${b}, dalam produksi ${c} dari ${tot}"><i style="width:${a / tot * 100}%;background:var(--k5)"></i><i style="width:${b / tot * 100}%;background:var(--k1)"></i><i style="width:${c / tot * 100}%;background:var(--k8)"></i></div><div class="leg">Kirim ${a} · Alok ${b} · Prod ${c} / ${tot}</div>`;
+const pb = (p, k) => `<div class="pb" role="progressbar" aria-valuenow="${p}" aria-valuemin="0" aria-valuemax="100" aria-label="${p}%"><i style="width:${Math.min(p, 100)}%;background:var(--${k})"></i></div>`;
+const mbar = (k, i, h) => `<div class="mb ${k}" role="${k === 'err' ? 'alert' : 'status'}">${ic(i)}<div class="t">${h}</div>${k === 'err' ? '' : `<button class="cl" aria-label="Tutup pesan" onclick="this.parentElement.remove()">${ic('x')}</button>`}</div>`;
+
+/* ---------- Layar: Beranda ---------- */
+function home() {
+  const cb = (n, v, p) => `<div class="cb-row" onclick="toast('Membuka Riwayat Output (proses ${n}) di tab…','info')"><span>${n}</span><span class="bar"><i style="width:${p}%"></i></span><span class="num">${v}</span><span class="p">${p}%</span></div>`;
+  return `
+  <div class="hero">
+    <h1>Selamat datang, Budi</h1><span class="when">Diperbarui 14 Nov 2026 14:30</span>
+    <button class="hchip t-err" onclick="openTab('po-list')">${ic('clock', 's12')}3 PO terlambat</button>
+    <button class="hchip t-err">${ic('clock', 's12')}2 WO terlambat</button>
+    <button class="hchip t-warn">${ic('alert', 's12')}2 PO belum ada No. Customer</button>
+    <span style="margin-left:auto"><button class="btn ico" aria-label="Segarkan Beranda" title="Segarkan" onclick="toast('Beranda diperbarui')">${ic('refresh')}</button></span>
+  </div>
+  <div class="card"><div class="qa">
+    <button class="btn" onclick="openTab('out-input')">${ic('plus')}Input Output</button><button class="btn">${ic('truck')}Kirim/Terima Vendor</button>
+    <button class="btn">${ic('box')}Serah Terima FG</button><button class="btn">${ic('layers')}Serah Terima Material</button><button class="btn">Lainnya${ic('chev', 's12')}</button>
+  </div></div>
+
+  <div class="area">Produksi</div>
+  <div class="grid">
+    <section class="dc c4" aria-label="Output Hari Ini"><h3><span class="tile t">${ic('chart')}</span>Output Hari Ini</h3>
+      <div class="big">1.240 <small style="font-size:12px;font-weight:400;color:var(--fg3)">pcs</small></div>
+      <div role="img" aria-label="Output per proses: Cutting 400, Sewing 520, QC 320">${cb('Cutting', 400, 32)}${cb('Sewing', 520, 42)}${cb('QC', 320, 26)}</div>
+      <button class="btn more" onclick="openTab('out-hist','Riwayat Output')">Buka detail</button></section>
+    <section class="dc c8" aria-label="WO Berjalan"><h3><span class="tile t">${ic('task')}</span>WO Berjalan</h3>
+      <div class="stack" role="img" aria-label="Released 2, In Progress 5, Completed 1"><i style="width:25%;background:var(--k1)"></i><i style="width:62.5%;background:var(--k8)"></i><i style="width:12.5%;background:var(--k5)"></i></div>
+      <div class="lg"><span style="--c:var(--k1)">Released 2</span><span style="--c:var(--k8)">In Progress 5</span><span style="--c:var(--k5)">Completed 1</span></div>
+      <table><tbody>
+        <tr><td class="mono">WO-202611-0004</td><td>KMJ-001</td><td style="width:140px">${pb(62, 'bar-prog')}</td><td class="num">62%</td><td>Target 20 Nov</td></tr>
+        <tr><td class="mono">WO-202611-0002</td><td>CLN-004</td><td>${pb(100, 'k5')}</td><td class="num">104%</td><td>${bd('Terlambat', 'err', 'clock')}</td></tr>
+        <tr><td class="mono">WO-202611-0007</td><td>JKT-002</td><td>${pb(35, 'k6')}</td><td class="num">35%</td><td>${bd('Terlambat', 'err', 'clock')}</td></tr>
+      </tbody></table>
+      <button class="btn more" onclick="openTab('wo-list','Daftar WO')">Buka detail</button></section>
+  </div>
+
+  <div class="area">Penjualan</div>
+  <div class="tiles" style="grid-template-columns:repeat(4,1fr)">
+    ${stat('PO Terlambat', 3, bd('Terlambat', 'err', 'clock') + ' 420 pcs')}
+    ${stat('Jatuh Tempo 7 Hari', 5, bd('Jatuh tempo', 'warn', 'alert') + ' 1.150 pcs')}
+    ${stat('PO Belum Ada No. Customer', 2, bd('Belum ada', 'warn', 'alert'))}
+    ${stat('Kebutuhan Belum Terencana', '640', '4 PO', 'pcs')}
+  </div>
+
+  <div class="area">Gudang dan Penggajian</div>
+  <div class="grid">
+    <section class="dc c6" aria-label="Stok FG"><h3><span class="tile t">${ic('box')}</span>Stok FG</h3>
+      <div class="big">2.140 <small style="font-size:12px;font-weight:400;color:var(--fg3)">pcs fisik</small></div>
+      <div class="stack" role="img" aria-label="Teralokasi 640, tersedia 1.500"><i style="width:30%;background:var(--k1)"></i><i style="width:70%;background:var(--k5)"></i></div>
+      <div class="lg"><span style="--c:var(--k1)">Teralokasi 640</span><span style="--c:var(--k5)">Tersedia 1.500</span></div>
+      ${cb('KMJ-001', 520, 24)}${cb('CLN-004', 410, 19)}
+      <button class="btn more" onclick="openTab('stock','Stok FG')">Buka detail</button></section>
+    <section class="dc c6" aria-label="Periode Gaji"><h3><span class="tile t">${ic('money')}</span>Periode Gaji</h3>
+      <div class="mono">GJ-20261102-20261108</div>
+      <div style="display:flex;gap:6px">${bd('Open', 'prog')}${bd('Belum final', 'warn', 'alert')}</div>
+      <div class="big">Rp 18.450.000<span style="font-size:14px">*</span></div>
+      <div class="sub">14 pekerja · sisa 2 hari · * angka sementara</div>
+      <button class="btn more" onclick="openTab('pay-list','Periode Gaji')">Buka detail</button></section>
+  </div>`;
+}
+
+/* ---------- Layar: Daftar PO ---------- */
+function poList() {
+  const rows = [
+    ['PO-202611-0003', null, 'PT Maju', '6 Nov 2026', ['Confirmed', 'proc'], [0, 100, 300, 1200]],
+    ['PO-202611-0001', 'PO/25/118', 'PT Jaya', '2 Nov 2026', ['In Progress', 'prog'], [600, 0, 200, 1000], 1],
+    ['PO-202610-0007', 'PO/25/101', 'PT Maju', '14 Okt 2026', ['Completed', 'ok'], [800, 0, 0, 800]],
+    ['PO-202610-0004', 'PO/25/090', 'PT Sentosa', '3 Okt 2026', ['Cancelled', 'obs'], [0, 0, 0, 500], 0, 1],
+    ['PO-202611-0005', 'PO/25/131', 'PT Jaya', '9 Nov 2026', ['Draft', 'proc'], [0, 0, 0, 300]],
+  ];
+  return `
+  <div class="crumb">Penjualan / Customer PO</div>
+  <div class="ph"><div><h1>Customer PO <span class="sub" style="font-weight:400">(42)</span></h1></div>
+    <div class="acts"><button class="btn pri" onclick="openTab('po-new','Buat PO')">${ic('plus')}Buat PO</button></div></div>
+  <div class="card pad0">
+    <div class="dl-top"><div class="sw"><svg class="ic"><use href="#i-search"/></svg><input class="in srch" placeholder="Cari kode, No. PO customer, customer" aria-label="Cari PO"></div>
+      <select class="in" aria-label="Status"><option>Status: Semua</option></select><select class="in" aria-label="Customer"><option>Customer: Semua</option></select><button class="btn">Reset</button></div>
+    <div class="chips" role="group" aria-label="Filter cepat">
+      <button class="chip" aria-pressed="true" onclick="pressChip(this)">Semua <i>42</i></button>
+      <button class="chip" aria-pressed="false" onclick="pressChip(this)">Terlambat <i>3</i></button>
+      <button class="chip" aria-pressed="false" onclick="pressChip(this)">Jatuh tempo 7 hari <i>5</i></button>
+      <button class="chip" aria-pressed="false" onclick="pressChip(this)">PO Customer belum ada <i>2</i></button>
+      <button class="chip" aria-pressed="false" onclick="pressChip(this)">Sisa rencana &gt; 0 <i>4</i></button></div>
+    <table><thead><tr><th>Kode PO</th><th>No. PO Customer</th><th>Customer</th><th>Tgl PO</th><th>Status</th><th>Progres (pcs)</th><th></th></tr></thead><tbody>
+    ${rows.map(r => `<tr class="${r[7] ? 'cancelled' : ''}" style="cursor:pointer" onclick="openTab('po-0001')">
+      <td class="mono"><a href="#">${r[0]}</a></td><td>${r[1] || bd('Belum ada', 'warn', 'alert')}</td><td>${r[2]}</td><td>${r[3]}</td>
+      <td>${bd(r[4][0], r[4][1])}</td><td>${sp(r[5][0], r[5][1], r[5][2], r[5][3])}</td><td>${r[6] ? bd('Terlambat', 'err', 'clock') : ''}</td></tr>`).join('')}
+    </tbody></table>
+    <div class="dl-foot"><span>Menampilkan 5 dari 42</span><div class="pager"><button class="on">1</button><button>2</button><button>3</button><button aria-label="Berikutnya">›</button></div></div>
+  </div>`;
+}
+function pressChip(b) { b.parentElement.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c === b)); }
+
+/* ---------- Layar: Detail PO ---------- */
+function poDetail() {
+  const step = (n, t, s, st) => `<div class="s ${st}"><div class="c">${st === 'done' ? ic('check') : n}</div><b>${t}</b>${s}</div>`;
+  return `
+  <div class="crumb">Penjualan / Customer PO / PO-202611-0001</div>
+  <div class="ph"><div><h1><span class="mono">PO-202611-0001</span> ${bd('In Progress', 'prog')} ${bd('Terlambat', 'err', 'clock')}</h1><div class="sub">PT Jaya · No. PO Customer PO/25/118 · Tgl PO 2 Nov 2026</div></div>
+    <div class="acts"><button class="btn">${ic('edit')}Ubah</button><button class="btn">${ic('box')}Alokasi Stok</button><button class="btn dng" onclick="openModal()">${ic('ban')}Batalkan</button><button class="btn pri">${ic('plus')}Buat WO</button></div></div>
+  ${mbar('warn', 'alert', '<b>1 baris terlambat.</b> KMJ-001 / Navy / M melewati tanggal kirim 20 Nov 2026.')}
+  <div class="tiles">${stat('Total', '1.000', '', 'pcs')}${stat('Terkirim', 600, '', 'pcs')}${stat('Dialokasikan', 0, '', 'pcs')}${stat('Dalam Produksi', 200, '', 'pcs')}${stat('Sisa Rencana', 200, '', 'pcs')}</div>
+  <div class="card"><div class="stp" role="list" aria-label="Siklus status">
+    ${step(1, 'Draft', 'Selesai', 'done')}${step(2, 'Confirmed', 'Selesai', 'done')}${step(3, 'In Progress', 'Berjalan', 'cur yel')}${step(4, 'Completed', 'Belum', '')}</div></div>
+  <div class="itabs" role="tablist"><button class="on">Baris</button><button>Alokasi</button><button>Work Order (2)</button><button>Pengiriman (1)</button><button>Riwayat</button></div>
+  <div class="card pad0"><table><thead><tr><th>FG</th><th>Color</th><th>Size</th><th>Tgl Kirim</th><th class="num">Qty</th><th class="num">Terkirim</th><th class="num">Dialok.</th><th class="num">Produksi</th><th class="num">Sisa Rencana</th></tr></thead><tbody>
+    <tr><td class="mono">KMJ-001</td><td>Navy</td><td>M</td><td>20 Nov 2026 ${bd('Terlambat', 'err', 'clock')}</td><td class="num">200</td><td class="num">150</td><td class="num">0</td><td class="num">50</td><td class="num">0</td></tr>
+    <tr><td class="mono">KMJ-001</td><td>Navy</td><td>L</td><td>20 Nov 2026</td><td class="num">150</td><td class="num">50</td><td class="num">0</td><td class="num">100</td><td class="num">0</td></tr>
+    <tr><td class="mono">KMJ-001</td><td>Orange</td><td>M</td><td>27 Nov 2026</td><td class="num">80</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">80</td></tr>
+  </tbody></table><div class="dl-foot"><span>Menampilkan 3 dari 12 baris</span><span></span></div></div>`;
+}
+
+/* ---------- Layar: Input Output (grid input, Compact) ---------- */
+function outInput() {
+  const cell = (v, max, st) => `<td><div class="cell"><input class="in ${st || ''}" value="${v}" aria-label="qty maksimum ${max}" ${st === 'bad' ? 'aria-invalid="true"' : ''}>${max === null ? '' : `<span class="${st === 'bad' ? 'err-t' : 'sub'}">${st === 'bad' ? ic('err', 's12') + 'Maks ' + max : 'maks ' + max}</span>`}</div></td>`;
+  return `
+  <div class="crumb">Produksi / Production Output / Input Output</div>
+  <div class="ph"><div><h1>Input Output</h1><div class="sub">WO-202611-0004 · KMJ-001 · PT Maju</div></div></div>
+  ${mbar('err', 'err', '<b>1 sel melebihi batas.</b> Melebihi batas tersedia: Navy / L (maks 100). Perbaiki sel bertanda merah sebelum menyimpan.')}
+  <div class="card"><div class="cb"><div class="fgrid">
+    <div class="fld"><label for="w">WO<span class="req" aria-hidden="true">*</span></label><select id="w" class="in"><option>WO-202611-0004 · KMJ-001</option></select></div>
+    <div class="fld"><label for="p">Proses<span class="req" aria-hidden="true">*</span></label><select id="p" class="in"><option>3 Sewing</option></select></div>
+    <div class="fld"><label for="d">Tanggal kerja<span class="req" aria-hidden="true">*</span></label><input id="d" class="in" value="14/11/2026"></div></div>
+    <div class="sub" style="margin-top:10px">Output proses sebelumnya (Cutting) 665 · Sudah Sewing 290 · Tersedia 375</div></div></div>
+  <div class="card"><div class="ch">Qty per pekerja</div><div class="cb qg" style="padding:0"><table>
+    <thead><tr><th class="nm" rowspan="2">Pekerja</th><th colspan="4">Navy</th><th colspan="3">Orange</th><th rowspan="2" class="num">Total</th></tr><tr><th>S</th><th>M</th><th>L</th><th>XL</th><th>S</th><th>M</th><th>L</th></tr></thead>
+    <tbody>
+    <tr class="lim"><td class="nm">Batas tersedia</td><td>40</td><td>110</td><td>100</td><td>55</td><td>0</td><td>45</td><td>25</td><td></td></tr>
+    <tr><td class="nm">PKJ-0012 Budi</td>${cell('20', 40)}${cell('30', 110)}${cell('', 100)}${cell('', 55)}${cell('', 0)}${cell('', 45)}${cell('', 25)}<td class="num">50</td></tr>
+    <tr><td class="nm">PKJ-0007 Siti</td>${cell('', 40)}${cell('40', 110)}${cell('125', 100, 'bad')}${cell('', 55)}${cell('', 0)}${cell('10', 45)}${cell('', 25)}<td class="num">175</td></tr>
+    </tbody><tfoot><tr><td class="nm">Total</td><td>20</td><td>70</td><td>125</td><td>0</td><td>0</td><td>10</td><td>0</td><td class="num">225</td></tr></tfoot></table></div>
+    <div class="cf"><span class="note"><span class="dirty"></span>Belum disimpan · 2 pekerja · 225 pcs</span><button class="btn">Batal</button><button class="btn pri" disabled title="Perbaiki 1 sel yang melebihi batas">Simpan</button></div></div>`;
+}
+
+{ const h = location.hash.slice(1); if (TABS[h] && open.includes(h)) active = h; }  // tautan langsung ke tab: index.html#po-0001
+draw();
+</script>
+</body>
+</html>

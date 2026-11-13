@@ -3,7 +3,7 @@
 | Atribut | Nilai |
 |---|---|
 | FSD | `docs/FSD/Pengiriman.md` v1.1 |
-| Fondasi | `docs/Design/_Foundation-UI.md` |
+| Fondasi | `docs/Design/_Foundation-UI.md` **v3.0 (Fluent 2)** |
 | Render Mode | Semua **Interactive Server**; PDF melalui endpoint unduhan/pratinjau |
 
 ---
@@ -17,7 +17,7 @@
 | Detail Surat Jalan | `/pengiriman/{id}` | `Pengiriman.View` |
 | Cetak PDF | `/pengiriman/{id}/cetak` (endpoint berkas) | `Pengiriman.Print` |
 
-Dialog: Void, Koreksi, Edit Informasi, Alokasi Stok (dari modul PO).
+Dialog: Void, Edit Informasi, Alokasi Stok (dari modul PO). **Koreksi = tab halaman** (lihat Revisi Fluent 2).
 
 ---
 
@@ -143,11 +143,44 @@ Koreksi: grid baris sama seperti Buat, terisi nilai asal, batas dihitung pada ko
 
 ---
 
+## Revisi Fluent 2 (v3.0, 2026-11-13)
+
+Bagian ini **menggantikan** wireframe, pola, dan istilah lama yang bertentangan. Acuan: `docs/Design.md` v2.0 (Fluent 2) dan `docs/Design/_Foundation-UI.md` v3.0. Mock-up visual: `docs/Design/mockup/index.html`.
+
+> Glyph pada wireframe di dokumen ini (⏰ ⚠ ✓ ◔ ⛔ 🔒 ⋯ ▾) hanyalah **notasi**. UI memakai ikon Fluent 16px + teks, tanpa emoji (Design.md bagian 12).
+
+### Tab Manager
+`sj:list` · `sj:{SJ-…}` (detail dan Edit Info berbagi tab) · `sj:baru` · `sj:koreksi:{SJ-…}`. Titik belum disimpan pada form Buat dan Koreksi.
+
+### Status
+**Aktif** hijau · **Voided** abu (qty dicoret, watermark DIBATALKAN pada PDF). Peringatan "Belum ada stok untuk dikirim" = `MessageBar` info/peringatan, bukan merah.
+
+### Daftar Surat Jalan
+PageHeader + **primary `⊕ Buat Surat Jalan`**. `DataList`: pencarian (kode SJ / PO / customer), dropdown Customer/Tanggal, chip **Aktif · Voided** dengan jumlah, footer "Menampilkan X dari Y". Menu `⋯`: Cetak PDF, Detail.
+
+### Buat Surat Jalan
+Kartu header form + tabel baris kirim (Compact). Kolom Maks kirim dari server; input melebihi maks = sel merah + "Maks 50". Tombol `Alokasikan stok` (default kecil) membuka Dialog Alokasi PO tanpa meninggalkan tab. Footer: [Batal] [Simpan Surat Jalan] (primary, tanpa ikon). "Isi minimal satu baris" = galat di ringkasan `MessageBar` error.
+
+### Detail Surat Jalan — aksi header
+Badge status di PageHeader. Tombol (ikon kiri): **`Cetak PDF` (primary, hanya bila Aktif)**, `Edit Info`, `Koreksi`, **`Void` (bahaya)**. Tombol **Cetak PDF** menyebut "membuka berkas PDF di tab baru" pada `aria-label`. Surat jalan Voided: tanpa Cetak/Edit/Koreksi/Void (cetak ulang dokumen Voided hanya bila FSD mengizinkan; tetap menampilkan watermark). Edit Info = Dialog 480px kecil (tanggal, penerima, kendaraan, sopir, catatan).
+
+### Dialog Void (480px)
+Daftar dampak berlabel (cocok 480px): Stok fisik · Alokasi PO · Terkirim PO · Status PO (mis. "Completed → In Progress"); alasan wajib; tombol bahaya "Void surat jalan".
+
+### Koreksi = halaman, bukan dialog
+Grid baris kirim terisi + pratinjau dampak + alasan wajib tidak muat di 480px (U-1) → tab `sj:koreksi:{SJ-…}`. Footer [Batal] [Simpan Koreksi] (primary, nonaktif bila melanggar batas).
+
+### PDF
+Dokumen cetak tidak berubah (Fondasi bagian 13); tidak memakai token UI.
+
+
+---
+
 ## Komponen dan Token (Design.md)
 
-Acuan: `docs/Design.md` dan `docs/Design/_Foundation-UI.md` v2.0. Nama komponen mengikuti kontrak Design.md; implementasi di `docs/Frontend/README.md`.
+Acuan: `docs/Design.md` v2.0 dan `docs/Design/_Foundation-UI.md` v3.0. Nama komponen mengikuti kontrak Design.md bagian 13 (pemetaan dari nama lama: Fondasi bagian 8). Pustaka UI ditentukan oleh keputusan **K-1** (Fondasi bagian 12); spesifikasi ini tidak bergantung pada pustaka.
 
-- **Komponen umum:** AppShell (header + MegaMenu + CommandPalette), `PageHeader`, tabel `gms-table` + `PagerBar` (DataTable), `StatusTag`, `ProblemBanner` (Alert), `EmptyState` / `ErrorState` / `SkeletonRows`, `AntDesign.Button` (satu `Primary` per area), `IGmsToast`.
-- **Khusus modul:** `QtyGrid` (qty kirim dengan batas alokasi), `AllocationDialog` (alokasi stok), `ConfirmDialog` + `ImpactPreviewTable` (Void, Koreksi), tombol Cetak PDF (`Default`) dan penanda "CETAK ULANG"/"DIBATALKAN" pada dokumen PDF, `StatusTag` `voided`.
-- **Token yang dipakai:** `primary` (aksi utama Simpan), `danger` (Void), `fill-alter`, `space-4`. PDF memakai font Liberation Sans, bukan token UI.
-- **Deviasi:** tidak ada.
+- **Komponen umum:** `AppHeader` (pencarian, bahasa, pengguna), `TopNav`, `TabManager`, `Workspace`, `PageHeader`, `MessageBar`, `StatusBadge`, `DataList` (cari, filter chip, footer "Menampilkan X dari Y"), `ToastHost`, `Dialog` (480px).
+- **Khusus modul:** `QtyGrid`/tabel baris kirim (Compact) dengan batas dari server, `Dialog` + dialog Alokasi (dari modul PO), tombol Cetak PDF (primary pada detail Aktif) + penanda CETAK ULANG/DIBATALKAN di dokumen PDF, `StatusBadge` Aktif/Voided.
+- **Token yang dipakai:** `--brand` (primary), `--s1`/`--fg3`, `--s3`, badge `t-ok`/`t-obs`/`t-err`; PDF memakai font Liberation Sans, bukan token UI. Tidak ada hex/px mentah.
+- **Deviasi:** Koreksi menjadi tab halaman (akibat U-1).

@@ -3,7 +3,7 @@
 | Atribut | Nilai |
 |---|---|
 | FSD | `docs/FSD/ProductionOutput.md` v1.0 |
-| Fondasi | `docs/Design/_Foundation-UI.md` |
+| Fondasi | `docs/Design/_Foundation-UI.md` **v3.0 (Fluent 2)** |
 | Render Mode | Semua **Interactive Server** |
 | Pengguna utama | Admin Produksi, input volume tinggi di PC → mode **Compact**, keyboard-first |
 
@@ -17,9 +17,9 @@
 | Penyesuaian Output | `/produksi/penyesuaian` | `ProductionOutput.Adjust` |
 | Kirim/Terima Vendor | `/produksi/vendor` (tab Kirim · Terima) | `VendorJob.Create` |
 | Riwayat Produksi | `/produksi/riwayat` | `ProductionOutput.View` / `VendorJob.View` |
-| Detail Entri | `/produksi/riwayat/{id}` (panel samping) | View |
+| Detail Entri | `/produksi/riwayat/{id}` (**baris yang diperluas inline**, bukan panel samping) | View |
 
-Dialog: Void, Koreksi (grid terisi), Konfirmasi Peringatan.
+Dialog: Void, Konfirmasi Peringatan. **Koreksi = tab halaman** (lihat Revisi Fluent 2).
 
 ---
 
@@ -105,7 +105,7 @@ Waktu input       WO         Proses   Pekerja/Vendor  Tgl kerja   Jenis        Q
 07 Nov 16:10      WO-…0004   Bordir   CV Bordir       07 Nov      Terima       250    Aktif    ⋯
 ```
 - Baris Voided: teks dicoret + chip "Void" + alasan di tooltip. Tautan antar entri (digantikan oleh / menggantikan).
-- Klik baris membuka **panel detail**: qty per Color × Size, alasan, rujukan, jejak pembuat. Aksi: Void, Koreksi (sesuai permission dan syarat).
+- Klik baris memperluas **detail inline**: qty per Color × Size, alasan, rujukan, jejak pembuat. Aksi: Void, Koreksi (sesuai permission dan syarat).
 - Aksi Void/Koreksi dinonaktifkan dengan tooltip alasan bila WO Completed/Closed atau tanggal kerja berada di periode tertutup (arahkan ke Penyesuaian).
 - Ekspor tidak ada di fase 1.
 
@@ -155,11 +155,49 @@ Grid yang sama dengan Input Output (satu baris), terisi nilai entri asal; boleh 
 
 ---
 
+## Revisi Fluent 2 (v3.0, 2026-11-13)
+
+Bagian ini **menggantikan** wireframe, pola, dan istilah lama yang bertentangan. Acuan: `docs/Design.md` v2.0 (Fluent 2) dan `docs/Design/_Foundation-UI.md` v3.0. Mock-up visual: `docs/Design/mockup/index.html`.
+
+> Glyph pada wireframe di dokumen ini (⏰ ⚠ ✓ ◔ ⛔ 🔒 ⋯ ▾) hanyalah **notasi**. UI memakai ikon Fluent 16px + teks, tanpa emoji (Design.md bagian 12).
+
+### Tab Manager
+| Layar | ID tab |
+|---|---|
+| Input Output | `output:input:{WO-…}` (satu tab per WO; membuka WO yang sama memfokuskan tab itu) |
+| Penyesuaian Output | `output:adjust` |
+| Kirim/Terima Vendor | `output:vendor:{WO-…}` |
+| Riwayat Produksi | `output:history` |
+| Koreksi entri | `output:koreksi:{id}` |
+
+Titik **belum disimpan** muncul segera setelah ada sel terisi dan menahan penutupan tab (konfirmasi Dialog 480px). Alert tab: **oranye** bila ada sel melebihi Qty WO (peringatan), **merah** bila ada sel melebihi batas (galat); hilang otomatis saat dibereskan.
+
+### Input Output (Grid input, mode Compact, keyboard-first)
+Selector WO / Proses / Tanggal Kerja di kartu atas (tinggi kontrol 32px). Baris "Batas tersedia" terlihat **sebelum** mengetik; sel melebihi → border + garis bawah merah, ikon + pesan "Maks 40"; peringatan Qty WO = oranye + ikon + teks. Pesan galat menyebut letaknya ("Melebihi batas tersedia: Navy / M (maks 110)"). Ringkasan galat di atas = `MessageBar` error (tidak dapat ditutup), fokus pindah ke sana. Footer kartu aksi: catatan kiri (`● Belum disimpan · 2 pekerja · 125 pcs`), kanan **[Simpan]** primary tanpa ikon (nonaktif/diblokir dengan penjelasan bila ada galat). Toast sukses eksplisit: "2 entri tersimpan (125 pcs)". WO tidak bisa diinput = `MessageBar` peringatan di atas halaman + tautan ke WO.
+
+### Kirim/Terima Vendor
+Inner tabs **Kirim · Terima**; aturan grid sama. Ringkasan Vendor (Terkirim/Diterima/Sisa) tampil sebagai `StatTile` di atas grid (menggantikan "panel samping" — Design.md tidak mengenal panel samping).
+
+### Riwayat Produksi
+PageHeader "Riwayat Produksi" (tanpa primary). `DataList`: **pencarian** (WO, pekerja, vendor, no. dokumen), dropdown WO/Proses/Pekerja/Vendor/Tanggal kerja, **chip jenis dengan jumlah**: Output · Terima · Kirim · Penyesuaian · Void (+ chip `hariIni`). Footer "Menampilkan X dari Y". Status: **Aktif** hijau, **Void** abu + teks dicoret + tautan antar entri; qty negatif = teks merah dengan tanda minus (badge **Negatif** merah pada Penyesuaian bernilai negatif). **Detail entri = baris yang dapat diperluas (inline)**, menggantikan "panel samping": qty per Color × Size, alasan, rujukan, jejak pembuat, dan aksi **Void** (bahaya) / **Koreksi** (default). Aksi nonaktif dengan tooltip bila WO Completed/Closed atau tanggal di periode tertutup (arahkan ke Penyesuaian).
+
+### Dialog Void (480px)
+Judul "Void entri ini?" + ringkasan satu baris. Pratinjau dampak: daftar kartu per sel (Langkah · Sel · Sebelum → Sesudah · Batas · status ✓ "Terpenuhi" / ✗ "Tertahan oleh QC (40)"), bukan tabel lebar; bila perlu tabel penuh, gulir horizontal di dalam dialog (menunggu **U-1**). Alasan wajib, tombol bahaya "Void entri" nonaktif bila ada ✗.
+
+### Koreksi = halaman, bukan dialog
+Grid terisi + pratinjau dampak + alasan tidak muat di 480px. Koreksi dibuka sebagai **tab** (`output:koreksi:{id}`) berisi grid satu baris pekerja (nilai asal terisi), panel pratinjau dampak (kondisi akhir, dari server) dan alasan wajib; footer [Batal] [Simpan Koreksi] (primary, nonaktif bila ada ✗).
+
+### Penyesuaian
+Form kartu: WO, Proses, Pekerja, Tanggal Asal, Tanggal Kerja penyesuaian, Alasan (wajib), grid qty (boleh negatif). `MessageBar` info (dapat ditutup) menjelaskan penghitungan upah. Tanggal asal di periode terbuka ditolak dengan arahan Void/Koreksi.
+
+
+---
+
 ## Komponen dan Token (Design.md)
 
-Acuan: `docs/Design.md` dan `docs/Design/_Foundation-UI.md` v2.0. Nama komponen mengikuti kontrak Design.md; implementasi di `docs/Frontend/README.md`.
+Acuan: `docs/Design.md` v2.0 dan `docs/Design/_Foundation-UI.md` v3.0. Nama komponen mengikuti kontrak Design.md bagian 13 (pemetaan dari nama lama: Fondasi bagian 8). Pustaka UI ditentukan oleh keputusan **K-1** (Fondasi bagian 12); spesifikasi ini tidak bergantung pada pustaka.
 
-- **Komponen umum:** AppShell (header + MegaMenu + CommandPalette), `PageHeader`, tabel `gms-table` + `PagerBar` (DataTable), `StatusTag`, `ProblemBanner` (Alert), `EmptyState` / `ErrorState` / `SkeletonRows`, `AntDesign.Button` (satu `Primary` per area), `IGmsToast`.
-- **Khusus modul:** `QtyGrid` (grid output per Color × Size dengan hint "maks N" dan galat per sel), `ConfirmDialog` + `ImpactPreviewTable` (Void, Koreksi, Penyesuaian), tab Kirim/Terima Vendor, `ProblemBanner` untuk penahan server, `StatusTag` `voided`.
-- **Token yang dipakai:** `danger-bg` + `danger-text` (sel melebihi batas), `warning-bg` (melebihi Qty WO), `border-control`, `radius-xs` (sel grid), `space-2`.
-- **Deviasi:** tidak ada.
+- **Komponen umum:** `AppHeader` (pencarian, bahasa, pengguna), `TopNav`, `TabManager`, `Workspace`, `PageHeader`, `MessageBar`, `StatusBadge`, `DataList` (cari, filter chip, footer "Menampilkan X dari Y"), `ToastHost`, `Dialog` (480px).
+- **Khusus modul:** `QtyGrid` (grid output per Color × Size, hint "Maks N", galat/peringatan per sel), `StatTile` (ringkasan vendor), baris tabel yang dapat diperluas (detail entri), `ImpactPreview` (daftar dampak dari server) di dalam `Dialog`, inner tabs Kirim/Terima, `MessageBar` untuk penahan server, `StatusBadge` Aktif/Void.
+- **Token yang dipakai:** `--brand` (primary, fokus sel), `--s1`/`--fg3` (input), tint merah (sel invalid), `--s3`, badge `t-ok` (Aktif), `t-obs` (Void), `t-err` (Negatif/galat), `t-warn` (peringatan Qty WO). Tidak ada hex/px mentah.
+- **Deviasi:** Koreksi menjadi tab halaman (akibat U-1). Dialog Void memakai daftar dampak di 480px (menunggu U-1). Grid output tetap tanpa tempel blok, Ctrl+Enter, dan kolom bertingkat penuh sampai fase 2 (diterima user 2026-11-10).

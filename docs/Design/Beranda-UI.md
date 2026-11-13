@@ -3,7 +3,7 @@
 | Atribut | Nilai |
 |---|---|
 | FSD | `docs/FSD/Beranda.md` v1.0 |
-| Fondasi | `docs/Design/_Foundation-UI.md` |
+| Fondasi | `docs/Design/_Foundation-UI.md` **v3.0 (Fluent 2)** |
 | Render Mode | **Interactive Server** |
 | Mode kerapatan | Comfortable |
 
@@ -64,7 +64,7 @@ ADMINISTRASI
 └─────────────────────────────────────────────────┘
 ```
 
-### Responsif
+### Responsif (DIGANTI oleh Revisi Fluent 2 di bawah)
 | Lebar | Perilaku |
 |---|---|
 | ≥ 1366 | 3–4 kartu per baris sesuai ukuran kartu (kecil 3 kolom, sedang 6, lebar 9–12) |
@@ -130,11 +130,50 @@ Aturan visual:
 
 ---
 
+## Revisi Fluent 2 (v3.0, 2026-11-13)
+
+Bagian ini **menggantikan** wireframe, pola, dan istilah lama yang bertentangan. Acuan: `docs/Design.md` v2.0 (Fluent 2) dan `docs/Design/_Foundation-UI.md` v3.0. Mock-up visual: `docs/Design/mockup/index.html`.
+
+> Glyph pada wireframe di dokumen ini (⏰ ⚠ ✓ ◔ ⛔ 🔒 ⋯ ▾) hanyalah **notasi**. UI memakai ikon Fluent 16px + teks, tanpa emoji (Design.md bagian 12).
+
+### Tab Manager dan layout
+Tab **Beranda** (`home`) terpaku, tidak dapat ditutup. Klik angka, baris, atau "Buka detail" pada kartu membuka daftar terkait **di tab baru** (atau memfokuskan tab yang sudah ada) dengan filter terpasang; filter tersimpan di tab itu.
+
+Menggantikan "### Responsif": grid 12 kolom, jarak antarkartu 16px, padding workspace 24px. Di bawah **960px** satu kolom (Design.md bagian 3, padding 16px); ≥ 960px kartu kecil 3 kolom, sedang 6, lebar 9–12.
+
+### Hero Beranda (menggantikan baris sapaan)
+Satu baris: sapaan ("Selamat datang, Budi"), tanggal dan waktu pembaruan, lalu **chip ringkasan** kecil (tinggi 28px, dapat diklik; mis. "3 PO terlambat", "2 WO terlambat", "1 akun terkunci"). Tombol **Segarkan** = ikon saja di kanan judul, `aria-label="Segarkan Beranda"` + tooltip. Beranda **tidak punya tombol primary**.
+
+### Aksi Cepat (W-13)
+Strip kartu dengan ≤ 6 tombol **default berikon** + "Lainnya ▾". Tidak ada primary. Tombol hanya untuk yang berhak (tidak dirender bila tidak).
+
+### Kartu dan chart (menggantikan wireframe kartu; tanpa donut)
+Kartu = kartu interaktif Design.md bagian 10: hover terangkat 2px + bayangan panel, tile ikon area 28px tint `--brand-t` di header, tombol "Buka detail" di dasar bila ada tujuan; animasi mati pada `prefers-reduced-motion`. Judul kartu Beranda 14px.
+
+| Kartu | Bentuk | Detail |
+|---|---|---|
+| W-02, 03, 04, 06, 08, 12 (kecil) | **StatTile** | Aksen atas 3px `--brand`; angka 24/32 semibold `tabular-nums`; label 12px; tile utuh dapat diklik. Keterlambatan ditampilkan lewat badge **Terlambat** (merah), tidak mengubah warna aksen |
+| W-01 PO Terlambat | StatTile + daftar 5 baris | Badge Terlambat merah pada selisih hari |
+| W-05 WO Berjalan | `ChartStack` satu baris (Released biru · In Progress kuning · Completed hijau) + daftar 5 WO dengan bar progres | Bar: berjalan kuning, selesai hijau, terlambat merah |
+| W-07 Output Hari Ini | `ChartBars`: bar horizontal per proses (label, bar, jumlah, persen), baris dapat diklik | Total pcs di atas |
+| W-09 Belum Diserahterimakan | `ChartBars` 5 WO terbesar | |
+| W-10 Stok FG | `ChartStack` Fisik = Teralokasi (biru) + Tersedia (hijau) + `ChartBars` per FG | |
+| W-11 Periode Gaji | Badge **Open** (kuning) + badge **Belum final** (oranye) + angka sementara berasterisk | Periode Closed = badge hijau |
+| W-12 Keamanan | StatTile; "akun terkunci" = badge **Terkunci** merah | |
+
+Semua chart: tooltip nilai, hover menyorot, `role="img"` + `aria-label`, **angka tertulis**, tinggi bar 120px. Kartu bernilai nol = nilai netral dengan ikon centang hijau + teks ("0 PO terlambat"), bukan state kosong.
+
+### Notifikasi
+Lonceng header tidak dirender di fase 1 (DEVIASI-3, Fondasi bagian 12).
+
+
+---
+
 ## Komponen dan Token (Design.md)
 
-Acuan: `docs/Design.md` dan `docs/Design/_Foundation-UI.md` v2.0. Nama komponen mengikuti kontrak Design.md; implementasi di `docs/Frontend/README.md`.
+Acuan: `docs/Design.md` v2.0 dan `docs/Design/_Foundation-UI.md` v3.0. Nama komponen mengikuti kontrak Design.md bagian 13 (pemetaan dari nama lama: Fondasi bagian 8). Pustaka UI ditentukan oleh keputusan **K-1** (Fondasi bagian 12); spesifikasi ini tidak bergantung pada pustaka.
 
-- **Komponen umum:** AppShell (header + MegaMenu + CommandPalette), `PageHeader`, tabel `gms-table` + `PagerBar` (DataTable), `StatusTag`, `ProblemBanner` (Alert), `EmptyState` / `ErrorState` / `SkeletonRows`, `AntDesign.Button` (satu `Primary` per area), `IGmsToast`.
-- **Khusus modul:** `DashboardCard` + `StatCard` (state per kartu: skeleton, galat dengan Coba lagi, kosong), kelompok area (judul `gms-area`), kartu **Aksi Cepat** (tombol per izin), `EmptyState` bila peran tanpa widget.
-- **Token yang dipakai:** `stat-value` (angka), `bg-container` + `shadow-card` (kartu), `link` (angka dapat diklik), `text-tertiary` (satuan), `space-4`/`space-6`.
-- **Deviasi:** tidak ada.
+- **Komponen umum:** `AppHeader` (pencarian, bahasa, pengguna), `TopNav`, `TabManager`, `Workspace`, `PageHeader`, `MessageBar`, `StatusBadge`, `DataList` (cari, filter chip, footer "Menampilkan X dari Y"), `ToastHost`, `Dialog` (480px).
+- **Khusus modul:** `StatTile`, `ChartStack`, `ChartBars`, kartu interaktif `DashboardCard` (tile ikon + "Buka detail"), hero satu baris + chip ringkasan, strip Aksi Cepat, `EmptyState` bila peran tanpa widget, panduan instalasi (fase 2).
+- **Token yang dipakai:** `--brand` (aksen atas StatTile 3px), `--brand-t` (tile ikon), `--sh2`/`--sh16` (kartu dan hover), `--fg3` (satuan), warna chart `k1`/`k8`/`k5` mengikuti peta status. Tidak ada hex/px mentah.
+- **Deviasi:** tidak ada. (Lonceng notifikasi dirender nanti: DEVIASI-3.)

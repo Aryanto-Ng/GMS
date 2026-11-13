@@ -3,7 +3,7 @@
 | Atribut | Nilai |
 |---|---|
 | FSD | `docs/FSD/CustomerPO.md` v1.0 |
-| Fondasi | `docs/Design/_Foundation-UI.md` |
+| Fondasi | `docs/Design/_Foundation-UI.md` **v3.0 (Fluent 2)** |
 | Render Mode | Semua **Interactive Server** |
 
 ---
@@ -142,11 +142,55 @@ Bila batas 0 karena Sisa Rencana habis atau stok tidak tersedia, pesan menjelask
 
 ---
 
+## Revisi Fluent 2 (v3.0, 2026-11-13)
+
+Bagian ini **menggantikan** wireframe, pola, dan istilah lama yang bertentangan. Acuan: `docs/Design.md` v2.0 (Fluent 2) dan `docs/Design/_Foundation-UI.md` v3.0. Mock-up visual: `docs/Design/mockup/index.html`.
+
+> Glyph pada wireframe di dokumen ini (⏰ ⚠ ✓ ◔ ⛔ 🔒 ⋯ ▾) hanyalah **notasi**. UI memakai ikon Fluent 16px + teks, tanpa emoji (Design.md bagian 12).
+
+### Tab Manager
+`po:list` · `po:{PO-…}` (detail dan mode Ubah berbagi tab) · `po:baru`. Tab menampilkan titik **belum disimpan** pada form Buat/Ubah. Ikon alert **merah** pada tab PO yang memiliki baris terlambat.
+
+### Status dan Stepper (menggantikan warna lama)
+| Status | Badge |
+|---|---|
+| Draft | biru `t-proc` |
+| Confirmed | biru `t-proc` |
+| In Progress | kuning `t-prog` |
+| Completed | hijau `t-ok` |
+| Cancelled | **abu** `t-obs` (bukan merah) |
+| Terlambat | merah `t-err` |
+| Jatuh tempo | oranye `t-warn` |
+| PO Customer belum ada | oranye `t-warn` ("Belum ada") |
+
+Detail PO menampilkan `Stepper`: Draft → Confirmed → In Progress → Completed (selesai = lingkaran putih garis hijau + centang). PO Cancelled: badge abu di header, stepper disembunyikan.
+
+### Daftar PO
+PageHeader "Customer PO (42)" + **primary `⊕ Buat PO`**. `DataList`: pencarian (kode / No. PO customer / customer), dropdown Status/Customer/Tanggal, **chip cepat dengan jumlah** (`terlambat`, `jatuhTempo7`, `poCustomerKosong`, `sisaRencana`; `aria-pressed`; jumlah dihitung server), footer "Menampilkan X dari Y". Kolom Progres = `StackedProgress`: **Terkirim hijau · Dialokasikan biru · Dalam Produksi kuning · sisa abu muda**, legenda dan angka teks. Baris Cancelled: badge abu + nomor dicoret ringan (bukan merah).
+
+### Detail PO — aksi header (satu primary per status)
+| Status | Tombol (ikon di kiri teks) | Primary |
+|---|---|---|
+| Draft | Ubah · Batalkan (bahaya) · Konfirmasi PO | **Konfirmasi PO** |
+| Confirmed / In Progress | Ubah · Alokasi Stok · Batalkan (bahaya) · Buat WO | **Buat WO** |
+| Completed / Cancelled | – (MessageBar info: "PO selesai. Tambahan pesanan dibuat pada PO baru.") | – |
+
+Ringkasan = 5 `StatTile` (Total, Terkirim, Dialokasikan, Dalam Produksi, Sisa Rencana). Inner tabs: Baris · Alokasi · Work Order (n) · Pengiriman (n) · Riwayat (state tab dalam per tab). Tombol ditolak aturan: nonaktif + tooltip alasan; tidak diizinkan status/izin: tidak dirender.
+
+### Form Buat/Ubah
+Footer kartu aksi: catatan kiri ("Kode otomatis saat disimpan"); kanan **[Batal] [Simpan Draft] [Simpan dan Konfirmasi]** — satu primary (`Simpan dan Konfirmasi`), tanpa ikon. Mode Ubah: [Batal] [Simpan Perubahan] (primary). Error simpan = ringkasan `MessageBar` error di atas; blok/sel bermasalah ditandai (merah). Peringatan (tanggal kirim < tanggal PO, Qty > 100.000) = `MessageBar` peringatan/oranye. Grid Qty per Size memakai `QtyGrid` (maks/min di bawah sel).
+
+### Dialog
+Alokasi Stok, Konfirmasi PO, Batalkan PO, Lepas Alokasi: semua **480px**. Dialog Alokasi menampilkan angka sebagai daftar label-nilai (bukan tabel lebar). Batalkan PO: alasan wajib + tombol bahaya; penahan sebagai daftar tertaut.
+
+
+---
+
 ## Komponen dan Token (Design.md)
 
-Acuan: `docs/Design.md` dan `docs/Design/_Foundation-UI.md` v2.0. Nama komponen mengikuti kontrak Design.md; implementasi di `docs/Frontend/README.md`.
+Acuan: `docs/Design.md` v2.0 dan `docs/Design/_Foundation-UI.md` v3.0. Nama komponen mengikuti kontrak Design.md bagian 13 (pemetaan dari nama lama: Fondasi bagian 8). Pustaka UI ditentukan oleh keputusan **K-1** (Fondasi bagian 12); spesifikasi ini tidak bergantung pada pustaka.
 
-- **Komponen umum:** AppShell (header + MegaMenu + CommandPalette), `PageHeader`, tabel `gms-table` + `PagerBar` (DataTable), `StatusTag`, `ProblemBanner` (Alert), `EmptyState` / `ErrorState` / `SkeletonRows`, `AntDesign.Button` (satu `Primary` per area), `IGmsToast`.
-- **Khusus modul:** `QtyGrid`/tabel baris PO pada form, `StackedProgress` (progres kirim/alokasi/produksi), chip cepat (`gms-chipbtn`, filter toggle dengan `aria-pressed`), tab detail, `ConfirmDialog` untuk Cancel/Reopen/Confirm, `StatusTag` PO (Draft/Confirmed/In Progress/Completed/Cancelled) dan `late`/`dueSoon`.
-- **Token yang dipakai:** `cyan-*` (Confirmed), `primary-bg` (In Progress), `success-*`, `danger-*`, `warning-*` (Belum ada No. PO), `fill-alter`, `space-6`.
+- **Komponen umum:** `AppHeader` (pencarian, bahasa, pengguna), `TopNav`, `TabManager`, `Workspace`, `PageHeader`, `MessageBar`, `StatusBadge`, `DataList` (cari, filter chip, footer "Menampilkan X dari Y"), `ToastHost`, `Dialog` (480px).
+- **Khusus modul:** `StackedProgress`, `StatTile`, `Stepper`, `QtyGrid` pada form, chip cepat (`aria-pressed`) di `DataList`, inner tabs, `Dialog` (Konfirmasi/Batalkan/Alokasi/Lepas), `StatusBadge` PO + Terlambat + Jatuh tempo + Belum ada.
+- **Token yang dipakai:** `--brand` (primary, aksen tile), `--brand-t` (chip terpilih), `--s3` (sisa progres), `--fg2`/`--fg3`, badge `t-proc`/`t-prog`/`t-ok`/`t-obs`/`t-err`/`t-warn`. Tidak ada hex/px mentah.
 - **Deviasi:** tidak ada.
