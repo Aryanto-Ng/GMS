@@ -42,7 +42,7 @@ Acuan visual TUNGGAL: `docs/Design.md` v2.0 (Microsoft Fluent 2) dan `docs/Desig
 - `StatusChips` (chip berjumlah dari server) pada Surat Jalan, Serah Terima FG, dan `MasterList` (semua master); jumlah = query 1 baris per status.
 - Alert tab: PO/WO terlambat, Periode Open lewat tanggal, FG Belum Siap, Input Output (merah = sel melebihi batas, oranye = peringatan).
 - **i18n chrome (K-2):** `Resources/ChromeResource(.en).resx` (142 kunci: navigasi, header, tab, footer, form masuk, status turunan). Bahasa dipilih HANYA lewat cookie (`/account/language`); header `Accept-Language` diabaikan (bawaan Indonesia). `LocalizerExtensions.Or` memberi fallback bila kunci belum ada. Nama status dokumen (Draft, In Progress, ...) tetap Inggris. Pesan galat per halaman modul masih Indonesia (kunci belum diekstrak). bUnit memaksa `id-ID` di `WebTestBase`.
-- **DEVIASI-4:** Koreksi Output/Pengiriman dan Ubah Qty WO tetap dialog (lebar 720px), bukan halaman; menunggu persetujuan (lihat `_Foundation-UI.md` bagian 12).
+- **DEVIASI-4:** Koreksi Output/Pengiriman dan Ubah Qty WO tetap dialog (lebar 720px), bukan halaman; **disetujui Ary 2026-11-14** (lihat `_Foundation-UI.md` bagian 12).
 
 ## Status migrasi Fluent 2
 - **Selesai (2026-11-14):** token + CSS, ikon, tombol, toast, dialog, status/badge, shell 4 zona, Tab Manager, form masuk, penghapusan AntDesign, tes bUnit dan E2E.
