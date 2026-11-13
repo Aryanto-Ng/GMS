@@ -192,7 +192,7 @@ Urutan tetap dari atas (Design.md bagian 7):
 
 ### 5.2 Dialog
 
-Lebar **480px**, radius 8px, bayangan `--sh64`, latar gelap 40%. Fokus terkurung; Esc menutup (kecuali saat memproses); fokus kembali ke pemicu.
+Lebar **480px** (varian **lebar 720px** hanya untuk dialog pratinjau dampak, disetujui 2026-11-13), radius 8px, bayangan `--sh64`, latar gelap 40%. Fokus terkurung; Esc menutup (kecuali saat memproses); fokus kembali ke pemicu.
 
 | Jenis | Pola |
 |---|---|
@@ -339,17 +339,17 @@ Halaman penuh **di luar** layout 4 zona; dipakai Login, Ganti Password, Akses Di
 
 ## 12. Keputusan terbuka, usulan perubahan Design.md, dan deviasi
 
-Sesuai Design.md bagian 15, hal berikut **menunggu persetujuan Ary**. Frontend tidak boleh mengimplementasikan sebelum diputuskan.
+Sesuai Design.md bagian 15, status keputusan. K-1, K-2, U-1 **disetujui 2026-11-13**; N-1 menunggu FSD Notifikasi.
 
 | # | Jenis | Masalah | Usulan | Status |
 |---|---|---|---|---|
-| **K-1** | Keputusan | Design.md 13: pustaka Fluent 2 (`Microsoft.FluentUI.AspNetCore.Components`) butuh **izin eksplisit**; bila ditolak, komponen dibangun sendiri dengan token. Aplikasi saat ini memakai AntDesign Blazor (CLAUDE.md dan CHECKPOINT menyebutnya). | **Bangun komponen sendiri** dengan CSS token (`tokens.css`) agar identik dengan mock-up dan tidak mewarisi gaya Ant. Fluent UI Blazor boleh dipakai sebagai alternatif bila Ary memberi izin. | Menunggu |
-| **K-2** | Keputusan | i18n ID/EN (Design.md 12) berarti seluruh teks lewat `.resx`. Aplikasi sekarang berbahasa Indonesia tertulis di komponen. | Fase 1: seluruh chrome (header, nav, tombol, status, pesan sistem) dua bahasa; teks per-halaman ID dulu dengan resource key siap diisi EN. Perlu keputusan apakah master data diterjemahkan. | Menunggu |
-| **U-1 / DEVIASI-1** | Usulan komponen | Dialog **480px** terlalu sempit untuk pratinjau dampak (tabel 5–6 kolom: Void/Koreksi Output, Serah Terima, Pengiriman) dan grid qty. | Tambah varian **Dialog lebar 720px** khusus pratinjau dampak. **Sampai disetujui:** tetap 480px dengan tabel dampak bergulir horizontal di dalam dialog; grid qty tidak dimasukkan ke dialog (halaman/tab). | Menunggu |
+| **K-1** | Keputusan | Design.md 13: pustaka Fluent 2 (`Microsoft.FluentUI.AspNetCore.Components`) butuh **izin eksplisit**; bila ditolak, komponen dibangun sendiri dengan token. Aplikasi saat ini memakai AntDesign Blazor (CLAUDE.md dan CHECKPOINT menyebutnya). | **Bangun komponen sendiri** dengan CSS token (`tokens.css`) agar identik dengan mock-up dan tidak mewarisi gaya Ant. Fluent UI Blazor boleh dipakai sebagai alternatif bila Ary memberi izin. | **DISETUJUI Ary 2026-11-13:** komponen dibangun sendiri dengan CSS token; tanpa paket UI baru (tidak perlu izin NuGet). |
+| **K-2** | Keputusan | i18n ID/EN (Design.md 12) berarti seluruh teks lewat `.resx`. Aplikasi sekarang berbahasa Indonesia tertulis di komponen. | Fase 1: seluruh chrome (header, nav, tombol, status, pesan sistem) dua bahasa; teks per-halaman ID dulu dengan resource key siap diisi EN. Perlu keputusan apakah master data diterjemahkan. | **DISETUJUI Ary 2026-11-13:** infrastruktur resource ID/EN penuh; English diterjemahkan untuk chrome (header, menu, tombol umum, status, pesan sistem, form masuk, notifikasi); teks halaman modul ID dulu dengan kunci resource; data master tidak diterjemahkan. Ini deviasi yang disetujui dari Design.md bagian 12. |
+| **U-1 / DEVIASI-1** | Usulan komponen | Dialog **480px** terlalu sempit untuk pratinjau dampak (tabel 5–6 kolom: Void/Koreksi Output, Serah Terima, Pengiriman) dan grid qty. | Tambah varian **Dialog lebar 720px** khusus pratinjau dampak. **Sampai disetujui:** tetap 480px dengan tabel dampak bergulir horizontal di dalam dialog; grid qty tidak dimasukkan ke dialog (halaman/tab). | **DISETUJUI Ary 2026-11-13:** varian Dialog lebar 720px khusus pratinjau dampak (bukan grid input). Koreksi Output/Pengiriman dan Ubah Qty WO tetap halaman. |
 | ~~DEVIASI-2~~ | Diputuskan | Presisi desimal tarif. | **Keputusan Ary (2026-11-13):** tarif mengikuti FSD; Design.md akan mengikuti jumlah desimal yang ditetapkan FSD. Bukan deviasi. | **Selesai** |
 | **N-1** | Keputusan | Lonceng notifikasi harus berlaku di fase 1, tetapi belum ada FSD, API, maupun penyimpanan notifikasi. | **Keputusan Ary (2026-11-13): diterapkan langsung di fase 1.** Prasyarat: System Analyst menulis `docs/FSD/Notifikasi.md` (peristiwa pemicu, penerima per role/izin, retensi, polling vs real-time), lalu Architect/Backend menyediakan kontrak dan penyimpanan. UI sudah dirancang (bagian 3.1) dan ada di mock-up. | Menunggu FSD |
 | **U-2** | Usulan | Alert ikon pada tab (bagian 4.1) baru mencakup layar yang diketahui (Design.md 16). | Daftar di bagian 4.1 dipakai sebagai awal. | Berlaku sementara |
-| **I-1** | Informasi | `CLAUDE.md` masih menyebut "AntDesign Blazor 1.x, gaya Ant Design Enterprise" dan agen 5 melarang Fluent/Ant. | Perbarui `CLAUDE.md` setelah K-1 diputuskan. UI/UX tidak mengubah CLAUDE.md. | Menunggu |
+| ~~I-1~~ | Selesai | CLAUDE.md | Sudah diperbaiki oleh Ary (netral-framework, merujuk Design.md). | **Selesai** |
 
 ---
 

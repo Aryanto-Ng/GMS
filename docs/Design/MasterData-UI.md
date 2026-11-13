@@ -184,7 +184,7 @@ PageHeader: kode + nama, badge **Siap Produksi** (hijau) / **Belum Siap** (orany
 - **Kesiapan:** butir ✓/✗ + teks ("Terpenuhi"/"Belum terpenuhi"); butir gagal memiliki tautan ke tab/sel.
 
 ### Wizard
-Impor CSV = `Stepper` (Unggah → Periksa → Konfirmasi). Hasil validasi = tabel dengan badge ✓ hijau / ✗ merah per baris. "Salin dari FG lain" (3 langkah): langkah 2 menampilkan pratinjau grid tarif; pada dialog 480px tabel tarif bergulir horizontal di dalam dialog sampai **U-1** diputuskan.
+Impor CSV = `Stepper` (Unggah → Periksa → Konfirmasi). Hasil validasi = tabel dengan badge ✓ hijau / ✗ merah per baris. "Salin dari FG lain" (3 langkah): langkah 2 menampilkan pratinjau grid tarif; pada dialog 480px tabel tarif ditampilkan penuh di **Dialog lebar 720px** (U-1 disetujui).
 
 
 ---
@@ -196,4 +196,4 @@ Acuan: `docs/Design.md` v2.0 dan `docs/Design/_Foundation-UI.md` v3.0. Nama komp
 - **Komponen umum:** `AppHeader` (pencarian, bahasa, pengguna), `TopNav`, `TabManager`, `Workspace`, `PageHeader`, `MessageBar`, `StatusBadge`, `DataList` (cari, filter chip, footer "Menampilkan X dari Y"), `ToastHost`, `Dialog` (480px).
 - **Khusus modul:** `MasterList<T>` + `Dialog` form untuk semua entitas selain FG; FG detail dengan inner tabs; grid tarif (`QtyGrid` mode desimal); `ImportWizard` + `Stepper`; `StatusBadge` Aktif/Nonaktif/Siap Produksi/Belum Siap; tag tipe proses netral.
 - **Token yang dipakai:** `--brand` (primary, tab aktif), `--s1`/`--fg3` (input), tint merah (sel invalid), `--s3`, `--fg2`, badge `t-ok`/`t-obs`/`t-warn`/`t-err`. Tidak ada hex/px mentah.
-- **Deviasi:** dialog Salin dari FG lain menampilkan tabel tarif dalam 480px dengan gulir horizontal (menunggu U-1). Tarif: desimal mengikuti FSD (bukan deviasi).
+- **Deviasi:** dialog Salin dari FG lain menampilkan tabel tarif dalam 480px dengan gulir horizontal (U-1 disetujui: Dialog lebar 720px). Tarif: desimal mengikuti FSD (bukan deviasi).

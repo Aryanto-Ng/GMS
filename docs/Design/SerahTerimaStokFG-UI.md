@@ -171,7 +171,7 @@ Header FG · Color · Size + 3 StatTile saldo. Tabel: Tanggal, Jenis, Dokumen su
 
 ### Dialog (480px)
 - **Penyesuaian Stok:** field tersusun satu kolom (FG, Color, Size, Qty ±, Tanggal, Alasan wajib). Hasil "Fisik 110 · Tersedia 80 ✓" sebagai baris ringkasan; tombol nonaktif bila Tersedia < 0 dengan pesan "Lepas alokasi terlebih dahulu".
-- **Void serah terima:** ringkasan + pratinjau dampak stok sebagai daftar per baris (FG · Color · Size, Fisik sebelum→sesudah, Teralokasi, Tersedia) dan "Alokasi otomatis yang akan dilepas"; alasan wajib; tombol bahaya nonaktif bila ada ✗ dengan langkah ("Batalkan pengiriman SJ-… terlebih dahulu", tertaut). Tabel penuh bergulir di dalam dialog (menunggu **U-1**).
+- **Void serah terima:** ringkasan + pratinjau dampak stok sebagai daftar per baris (FG · Color · Size, Fisik sebelum→sesudah, Teralokasi, Tersedia) dan "Alokasi otomatis yang akan dilepas"; alasan wajib; tombol bahaya nonaktif bila ada ✗ dengan langkah ("Batalkan pengiriman SJ-… terlebih dahulu", tertaut). Tabel penuh di **Dialog lebar 720px** (U-1 disetujui).
 - **Koreksi** serah terima: fase 1 hanya via API (diterima 2026-11-10). Bila diaktifkan nanti, berbentuk tab halaman seperti Koreksi Output.
 
 ### Impor Saldo Awal dan Serah Terima Material
@@ -187,4 +187,4 @@ Acuan: `docs/Design.md` v2.0 dan `docs/Design/_Foundation-UI.md` v3.0. Nama komp
 - **Komponen umum:** `AppHeader` (pencarian, bahasa, pengguna), `TopNav`, `TabManager`, `Workspace`, `PageHeader`, `MessageBar`, `StatusBadge`, `DataList` (cari, filter chip, footer "Menampilkan X dari Y"), `ToastHost`, `Dialog` (480px).
 - **Khusus modul:** `QtyGrid` (Dapat diserahkan), `StatTile` (Fisik/Teralokasi/Tersedia dan saldo kartu stok), `Stepper` + `ImportWizard`, `Dialog` + `ImpactPreview` (Void, Penyesuaian), tabel Stok FG dan Kartu Stok (qty rata kanan, negatif merah + minus), `StatusBadge` Aktif/Voided/Negatif.
 - **Token yang dipakai:** `--brand`, `--s1`/`--fg3`, `--s3`, `--fg1`/`--fg2`, badge `t-ok`/`t-obs`/`t-err`/`t-proc` (info). Tidak ada hex/px mentah.
-- **Deviasi:** pratinjau dampak Void dalam 480px menunggu U-1. Koreksi hanya API (diterima 2026-11-10).
+- **Deviasi:** pratinjau dampak Void dalam 480px U-1 disetujui: Dialog lebar 720px. Koreksi hanya API (diterima 2026-11-10).
