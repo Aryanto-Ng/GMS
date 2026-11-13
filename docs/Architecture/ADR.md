@@ -198,3 +198,24 @@ Tidak ada kredensial di repository. Connection string (tanpa password) hanya seb
 ## ADR-015 Hal yang Sengaja Ditunda
 
 Cache permission, outbox/event bus, multi-gudang, multi-tenant, idempotency-key pada POST, dan penyegaran data real-time antar sesi. Semuanya tidak dibutuhkan FSD fase 1 dan dapat ditambahkan tanpa mengubah kontrak yang ada.
+
+---
+
+## ADR-016 Notifikasi: Fan-out per Penerima, Penerbit dalam Transaksi, Pekerja Latar Beridempotensi
+
+**Konteks.** FSD Notifikasi v1.0: 12 peristiwa Kejadian + 4 Kondisi terjadwal, penerima per izin (bukan pelaku), status baca per pengguna, polling 60 detik, retensi 90 hari, hosting UAT bisa tertidur.
+
+**Keputusan.**
+1. **Fan-out saat dibuat.** Satu baris `notifications` per penerima (bukan satu peristiwa + penyaringan saat baca). Alasan: status baca dan retensi per pengguna sederhana, indeks parsial `read_at IS NULL` membuat lencana murah, dan AC-NT-02 (penerima ditetapkan saat dibuat) terpenuhi langsung. Jumlah pengguna kecil (puluhan), sehingga fan-out tidak menjadi beban.
+2. **Izin diperiksa dua kali.** Saat dibuat (penentuan penerima) dan saat disajikan (AC-NT-13): server mengambil set izin pemanggil dari sesi lalu menambahkan `type_code = ANY(@jenis yang diizinkan)` pada setiap query (daftar, hitung, lencana). Pengguna yang kehilangan izin tidak melihat maupun menghitung notifikasi lama itu.
+3. **Penerbit di dalam transaksi aksi.** `INotificationPublisher.PublishAsync` (domain) dipanggil oleh handler sumber SEBELUM `SaveChanges`; implementasi hanya (a) membaca pengaturan jenis, (b) membaca penerima berizin dan aktif bukan pelaku, (c) `Add` entitas ke DbContext yang sama. Ia **tidak mengunci baris bisnis dan tidak menyimpan sendiri**, sehingga tidak mengubah urutan kunci ADR-004 dan tidak dapat menimbulkan deadlock; atomik dengan aksi (rollback aksi = tidak ada notifikasi). Kegagalan membaca penerima (pengecualian non-database) ditangkap dan dicatat, tidak menggagalkan aksi (AC-NT-03); `SourceKey` unik per penerima mencegah ganda bila handler diulang.
+4. **Teks tidak disimpan.** Hanya `type_code` + `params` jsonb (objek datar string→string, nilai Invariant). Klien merakit kalimat dari kunci resource `Notif.{TypeCode}.Title/Body` (selaras K-2 i18n). Tidak ada tarif/rupiah pada `params` (diuji).
+5. **Katalog statis di kode.** `Gms.Shared.Notifications.NotificationCatalog` memuat 16 jenis (kategori, izin penerima, jenis target, kunci parameter). Tabel `notification_type_settings` hanya menyimpan `enabled`; seeder membuat baris per jenis secara idempoten dan tes memastikan katalog dan seeder sinkron. Menambah jenis = ubah katalog + resource + seeder.
+6. **Kondisi terjadwal dengan episode.** `NotificationEpisode` (unik parsial `(type_code, object_key) WHERE ended_at IS NULL`) menjamin satu notifikasi per episode meski dua instance berjalan (INSERT episode dahulu; yang kalah melewati). Episode berakhir saat kondisi hilang; kondisi muncul lagi = episode baru. Episode terpisah dari baris notifikasi agar retensi tidak memicu notifikasi ulang (AC-NT-16).
+7. **Pekerja latar.** `NotificationScheduler : BackgroundService` di Gms.Api: (a) tunggu hingga jam terjadwal (zona `App:TimeZone`) dari `notification_options`; (b) saat startup jalankan hanya bila `notification_job_runs` terakhir > 24 jam (AC-NT-23); (c) satu pemeriksaan = ambil `pg_try_advisory_lock` (kunci tetap; instance lain melewati, AC-NT-21); (d) tiap jenis dalam transaksinya sendiri dan try/catch sendiri (AC-NT-22); (e) akhiri episode yang kondisinya hilang, buka episode baru + fan-out notifikasi; (f) hapus notifikasi lebih tua dari `retention_days` (batch 1.000) dan episode berakhir > 400 hari; (g) catat `notification_job_runs`. Query kondisi **memakai ulang** `DashboardQueries` (PO terlambat, WO terlambat) agar konsisten dengan Beranda; PO jatuh tempo dan periode perlu ditutup ditambahkan di kelas yang sama.
+8. **Polling murah.** `GET /notifications/summary` hanya `SELECT count(*)` pada indeks parsial. Klien menjeda polling saat tab tersembunyi. Daftar hanya dimuat saat panel/halaman dibuka.
+9. **Tanpa real-time.** SignalR sengaja tidak dipakai (keputusan user 2026-11-13: polling 60 detik).
+10. **Audit.** Perubahan pengaturan menulis `audit_logs` (`NotificationSettingsChanged`, nilai sebelum/sesudah). Pembuatan notifikasi tidak diaudit (volume).
+11. **Konkurensi pengaturan.** `notification_options` dan `notification_type_settings` memakai `xmin` (`rowVersion` pada DTO). Satu `rowVersion` pada DTO = versi baris `notification_options`; perubahan jenis menaikkan versi itu juga (handler menyentuh baris opsi dalam transaksi yang sama).
+
+**Konsekuensi.** Modul sumber bergantung pada abstraksi domain `INotificationPublisher` (bukan pada tabel). Titik panggil Backend: lihat Database.md bagian 14.4. Jumlah baris `notifications` dibatasi retensi (≈ pengguna × peristiwa × 90 hari; kecil untuk skala GMS).

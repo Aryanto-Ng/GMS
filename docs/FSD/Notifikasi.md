@@ -122,7 +122,7 @@ Pekerja memeriksa **sekali sehari pukul 06:00 WIB** (nilai bawaan, dapat diubah 
 
 | Entitas | Atribut utama | Catatan |
 |---|---|---|
-| **Notification** | Id, RecipientUserId, TypeCode (NE-xx/NC-xx), TitleKey, BodyKey, Params (JSON: kode dokumen, qty, tanggal…), TargetRoute (jenis + id dokumen), CreatedAt, ReadAt (null = belum dibaca), SourceEventKey | Satu baris per penerima. **Tanpa data rahasia** (tarif/rupiah tidak boleh dimasukkan ke Params). Indeks (RecipientUserId, ReadAt, CreatedAt) |
+| **Notification** | Id, RecipientUserId, TypeCode (NE-xx/NC-xx), Category, Params (JSON: kode dokumen, qty, tanggal…), TargetRoute (jenis + id dokumen), CreatedAt, ReadAt (null = belum dibaca), SourceKey (idempotensi), TargetKind, TargetId, ActorUserId | Satu baris per penerima. Judul/isi diturunkan dari kunci resource `Notif.{TypeCode}.Title/Body` (tidak disimpan; lihat ADR-016). **Tanpa data rahasia** (tarif/rupiah tidak boleh dimasukkan ke Params). Indeks (RecipientUserId, ReadAt, CreatedAt) |
 | **NotificationEpisode** | TypeCode, ObjectKey (mis. `PO:{id}`), StartedAt, EndedAt (null = aktif) | Untuk kondisi terjadwal; unik pada (TypeCode, ObjectKey) yang EndedAt null |
 | **NotificationSetting** | TypeCode, Enabled, atau parameter global (DueSoonDays, ScheduleTime, RetentionDays), RowVersion | Satu baris per jenis + satu baris global |
 | **NotificationJobRun** | RunAt, Type (scheduled/startup), CreatedCount per jenis, DurationMs, Error | Untuk pemantauan dan AC-NT-23 |

@@ -221,4 +221,13 @@ public static class Permissions
         public const string Export = "Payroll.Export";
         public const string PrintSlip = "Payroll.PrintSlip";
     }
+
+    public static class Notifikasi
+    {
+        public static class Pengaturan
+        {
+            public const string View = "Notifikasi.Pengaturan.View";
+            public const string Edit = "Notifikasi.Pengaturan.Edit";
+        }
+    }
 }

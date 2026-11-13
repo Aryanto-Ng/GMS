@@ -416,6 +416,7 @@ PK `(period_id, worker_id)`: `worker_code`, `worker_name`, `total_qty int`, `sum
 |---|---|
 | `Initial` | 47 tabel (termasuk tabel Identity `users`, `user_claims`, `user_logins`, `user_tokens`), 33 CHECK constraint, indeks unik parsial, FK (termasuk FK komposit), ekstensi `citext` dan `btree_gist` |
 | `AdvancedConstraints` | SQL eksplisit: unik `(fg_id, seq)` DEFERRABLE pada `fg_routing_steps`; exclusion constraint `ex_payroll_periods_no_overlap`; trigger `audit_logs` anti UPDATE/DELETE/TRUNCATE |
+| `AddNotifications` | 5 tabel notifikasi (`notifications`, `notification_episodes`, `notification_type_settings`, `notification_options`, `notification_job_runs`), indeks parsial lencana dan episode, 3 CHECK pada `notification_options`. **Diverifikasi di PostgreSQL 17 (2026-11-13):** terpasang bersih di atas migrasi lama; unik episode aktif dan CHECK terbukti menolak data salah |
 
 Lokasi: `src/Backend/Gms.Infrastructure/Persistence/Migrations/`. Perintah: `dotnet tool restore` lalu
 `dotnet tool run dotnet-ef migrations add <Nama> --project src/Backend/Gms.Infrastructure --startup-project src/Backend/Gms.Api --output-dir Persistence/Migrations`.
@@ -424,3 +425,49 @@ Untuk menjalankan ke database: set `GMS_DESIGN_CONNECTION` (tanpa menaruh kreden
 **Status verifikasi:** migrasi **sudah dijalankan dan diuji terhadap PostgreSQL 17 nyata** (2026-11-08): 64 uji constraint SQL lulus, 12 uji runtime EF Core lulus, rollback penuh dan naik ulang bersih, tidak ada drift model. Rincian, keterbatasan, dan cara mengulang: `docs/Architecture/MigrationVerification.md`. Yang belum diuji: logika bisnis dan penguncian paralel (menunggu use case Backend).
 
 Catatan: tabel passkey Identity 10 tidak dibuat (fitur tidak dipakai). Nama PK/FK/indeks otomatis EF (mis. `PK_po_lines`) belum di-snake_case; kosmetik, dapat dirapikan Backend.
+
+---
+
+## 14. Notifikasi
+
+Migrasi `AddNotifications` (aditif, 5 tabel). Konvensi dan alasan: ADR-016. DTO/enum/katalog: `src/Shared/Gms.Shared/Notifications/`.
+
+### 14.1 Tabel
+
+| Tabel | Kolom penting | Constraint dan indeks |
+|---|---|---|
+| `notifications` | `id` (GUID v7), `recipient_user_id` FK→`users` (CASCADE), `type_code` varchar(10), `category` text, `params` jsonb, `target_kind` text?, `target_id` varchar(120)?, `actor_user_id`?, `source_key` varchar(200), `created_at`, `read_at`? | Unik `(recipient_user_id, source_key)` (idempoten); `(recipient_user_id, created_at DESC)`; `(recipient_user_id, category, created_at DESC)`; **parsial** `ix_notifications_unread (recipient_user_id) WHERE read_at IS NULL`; `(created_at)` untuk retensi |
+| `notification_episodes` | `id`, `type_code`, `object_key` varchar(100), `started_at`, `ended_at`? | **Unik parsial** `ux_notification_episodes_active (type_code, object_key) WHERE ended_at IS NULL`; `(ended_at)` |
+| `notification_type_settings` | `type_code` PK, `enabled`, `xmin` | Satu baris per jenis katalog (di-seed) |
+| `notification_options` | `id` (=1), `due_soon_days`, `schedule_time` (time), `retention_days`, `xmin` | CHECK `id = 1`, `due_soon_days` 1–14, `retention_days` 30–365 |
+| `notification_job_runs` | `id` bigint, `started_at`, `trigger` (Scheduled/Startup), `result` jsonb, `duration_ms`, `error`? | `(started_at DESC)` |
+
+### 14.2 Seed (idempoten)
+`notification_options` satu baris dari konfigurasi `Notifications:{DueSoonDays=3, ScheduleTime=06:00, RetentionDays=90}` bila belum ada; `notification_type_settings` satu baris per `NotificationCatalog.All` (`enabled = DefaultEnabled`) bila belum ada; permission `Notifikasi.Pengaturan.View/Edit` (assignable) lewat `PermissionCatalog` dan diberikan ke Administrator.
+
+### 14.3 Pemetaan invariant
+
+| Invariant | Mekanisme |
+|---|---|
+| Satu notifikasi per (penerima, peristiwa) walau diulang | Unik `(recipient_user_id, source_key)`; tulis dengan `ON CONFLICT DO NOTHING` pada jalur pekerja |
+| Satu episode aktif per (jenis, objek) walau dua instance | Unik parsial `ux_notification_episodes_active` |
+| Hanya satu pemeriksaan latar bersamaan | `pg_try_advisory_lock` + catatan `notification_job_runs` |
+| Pengaturan di luar batas ditolak | CHECK DB + validasi handler (400) |
+| Pengguna hanya melihat miliknya dan yang berizin | Filter `recipient_user_id = :me` dan `type_code = ANY(:diizinkan)` pada semua query |
+
+### 14.4 Titik panggil `INotificationPublisher` (Backend)
+
+| Jenis | Handler pemanggil | `SourceKey` (contoh) |
+|---|---|---|
+| NE-01 | Rilis WO | `NE-01:{woId}:released` |
+| NE-02 | Tandai WO Selesai (dan otomatis bila ada) | `NE-02:{woId}:completed:{statusHistoryId}` |
+| NE-03 | Simpan Serah Terima FG | `NE-03:{handoverId}` |
+| NE-04 | Tutup periode gaji | `NE-04:{periodId}` |
+| NE-05 | Void/Koreksi Output & Vendor | `NE-05:{entryId}:{void\|correct}` |
+| NE-06 | Void/Koreksi Serah Terima FG | `NE-06:{handoverId}:{void\|correct}` |
+| NE-07 | Void/Koreksi Pengiriman | `NE-07:{deliveryId}:{void\|correct}` |
+| NE-08 | Batalkan PO | `NE-08:{poId}` |
+| NE-09 | Kunci akun (lockout) | `NE-09:{userId}:{lockoutEnd}` |
+| NE-10 | Akhiri sesi paksa | `NE-10:{sessionId}` |
+| NE-11 | Penulisan ledger stok bila `tersedia` turun dari > 0 ke 0 (dihitung pada kondisi akhir transaksi, sekali per kombinasi) | `NE-11:{fg}:{color}:{size}:{ledgerEntryId}` |
+| NE-12 | Void serah terima / batalkan PO yang melepas alokasi | `NE-12:{poId}:{pemicuId}` |

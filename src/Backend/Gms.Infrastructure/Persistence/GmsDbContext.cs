@@ -3,6 +3,7 @@ using Gms.Domain.Common;
 using Gms.Domain.Deliveries;
 using Gms.Domain.Inventory;
 using Gms.Domain.Master;
+using Gms.Domain.Notifications;
 using Gms.Domain.Payroll;
 using Gms.Domain.Production;
 using Gms.Domain.Sales;
@@ -77,6 +78,13 @@ public sealed class GmsDbContext(DbContextOptions<GmsDbContext> options)
     public DbSet<PayrollPeriod> PayrollPeriods => Set<PayrollPeriod>();
     public DbSet<PayrollSnapshotLine> PayrollSnapshotLines => Set<PayrollSnapshotLine>();
     public DbSet<PayrollSnapshotWorker> PayrollSnapshotWorkers => Set<PayrollSnapshotWorker>();
+
+    // Notifikasi
+    public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<NotificationEpisode> NotificationEpisodes => Set<NotificationEpisode>();
+    public DbSet<NotificationTypeSetting> NotificationTypeSettings => Set<NotificationTypeSetting>();
+    public DbSet<NotificationOptions> NotificationOptionsRows => Set<NotificationOptions>();
+    public DbSet<NotificationJobRun> NotificationJobRuns => Set<NotificationJobRun>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

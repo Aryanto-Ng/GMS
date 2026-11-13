@@ -322,6 +322,28 @@ Pemetaan antarmuka → rute dilakukan oleh implementasi `HttpXxxApi` di Frontend
 
 ---
 
+### 4.12 Notifikasi (`/api/v1/notifications`)
+
+Klien bertipe: `INotificationsApi`, `INotificationSettingsApi` (`Gms.Shared.Notifications`). Semua endpoint pengguna hanya mengembalikan notifikasi **milik pemanggil** dan jenis yang izin sumbernya masih dimiliki pemanggil (FSD AC-NT-13/14). Tanpa izin tambahan kecuali pengaturan.
+
+| Metode | Rute | Izin | Keterangan |
+|---|---|---|---|
+| GET | `/notifications/summary` | — | `NotificationSummary { unreadCount }`. Endpoint polling 60 detik; hanya `count(*)` |
+| GET | `/notifications?category=&unread=&q=&page=&pageSize=` | — | `PagedResult<NotificationItem>` terbaru dahulu. Panel memakai `pageSize=20`. `q` mencari pada kode dokumen di `params` |
+| GET | `/notifications/counts?q=` | — | `NotificationCounts { all, unread, byCategory }` untuk chip |
+| POST | `/notifications/{id}/read` | — | 204. Milik pengguna lain atau tidak ada = 404 |
+| POST | `/notifications/read-all` | — | `MarkAllReadResult { marked }`; seluruh notifikasi pemanggil (bukan hanya yang tampak, AC-NT-10) |
+| GET | `/notifications/settings` | `Notifikasi.Pengaturan.View` | `NotificationSettingsDto` (+ `rowVersion`) |
+| PUT | `/notifications/settings` | `Notifikasi.Pengaturan.Edit` | `UpdateNotificationSettingsRequest`. 400 + `violations[]` (`dueSoonDays` 1–14, `scheduleTime` `HH:mm`, `retentionDays` 30–365, `typeCode` tidak dikenal); 409 `concurrency-conflict`; menulis audit `NotificationSettingsChanged` |
+
+**Aturan respons:**
+- `NotificationItem.params` = objek datar string→string, nilai Invariant (tanggal `yyyy-MM-dd`, angka titik desimal). Kunci per jenis: `NotificationCatalog.All[].ParamKeys`. **Tanpa tarif/rupiah.**
+- `NotificationItem.target` = `{ kind, id }` (`NotificationTargetKind`); klien memetakannya ke tab (ID tab Fondasi 4.1). Dokumen yang sudah tidak ada: klien menangani 404 saat dibuka ("Dokumen tidak tersedia"), notifikasi tetap terbaca.
+- Server tidak mengirim teks jadi; klien memakai kunci resource `Notif.{typeCode}.Title/Body`.
+- Tidak ada endpoint "tandai belum dibaca" pada fase 1 (UI hanya "Tandai terbaca").
+
+---
+
 ## 5. Aturan Respons yang Penting bagi UI
 
 - **Daftar:** `PagedResult<T>` dengan item ringkas. Detail dimuat per id.
@@ -364,6 +386,7 @@ Kunci = `Resource.Action`. Kolom **Assignable**: `Tidak` = hanya Administrator (
 | StokFG | View, Adjust, Import | Ya |
 | Pengiriman | View, Create, Edit, Void, Correct, Print | Ya |
 | Payroll | View, CreatePeriod, ClosePeriod, Export, PrintSlip | Ya |
+| Notifikasi.Pengaturan | View, Edit | Ya |
 
 Aturan: memberi aksi selain `View` pada suatu resource **wajib** menyertakan `View` pada resource yang sama (AC-AM-18). Dipaksakan oleh API saat menyimpan Role.
 *Penambahan dari FSD:* `Unlock` dan `EndSession` (AC-AM-03, AC-AM-06b).

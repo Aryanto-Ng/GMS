@@ -22,6 +22,7 @@ public static class PermissionCatalog
     private const string ModProduction = "Produksi";
     private const string ModWarehouse = "Gudang FG";
     private const string ModPayroll = "Penggajian";
+    private const string ModNotif = "Notifikasi";
 
     private static readonly Dictionary<string, string> ActionLabels = new()
     {
@@ -108,6 +109,9 @@ public static class PermissionCatalog
 
         // Penggajian
         Add(ModPayroll, "Payroll", "penggajian borongan", true, "View", "CreatePeriod", "ClosePeriod", "Export", "PrintSlip");
+
+        // Notifikasi (lonceng dan "Semua notifikasi" tidak butuh izin; hanya pengaturan)
+        Add(ModNotif, "Notifikasi.Pengaturan", "pengaturan notifikasi", true, "View", "Edit");
 
         return list;
     }

@@ -1443,6 +1443,250 @@ namespace Gms.Infrastructure.Persistence.Migrations
                     b.ToTable("workers", (string)null);
                 });
 
+            modelBuilder.Entity("Gms.Domain.Notifications.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("category");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Params")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("params");
+
+                    b.Property<DateTimeOffset?>("ReadAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("read_at");
+
+                    b.Property<Guid>("RecipientUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recipient_user_id");
+
+                    b.Property<string>("SourceKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("source_key");
+
+                    b.Property<string>("TargetId")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("target_id");
+
+                    b.Property<string>("TargetKind")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("target_kind");
+
+                    b.Property<string>("TypeCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("type_code");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("RecipientUserId")
+                        .HasDatabaseName("ix_notifications_unread")
+                        .HasFilter("read_at IS NULL");
+
+                    b.HasIndex("RecipientUserId", "CreatedAt")
+                        .IsDescending(false, true);
+
+                    b.HasIndex("RecipientUserId", "SourceKey")
+                        .IsUnique();
+
+                    b.HasIndex("RecipientUserId", "Category", "CreatedAt")
+                        .IsDescending(false, false, true);
+
+                    b.ToTable("notifications", (string)null);
+                });
+
+            modelBuilder.Entity("Gms.Domain.Notifications.NotificationEpisode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("EndedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ended_at");
+
+                    b.Property<string>("ObjectKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("object_key");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<string>("TypeCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("type_code");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EndedAt");
+
+                    b.HasIndex("TypeCode", "ObjectKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_notification_episodes_active")
+                        .HasFilter("ended_at IS NULL");
+
+                    b.ToTable("notification_episodes", (string)null);
+                });
+
+            modelBuilder.Entity("Gms.Domain.Notifications.NotificationJobRun", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("DurationMs")
+                        .HasColumnType("integer")
+                        .HasColumnName("duration_ms");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("error");
+
+                    b.Property<string>("Result")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("result");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<string>("Trigger")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("trigger");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StartedAt")
+                        .IsDescending();
+
+                    b.ToTable("notification_job_runs", (string)null);
+                });
+
+            modelBuilder.Entity("Gms.Domain.Notifications.NotificationOptions", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<int>("DueSoonDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("due_soon_days");
+
+                    b.Property<int>("RetentionDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("retention_days");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<TimeOnly>("ScheduleTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("schedule_time");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("notification_options", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_notification_options_due_soon", "due_soon_days BETWEEN 1 AND 14");
+
+                            t.HasCheckConstraint("ck_notification_options_retention", "retention_days BETWEEN 30 AND 365");
+
+                            t.HasCheckConstraint("ck_notification_options_single", "id = 1");
+                        });
+                });
+
+            modelBuilder.Entity("Gms.Domain.Notifications.NotificationTypeSetting", b =>
+                {
+                    b.Property<string>("TypeCode")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("type_code");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("TypeCode");
+
+                    b.ToTable("notification_type_settings", (string)null);
+                });
+
             modelBuilder.Entity("Gms.Domain.Payroll.PayrollPeriod", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2923,6 +3167,15 @@ namespace Gms.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("MainProcessId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Gms.Domain.Notifications.Notification", b =>
+                {
+                    b.HasOne("Gms.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("RecipientUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Gms.Domain.Payroll.PayrollSnapshotLine", b =>
