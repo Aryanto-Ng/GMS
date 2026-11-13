@@ -34,26 +34,29 @@ public sealed class DialogAndAsyncTests : WebTestBase
         });
 
     private static AngleSharp.Dom.IElement Confirm(IRenderedComponent<ConfirmDialog> cut) =>
-        cut.FindAll("button.ant-btn").First(b => b.TextContent.Contains("Ya, lanjutkan"));
+        cut.FindAll("button.gms-btn").First(b => b.TextContent.Contains("Ya, lanjutkan"));
 
     // ===== ConfirmDialog =====
 
     [Fact]
-    public void Dialog_memakai_Modal_role_dialog_dengan_judul_h2_deskripsi_dan_label_alasan_terhubung()
+    public void Dialog_role_dialog_dengan_judul_h2_deskripsi_dan_label_alasan_terhubung()
     {
         var cut = Dialog();
 
-        Assert.Equal("dialog", cut.Find(".ant-modal-wrap").GetAttribute("role"));
+        var dialog = cut.Find(".gms-dialog");
+        Assert.Equal(("dialog", "true"), (dialog.GetAttribute("role"), dialog.GetAttribute("aria-modal")));
+        Assert.Equal(cut.Find("h2").Id, dialog.GetAttribute("aria-labelledby"));
+        Assert.DoesNotContain("wide", dialog.ClassName); // 480px; varian lebar hanya untuk pratinjau dampak
         var title = cut.Find("h2");
         Assert.Contains("Void entri output", title.TextContent);
-        Assert.Equal(title.Id, cut.Find(".ant-modal-title h2").Id); // judul berada di header Modal
+        Assert.Equal(title.Id, cut.Find("h2.gms-dialog-title").Id); // judul berada di header dialog
         Assert.Contains("Entri akan dibatalkan.", cut.Find(".gms-dialog-body p").TextContent);
         var textarea = cut.Find("textarea");
         Assert.Equal(textarea.Id, cut.Find("label").GetAttribute("for"));
         Assert.Contains("wajib", cut.Find("label").TextContent); // penanda wajib berupa teks
         Assert.Equal("500", textarea.GetAttribute("maxlength"));
         Assert.Contains("0 / 500", cut.Find("small").TextContent);
-        Assert.Equal(["Batal", "Ya, lanjutkan"], cut.FindAll(".ant-modal-footer button.ant-btn").Select(x => x.TextContent.Trim())); // Batal lalu aksi utama
+        Assert.Equal(["Batal", "Ya, lanjutkan"], cut.FindAll(".gms-dialog-footer button.gms-btn").Select(x => x.TextContent.Trim())); // Batal lalu aksi utama
     }
 
     [Fact]
@@ -61,7 +64,7 @@ public sealed class DialogAndAsyncTests : WebTestBase
     {
         var cut = Dialog(open: false);
 
-        Assert.Empty(cut.FindAll("h2, textarea, .ant-modal-wrap")); // konten dihancurkan saat tertutup
+        Assert.Empty(cut.FindAll("h2, textarea, .gms-dialog-wrap")); // konten dihancurkan saat tertutup
     }
 
     [Fact]
@@ -84,8 +87,8 @@ public sealed class DialogAndAsyncTests : WebTestBase
         var danger = Dialog();
         var plain = Render<ConfirmDialog>(p => p.Add(x => x.Open, true).Add(x => x.Title, "Lepas").Add(x => x.Danger, false).Add(x => x.OnConfirm, _ => Task.CompletedTask));
 
-        Assert.Contains("ant-btn-dangerous", Confirm(danger).ClassName);
-        Assert.DoesNotContain("ant-btn-dangerous", plain.FindAll("button.ant-btn").Last().ClassName ?? string.Empty);
+        Assert.Contains("is-danger", Confirm(danger).ClassName);
+        Assert.DoesNotContain("is-danger", plain.FindAll("button.gms-btn").Last().ClassName ?? string.Empty);
     }
 
     [Fact]
@@ -94,7 +97,7 @@ public sealed class DialogAndAsyncTests : WebTestBase
         var cut = Render<ConfirmDialog>(p => p.Add(x => x.Open, true).Add(x => x.Title, "Tutup").Add(x => x.ReasonRequired, false).Add(x => x.OnConfirm, _ => Task.CompletedTask));
 
         Assert.Contains("opsional", cut.Find("label").TextContent);
-        Assert.False(cut.FindAll("button.ant-btn").Last().HasAttribute("disabled"));
+        Assert.False(cut.FindAll("button.gms-btn").Last().HasAttribute("disabled"));
     }
 
     [Fact]
@@ -208,8 +211,8 @@ public sealed class DialogAndAsyncTests : WebTestBase
         await cut.InvokeAsync(() => cut.Instance.RequestClose()); // Esc saat memproses (dari modul JS)
         Assert.Null(opened);
         Assert.Equal("true", cut.Find(".gms-dialog-body").GetAttribute("aria-busy"));
-        Assert.True(cut.FindAll(".ant-modal-footer button.ant-btn").First().HasAttribute("disabled")); // Batal
-        Assert.Empty(cut.FindAll("button.ant-modal-close")); // tombol X disembunyikan
+        Assert.True(cut.FindAll(".gms-dialog-footer button.gms-btn").First().HasAttribute("disabled")); // Batal
+        Assert.True(cut.Find("button.gms-dialog-close").HasAttribute("disabled")); // tombol X dinonaktifkan
 
         gate.SetResult();
         await running;
@@ -227,7 +230,7 @@ public sealed class DialogAndAsyncTests : WebTestBase
         Assert.Equal([false], states);
 
         var second = Dialog(onConfirm: _ => { confirmed++; return Task.CompletedTask; }, openChanged: EventCallback.Factory.Create<bool>(this, states.Add));
-        second.FindAll(".ant-modal-footer button.ant-btn").First().Click();
+        second.FindAll(".gms-dialog-footer button.gms-btn").First().Click();
         Assert.Equal([false, false], states);
         Assert.Equal(0, confirmed);
     }
@@ -238,11 +241,10 @@ public sealed class DialogAndAsyncTests : WebTestBase
         var states = new List<bool>();
         var cut = Dialog(openChanged: EventCallback.Factory.Create<bool>(this, states.Add));
 
-        cut.Find(".ant-modal-wrap").MouseDown();
-        cut.Find(".ant-modal-wrap").MouseUp();
+        Assert.DoesNotContain(cut.Find(".gms-dialog-wrap").Attributes, a => a.Name.StartsWith("blazor:onclick", StringComparison.Ordinal)); // latar tidak menangani klik
 
         Assert.Empty(states);
-        Assert.NotEmpty(cut.FindAll(".ant-modal-wrap"));
+        Assert.NotEmpty(cut.FindAll(".gms-dialog-wrap"));
     }
 
     // ===== AsyncContent =====
@@ -289,7 +291,7 @@ public sealed class DialogAndAsyncTests : WebTestBase
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find(".gms-state.error")));
         Assert.Contains("00-t", cut.Find("code").TextContent);
 
-        cut.Find("button.ant-btn").Click();
+        cut.Find("button.gms-btn").Click();
         cut.WaitForAssertion(() => Assert.Equal("pulih", cut.Find("#isi").TextContent));
         Assert.Equal(2, calls);
     }
@@ -302,8 +304,8 @@ public sealed class DialogAndAsyncTests : WebTestBase
 
         notFound.WaitForAssertion(() => Assert.NotNull(notFound.Find(".gms-state.error")));
         forbidden.WaitForAssertion(() => Assert.NotNull(forbidden.Find(".gms-state.error")));
-        Assert.Empty(notFound.FindAll("button.ant-btn"));
-        Assert.Empty(forbidden.FindAll("button.ant-btn"));
+        Assert.Empty(notFound.FindAll("button.gms-btn"));
+        Assert.Empty(forbidden.FindAll("button.gms-btn"));
         Assert.Contains("Data tidak ditemukan", notFound.Markup);
     }
 
@@ -366,16 +368,28 @@ public sealed class DialogAndAsyncTests : WebTestBase
     // ===== UnsavedChangesGuard =====
 
     [Fact]
-    public void Navigasi_internal_dengan_perubahan_dikonfirmasi_dan_dibatalkan_bila_ditolak()
+    public void Penjaga_menandai_tab_belum_disimpan_dan_tidak_menghalangi_navigasi_internal_karena_halaman_tab_tetap_hidup()
     {
-        JSInterop.Setup<bool>("confirm", _ => true).SetResult(false);
-        Render<UnsavedChangesGuard>(p => p.Add(x => x.HasChanges, true));
-        var start = Nav.Uri;
+        var tabs = Services.GetRequiredService<Gms.Web.Services.Tabs.TabManager>();
+        tabs.EnsureHome(typeof(Gms.Web.Components.Pages.Home));
+        Nav.NavigateTo("/purchase-orders/new");
+        tabs.Sync(typeof(Gms.Web.Components.Pages.Home), new Dictionary<string, object?>(), Nav.Uri);
+        var context = tabs.Active!.Context;
 
+        var cut = Render<CascadingValue<Gms.Web.Services.Tabs.TabContext>>(p => p
+            .Add(x => x.Value, context)
+            .Add(x => x.ChildContent, (Microsoft.AspNetCore.Components.RenderFragment)(b =>
+            {
+                b.OpenComponent<UnsavedChangesGuard>(0);
+                b.AddAttribute(1, "HasChanges", true);
+                b.CloseComponent();
+            })));
+
+        Assert.True(tabs.Active.Dirty);
         Nav.NavigateTo("/lain");
-
-        Assert.Equal(start, Nav.Uri);
-        Assert.Contains(JSInterop.Invocations, i => i.Identifier == "confirm");
+        Assert.EndsWith("/lain", Nav.Uri); // tidak ada pertanyaan "tinggalkan halaman?"
+        Assert.DoesNotContain(JSInterop.Invocations, i => i.Identifier == "confirm");
+        Assert.NotNull(cut);
     }
 
     [Fact]
@@ -404,12 +418,13 @@ public sealed class DialogAndAsyncTests : WebTestBase
 
         var form = cut.Find("form");
         Assert.Equal(("post", "/account/login"), (form.GetAttribute("method"), form.GetAttribute("action")));
-        Assert.Equal("Username", cut.Find("label[for='username']").TextContent.Replace("wajib", "").Trim());
+        Assert.Equal("Nama pengguna", cut.Find("label[for='username']").TextContent.Replace("wajib", "").Trim());
         Assert.Equal("username", cut.Find("#username").GetAttribute("autocomplete"));
         Assert.Equal("current-password", cut.Find("#password").GetAttribute("autocomplete"));
         Assert.Equal("password", cut.Find("#password").GetAttribute("type"));
         Assert.Equal("/stock", cut.Find("input[name='ReturnUrl']").GetAttribute("value"));
-        Assert.Contains("Username atau password salah.", cut.Find("[role='alert']").TextContent);
+        Assert.Contains("Nama pengguna atau kata sandi salah.", cut.Find("[role='alert']").TextContent);
+        Assert.Contains("Lupa kata sandi?", cut.Markup);
         Assert.Null(cut.Find("#password").GetAttribute("value")); // password tidak pernah dipantulkan
     }
 

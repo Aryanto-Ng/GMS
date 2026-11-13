@@ -1,0 +1,34 @@
+@implements IDisposable
+@inject TabManager Tabs
+
+@* Merender SEMUA tab terbuka; yang tidak aktif disembunyikan (hidden) sehingga state form, filter, dan sub-tab tetap hidup (Design.md 6). Setiap tab: konteks tab
+   (judul/dirty/alert), batas galat sendiri, dan AuthorizeRouteView tanpa layout (layout dirender sekali oleh MainLayout). *@
+@foreach (var tab in Tabs.Tabs)
+{
+    <div class="gms-tabpanel-host" hidden="@(tab.Id != Tabs.ActiveId)" data-tab-panel="@tab.Id" @key="@($"{tab.Id}#{tab.Generation}")">
+        <CascadingValue Value="tab.Context" IsFixed="true">
+            <ErrorBoundary @key="@($"{tab.Id}#{tab.Generation}-eb")">
+                <ChildContent>
+                    <AuthorizeRouteView RouteData="@RouteDataFor(tab)" DefaultLayout="null">
+                        <NotAuthorized><ForbiddenContent /></NotAuthorized>
+                        <Authorizing><div class="gms-boot" role="status" aria-live="polite">Memuat…</div></Authorizing>
+                    </AuthorizeRouteView>
+                </ChildContent>
+                <ErrorContent Context="exception">
+                    <ErrorState Title="Terjadi kesalahan pada halaman ini" Detail="Muat ulang tab ini. Bila berlanjut, laporkan kepada administrator."
+                                OnRetry="() => Tabs.Reload(tab.Id)" RetryText="Muat ulang tab" />
+                </ErrorContent>
+            </ErrorBoundary>
+        </CascadingValue>
+    </div>
+}
+
+@code {
+    protected override void OnInitialized() => Tabs.Changed += OnChanged;
+
+    private void OnChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private static RouteData RouteDataFor(Tab tab) => new(tab.PageType, tab.Parameters);
+
+    public void Dispose() => Tabs.Changed -= OnChanged;
+}

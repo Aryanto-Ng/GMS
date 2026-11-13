@@ -1,6 +1,6 @@
 @* State kosong (_Foundation-UI.md 7): ikon sederhana, judul, penjelasan, dan tombol aksi bila pengguna berhak. *@
 <div class="gms-state empty" role="status">
-    <AntDesign.Icon Type="inbox" />
+    <GmsIcon Name="inbox" />
     <h2>@Title</h2>
     @if (!string.IsNullOrEmpty(Description))
     {
@@ -14,7 +14,7 @@
         }
         else
         {
-            <AntDesign.Button Type="@AntDesign.ButtonType.Primary" OnClick="OnAction">@ActionText</AntDesign.Button>
+            <GmsButton Type="@BtnKind.Primary" OnClick="OnAction">@ActionText</GmsButton>
         }
     }
     @ChildContent

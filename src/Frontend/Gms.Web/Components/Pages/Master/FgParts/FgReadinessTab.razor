@@ -4,16 +4,16 @@
     <ChildContent Context="r">
         <section class="gms-card" aria-labelledby="ready-title">
             <h2 id="ready-title">Kesiapan produksi</h2>
-            <p><StatusTag Value="@(r.IsReady ? "ready" : "not-ready")" /></p>
+            <p><StatusBadge Value="@(r.IsReady ? "ready" : "not-ready")" /></p>
             <ul class="gms-readiness">
                 @foreach (var item in r.Items)
                 {
                     <li class="@(item.Ok ? "gms-ok" : "gms-bad")">
-                        <AntDesign.Icon Type="@(item.Ok ? "check-circle" : "close-circle")" />
+                        <GmsIcon Name="@(item.Ok ? "check-circle" : "close-circle")" />
                         <span class="gms-sr-only">@(item.Ok ? "Terpenuhi:" : "Belum terpenuhi:")</span> @item.Message
                         @if (!item.Ok && TabOf(item.FixTarget) is { } tab)
                         {
-                            <AntDesign.Button Type="@AntDesign.ButtonType.Link" OnClick="() => OnGoto.InvokeAsync(tab)">@LabelOf(tab) ▸</AntDesign.Button>
+                            <GmsButton Type="@BtnKind.Link" OnClick="() => OnGoto.InvokeAsync(tab)">@LabelOf(tab) ▸</GmsButton>
                         }
                     </li>
                 }

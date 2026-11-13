@@ -21,7 +21,7 @@
     {
         <LookupSelect Label="FG sumber" Items="_sources" @bind-Value="_source" Required="true" ShowCode="true" />
         <div class="gms-formactions">
-            <AntDesign.Button Type="@AntDesign.ButtonType.Primary" Disabled="@(_source is null || _busy)" OnClick="PreviewAsync">Lanjut</AntDesign.Button>
+            <GmsButton Type="@BtnKind.Primary" Disabled="@(_source is null || _busy)" OnClick="PreviewAsync">Lanjut</GmsButton>
         </div>
     }
     else if (_step == 2 && _preview is not null)
@@ -33,13 +33,13 @@
         <p>@_preview.Cells.Count(c => c.Rate is not null) sel tarif akan disalin.</p>
         @if (_preview.SkippedSizeCodes.Count > 0)
         {
-            <p class="gms-warn" role="status"><AntDesign.Icon Type="warning" />
+            <p class="gms-warn" role="status"><GmsIcon Name="warning" />
                 Dilewati karena Size tidak berlaku pada FG ini: @string.Join(", ", _preview.SkippedSizeCodes).</p>
         }
 
         <div class="gms-formactions">
-            <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _step = 1">Kembali</AntDesign.Button>
-            <AntDesign.Button Type="@AntDesign.ButtonType.Primary" OnClick="() => _step = 3">Lanjut</AntDesign.Button>
+            <GmsButton Type="@BtnKind.Default" OnClick="() => _step = 1">Kembali</GmsButton>
+            <GmsButton Type="@BtnKind.Primary" OnClick="() => _step = 3">Lanjut</GmsButton>
         </div>
     }
     else if (_step == 3 && _preview is not null)
@@ -57,7 +57,7 @@
         }
 
         <div class="gms-formactions">
-            <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _step = 2">Kembali</AntDesign.Button>
+            <GmsButton Type="@BtnKind.Default" OnClick="() => _step = 2">Kembali</GmsButton>
         </div>
     }
 </ConfirmDialog>

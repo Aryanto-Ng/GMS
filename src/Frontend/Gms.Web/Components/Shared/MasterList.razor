@@ -7,11 +7,11 @@
     <Actions>
         @if (CanCreate)
         {
-            <AntDesign.Button Type="@AntDesign.ButtonType.Primary" OnClick="OnCreate">Tambah @Noun</AntDesign.Button>
+            <GmsButton Type="@BtnKind.Primary" OnClick="OnCreate">Tambah @Noun</GmsButton>
         }
         @if (ImportHref is not null && Can(ImportPermission))
         {
-            <a class="ant-btn ant-btn-default" href="@ImportHref">Impor CSV</a>
+            <a class="gms-btn gms-btn-default" href="@ImportHref">Impor CSV</a>
         }
     </Actions>
 </PageHeader>
@@ -59,20 +59,20 @@
                     var active = IsActive(item);
                     <tr class="@(active ? null : "gms-inactive")">
                         @Row(item)
-                        <td><StatusTag Value="@(active ? "active" : "inactive")" /></td>
+                        <td><StatusBadge Value="@(active ? "active" : "inactive")" /></td>
                         <td class="gms-rowactions">
                             @if (CanEdit)
                             {
-                                <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Ubah {Label(item)}")" OnClick="() => OnEdit.InvokeAsync(item)">Ubah</AntDesign.Button>
+                                <GmsButton Type="@BtnKind.Link" AriaLabel="@($"Ubah {Label(item)}")" OnClick="() => OnEdit.InvokeAsync(item)">Ubah</GmsButton>
                             }
                             @if (RowLink is not null)
                             {
-                                <a class="ant-btn ant-btn-link" href="@RowLink(item)" aria-label="@($"Buka {Label(item)}")">Buka</a>
+                                <a class="gms-btn gms-btn-link" href="@RowLink(item)" aria-label="@($"Buka {Label(item)}")">Buka</a>
                             }
                             @if (CanDeactivate)
                             {
-                                <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"{(active ? "Nonaktifkan" : "Aktifkan")} {Label(item)}")"
-                                              OnClick="() => _target = item">@(active ? "Nonaktifkan" : "Aktifkan")</AntDesign.Button>
+                                <GmsButton Type="@BtnKind.Link" AriaLabel="@($"{(active ? "Nonaktifkan" : "Aktifkan")} {Label(item)}")"
+                                              OnClick="() => _target = item">@(active ? "Nonaktifkan" : "Aktifkan")</GmsButton>
                             }
                         </td>
                     </tr>

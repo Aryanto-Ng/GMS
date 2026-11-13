@@ -225,7 +225,7 @@ public sealed class MasterPageTests : WebTestBase
         SignIn(AllMaster);
     }
 
-    private static IElement DialogConfirm(IRenderedComponent<Microsoft.AspNetCore.Components.IComponent> cut) => cut.FindAll(".ant-modal-wrap button.ant-btn").Last();
+    private static IElement DialogConfirm(IRenderedComponent<Microsoft.AspNetCore.Components.IComponent> cut) => cut.FindAll(".gms-dialog-wrap button.gms-btn").Last();
 
     private static void WaitRows<T>(IRenderedComponent<T> cut, int count) where T : Microsoft.AspNetCore.Components.IComponent =>
         cut.WaitForAssertion(() => Assert.Equal(count, cut.FindAll("tbody tr").Count));
@@ -263,7 +263,7 @@ public sealed class MasterPageTests : WebTestBase
 
         cut.Find("input[type=search]").Change("zzz");
         cut.WaitForAssertion(() => Assert.Contains("Tidak ada hasil", cut.Markup));
-        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Reset filter")).Click();
+        cut.FindAll("button.gms-btn").Single(b => b.TextContent.Contains("Reset filter")).Click();
 
         WaitRows(cut, 3);
     }
@@ -274,11 +274,11 @@ public sealed class MasterPageTests : WebTestBase
         var cut = Render<UomsPage>();
         WaitRows(cut, 3);
 
-        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Tambah satuan")).Click();
-        Assert.Contains("Tambah satuan", cut.Find(".ant-modal-wrap h2").TextContent);
+        cut.FindAll("button.gms-btn").Single(b => b.TextContent.Contains("Tambah satuan")).Click();
+        Assert.Contains("Tambah satuan", cut.Find(".gms-dialog-wrap h2").TextContent);
         Assert.True(DialogConfirm(cut).HasAttribute("disabled"));
-        cut.FindAll(".ant-modal-body input")[0].Input("DUS");
-        cut.FindAll(".ant-modal-body input")[1].Input("Dus");
+        cut.FindAll(".gms-dialog-body input")[0].Input("DUS");
+        cut.FindAll(".gms-dialog-body input")[1].Input("Dus");
         Assert.False(DialogConfirm(cut).HasAttribute("disabled"));
         DialogConfirm(cut).Click();
 
@@ -291,14 +291,14 @@ public sealed class MasterPageTests : WebTestBase
     {
         var cut = Render<UomsPage>();
         WaitRows(cut, 3);
-        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Tambah satuan")).Click();
-        cut.FindAll(".ant-modal-body input")[0].Input("PCS");
-        cut.FindAll(".ant-modal-body input")[1].Input("Duplikat");
+        cut.FindAll("button.gms-btn").Single(b => b.TextContent.Contains("Tambah satuan")).Click();
+        cut.FindAll(".gms-dialog-body input")[0].Input("PCS");
+        cut.FindAll(".gms-dialog-body input")[1].Input("Duplikat");
 
         DialogConfirm(cut).Click();
 
-        cut.WaitForAssertion(() => Assert.Contains("sudah terdaftar", cut.FindAll(".ant-modal-wrap").Last().TextContent));
-        Assert.Equal("Duplikat", cut.FindAll(".ant-modal-body input")[1].GetAttribute("value"));
+        cut.WaitForAssertion(() => Assert.Contains("sudah terdaftar", cut.FindAll(".gms-dialog-wrap").Last().TextContent));
+        Assert.Equal("Duplikat", cut.FindAll(".gms-dialog-body input")[1].GetAttribute("value"));
     }
 
     [Fact]
@@ -307,9 +307,9 @@ public sealed class MasterPageTests : WebTestBase
         var cut = Render<UomsPage>();
         WaitRows(cut, 3);
 
-        cut.FindAll("tbody button.ant-btn").First(b => b.GetAttribute("aria-label") == "Ubah Meter").Click();
-        Assert.Equal("MTR", cut.FindAll(".ant-modal-body input")[0].GetAttribute("value"));
-        cut.FindAll(".ant-modal-body input")[1].Input("Meter Panjang");
+        cut.FindAll("tbody button.gms-btn").First(b => b.GetAttribute("aria-label") == "Ubah Meter").Click();
+        Assert.Equal("MTR", cut.FindAll(".gms-dialog-body input")[0].GetAttribute("value"));
+        cut.FindAll(".gms-dialog-body input")[1].Input("Meter Panjang");
         DialogConfirm(cut).Click();
 
         cut.WaitForAssertion(() => Assert.Contains("Meter Panjang", cut.Find("tbody").TextContent));
@@ -321,9 +321,9 @@ public sealed class MasterPageTests : WebTestBase
         var cut = Render<UomsPage>();
         WaitRows(cut, 3);
 
-        cut.FindAll("tbody button.ant-btn").First(b => b.GetAttribute("aria-label") == "Nonaktifkan Kilogram").Click();
-        Assert.Contains("Nonaktifkan Kilogram?", cut.Find(".ant-modal-wrap h2").TextContent);
-        Assert.Contains("tidak dihapus", cut.Find(".ant-modal-wrap").TextContent);
+        cut.FindAll("tbody button.gms-btn").First(b => b.GetAttribute("aria-label") == "Nonaktifkan Kilogram").Click();
+        Assert.Contains("Nonaktifkan Kilogram?", cut.Find(".gms-dialog-wrap h2").TextContent);
+        Assert.Contains("tidak dihapus", cut.Find(".gms-dialog-wrap").TextContent);
         DialogConfirm(cut).Click();
 
         WaitRows(cut, 2);
@@ -335,11 +335,11 @@ public sealed class MasterPageTests : WebTestBase
         var cut = Render<ProcessesPage>();
         WaitRows(cut, 4);
 
-        cut.FindAll("tbody button.ant-btn").First(b => b.GetAttribute("aria-label") == "Nonaktifkan Sewing").Click();
+        cut.FindAll("tbody button.gms-btn").First(b => b.GetAttribute("aria-label") == "Nonaktifkan Sewing").Click();
         DialogConfirm(cut).Click();
 
-        cut.WaitForAssertion(() => Assert.Contains("masih ada di routing FG aktif", cut.Find(".ant-modal-wrap").TextContent));
-        Assert.Contains("Nonaktifkan Sewing?", cut.Find(".ant-modal-wrap h2").TextContent);
+        cut.WaitForAssertion(() => Assert.Contains("masih ada di routing FG aktif", cut.Find(".gms-dialog-wrap").TextContent));
+        Assert.Contains("Nonaktifkan Sewing?", cut.Find(".gms-dialog-wrap h2").TextContent);
     }
 
     [Fact]
@@ -351,7 +351,7 @@ public sealed class MasterPageTests : WebTestBase
 
         WaitRows(cut, 3);
         Assert.DoesNotContain("Tambah satuan", cut.Markup);
-        Assert.Empty(cut.FindAll("tbody button.ant-btn"));
+        Assert.Empty(cut.FindAll("tbody button.gms-btn"));
     }
 
     [Fact]
@@ -362,14 +362,14 @@ public sealed class MasterPageTests : WebTestBase
         var cut = Render<MaterialsPage>();
         WaitRows(cut, 2);
 
-        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Tambah material")).Click();
-        var selects = cut.FindAll(".ant-modal-body select");
-        Assert.DoesNotContain("Yard", cut.Find(".ant-modal-wrap").TextContent); // satuan nonaktif tidak ditawarkan
-        cut.FindAll(".ant-modal-body input")[0].Input("BTN-1");
-        cut.FindAll(".ant-modal-body input")[1].Input("Kancing Hitam");
+        cut.FindAll("button.gms-btn").Single(b => b.TextContent.Contains("Tambah material")).Click();
+        var selects = cut.FindAll(".gms-dialog-body select");
+        Assert.DoesNotContain("Yard", cut.Find(".gms-dialog-wrap").TextContent); // satuan nonaktif tidak ditawarkan
+        cut.FindAll(".gms-dialog-body input")[0].Input("BTN-1");
+        cut.FindAll(".gms-dialog-body input")[1].Input("Kancing Hitam");
         Assert.True(DialogConfirm(cut).HasAttribute("disabled")); // kategori & satuan wajib
         selects[0].Change(categoryId);
-        cut.FindAll(".ant-modal-body select")[1].Change(uomId);
+        cut.FindAll(".gms-dialog-body select")[1].Change(uomId);
         DialogConfirm(cut).Click();
 
         WaitRows(cut, 3);
@@ -384,9 +384,9 @@ public sealed class MasterPageTests : WebTestBase
 
         Assert.Contains("#1F2A5A", cut.Find("tbody").TextContent);
         Assert.NotEmpty(cut.FindAll(".gms-swatch"));
-        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Tambah color")).Click();
-        cut.FindAll(".ant-modal-body input")[2].Input("#ff0000");
-        Assert.Contains("#FF0000", cut.FindAll(".ant-modal-wrap").Last().TextContent);
+        cut.FindAll("button.gms-btn").Single(b => b.TextContent.Contains("Tambah color")).Click();
+        cut.FindAll(".gms-dialog-body input")[2].Input("#ff0000");
+        Assert.Contains("#FF0000", cut.FindAll(".gms-dialog-wrap").Last().TextContent);
     }
 
     [Fact]
@@ -394,14 +394,14 @@ public sealed class MasterPageTests : WebTestBase
     {
         var customers = Render<CustomersPage>();
         WaitRows(customers, 2);
-        customers.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Tambah customer")).Click();
-        Assert.Contains("Otomatis saat disimpan", customers.FindAll(".ant-modal-wrap").Last().TextContent);
+        customers.FindAll("button.gms-btn").Single(b => b.TextContent.Contains("Tambah customer")).Click();
+        Assert.Contains("Otomatis saat disimpan", customers.FindAll(".gms-dialog-wrap").Last().TextContent);
 
         var workers = Render<WorkersPage>();
         WaitRows(workers, 2);
         Assert.Contains("05 Feb 2024", workers.Markup);
-        workers.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Tambah pekerja")).Click();
-        Assert.Contains("Otomatis saat disimpan", workers.FindAll(".ant-modal-wrap").Last().TextContent);
+        workers.FindAll("button.gms-btn").Single(b => b.TextContent.Contains("Tambah pekerja")).Click();
+        Assert.Contains("Otomatis saat disimpan", workers.FindAll(".gms-dialog-wrap").Last().TextContent);
     }
 
     [Fact]
@@ -410,7 +410,7 @@ public sealed class MasterPageTests : WebTestBase
         var cut = Render<ProcessesPage>();
         WaitRows(cut, 4);
 
-        cut.FindAll("tbody button.ant-btn").First(b => b.GetAttribute("aria-label") == "Ubah Sewing").Click();
+        cut.FindAll("tbody button.gms-btn").First(b => b.GetAttribute("aria-label") == "Ubah Sewing").Click();
 
         Assert.True(cut.Find("#proc-type").HasAttribute("disabled"));
         Assert.Contains("terkunci", cut.Find("#proc-type-hint").TextContent);
@@ -423,12 +423,12 @@ public sealed class MasterPageTests : WebTestBase
         WaitRows(cut, 4);
 
         Assert.Equal(["S", "M", "L", "XL"], cut.FindAll("tbody th[scope=row]").Select(t => t.TextContent));
-        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Tambah size")).Click();
-        cut.FindAll(".ant-modal-body input")[0].Input("XXL");
-        cut.FindAll(".ant-modal-body input")[1].Input("Double XL");
-        cut.FindAll(".ant-modal-body input")[2].Input("abc");
+        cut.FindAll("button.gms-btn").Single(b => b.TextContent.Contains("Tambah size")).Click();
+        cut.FindAll(".gms-dialog-body input")[0].Input("XXL");
+        cut.FindAll(".gms-dialog-body input")[1].Input("Double XL");
+        cut.FindAll(".gms-dialog-body input")[2].Input("abc");
         Assert.True(DialogConfirm(cut).HasAttribute("disabled"));
-        cut.FindAll(".ant-modal-body input")[2].Input("5");
+        cut.FindAll(".gms-dialog-body input")[2].Input("5");
         Assert.False(DialogConfirm(cut).HasAttribute("disabled"));
     }
 }

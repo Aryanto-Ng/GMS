@@ -15,7 +15,7 @@ public sealed class AuthE2ETests(StackFixture stack)
 
         await StackFixture.LoginAsync(page, "admin", "salah-banget-1");
 
-        await Expect(page.GetByRole(AriaRole.Alert)).ToContainTextAsync("Username atau password salah.");
+        await Expect(page.GetByRole(AriaRole.Alert)).ToContainTextAsync("Nama pengguna atau kata sandi salah.");
         await Expect(page).ToHaveURLAsync(new Regex("/login"));
     }
 
@@ -61,8 +61,8 @@ public sealed class AuthE2ETests(StackFixture stack)
 
         await page.GotoAsync("/master/uoms");
         await Expect(page).ToHaveURLAsync(new Regex("/login\\?.*returnUrl"));
-        await page.GetByLabel("Username").FillAsync(user);
-        await page.GetByLabel("Password").FillAsync(password);
+        await page.GetByLabel("Nama pengguna").FillAsync(user);
+        await page.GetByLabel("Kata sandi").FillAsync(password);
         await page.GetByRole(AriaRole.Button, new() { Name = "Masuk" }).ClickAsync();
 
         await Expect(page).ToHaveURLAsync(new Regex("/master/uoms$"));
@@ -76,8 +76,8 @@ public sealed class AuthE2ETests(StackFixture stack)
         var page = await stack.NewPageAsync();
 
         await page.GotoAsync("/login?returnUrl=https%3A%2F%2Fevil.example%2F");
-        await page.GetByLabel("Username").FillAsync(user);
-        await page.GetByLabel("Password").FillAsync(password);
+        await page.GetByLabel("Nama pengguna").FillAsync(user);
+        await page.GetByLabel("Kata sandi").FillAsync(password);
         await page.GetByRole(AriaRole.Button, new() { Name = "Masuk" }).ClickAsync();
 
         await Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToContainTextAsync("Selamat datang");
@@ -117,7 +117,7 @@ public sealed class AuthE2ETests(StackFixture stack)
         await StackFixture.GotoInteractiveAsync(page, "/"); // klik sebelum sirkuit Blazor tersambung tidak diproses
         await Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToContainTextAsync("Selamat datang");
 
-        await page.Locator("button[aria-haspopup=true]").ClickAsync();
+        await page.GetByRole(AriaRole.Button, new() { Name = "Menu pengguna" }).ClickAsync();
         await page.GetByRole(AriaRole.Menuitem, new() { Name = "Keluar" }).ClickAsync();
 
         await page.GotoAsync("/stock");

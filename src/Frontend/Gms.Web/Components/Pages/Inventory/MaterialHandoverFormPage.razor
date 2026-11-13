@@ -32,16 +32,16 @@
                 <LookupSelect Label="@($"Material {i + 1}")" Items="_materials" Value="line.Material" ValueChanged="v => { line.Material = v; _dirty = true; }" Required="true" ShowCode="true" />
                 <TextField Label="Qty (maks 3 desimal)" InputMode="decimal" MaxLength="12" Value="@line.Qty" ValueChanged="v => { line.Qty = v ?? string.Empty; _dirty = true; }" Required="true" />
                 <TextField Label="Keterangan" MaxLength="100" Value="@line.Notes" ValueChanged="v => { line.Notes = v; _dirty = true; }" />
-                <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Hapus baris {i + 1}")" Disabled="@(_lines.Count == 1)" OnClick="() => _lines.Remove(line)">✕</AntDesign.Button>
+                <GmsButton Type="@BtnKind.Link" AriaLabel="@($"Hapus baris {i + 1}")" Disabled="@(_lines.Count == 1)" OnClick="() => _lines.Remove(line)">✕</GmsButton>
             </div>
         }
 
-        <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _lines.Add(new Line())">Tambah material</AntDesign.Button>
+        <GmsButton Type="@BtnKind.Default" OnClick="() => _lines.Add(new Line())">Tambah material</GmsButton>
     </section>
 
     <div class="gms-formactions">
-        <a class="ant-btn ant-btn-default" href="/handovers/material">Batal</a>
-        <AntDesign.Button Type="@AntDesign.ButtonType.Primary" HtmlType="submit" Disabled="_saving">Simpan</AntDesign.Button>
+        <a class="gms-btn gms-btn-default" href="/handovers/material">Batal</a>
+        <GmsButton Type="@BtnKind.Primary" HtmlType="submit" Disabled="_saving">Simpan</GmsButton>
     </div>
 </form>
 

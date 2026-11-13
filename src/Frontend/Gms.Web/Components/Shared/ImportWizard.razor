@@ -27,7 +27,7 @@
             <li>Maksimal 2.000 baris dan 2 MB.</li>
             <li>Judul kolom harus sama dengan template. @if (Entity == ImportEntity.Fg) { <span>Kolom <code>sizes</code> memakai pemisah <code>|</code>, contoh <code>S|M|L|XL</code>.</span> }</li>
         </ul>
-        <p><AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="DownloadTemplateAsync">Unduh template</AntDesign.Button></p>
+        <p><GmsButton Type="@BtnKind.Default" OnClick="DownloadTemplateAsync">Unduh template</GmsButton></p>
         <div class="gms-field">
             <label for="imp-file">Pilih berkas (.csv)</label>
             <InputFile id="imp-file" accept=".csv,text/csv" OnChange="OnFileAsync" disabled="@_busy" />
@@ -59,8 +59,8 @@ else if (_step == 2 && _result is not null)
                         <td class="num">@row.RowNumber</td>
                         <td>@(row.Key ?? "—")</td>
                         <td>
-                            @if (row.IsValid) { <span class="gms-ok"><AntDesign.Icon Type="check-circle" /> Valid</span> }
-                            else { <span class="gms-bad"><AntDesign.Icon Type="close-circle" /> Error</span> }
+                            @if (row.IsValid) { <span class="gms-ok"><GmsIcon Name="check-circle" /> Valid</span> }
+                            else { <span class="gms-bad"><GmsIcon Name="close-circle" /> Error</span> }
                         </td>
                         <td>@row.Message</td>
                     </tr>
@@ -74,8 +74,8 @@ else if (_step == 2 && _result is not null)
                 <span class="gms-bad" role="alert">Perbaiki berkas dan unggah ulang.</span>
             }
 
-            <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="Restart">Unggah ulang</AntDesign.Button>
-            <AntDesign.Button Type="@AntDesign.ButtonType.Primary" Disabled="@(_result.ErrorRows > 0 || _result.TotalRows == 0)" OnClick="() => _step = 3">Lanjut</AntDesign.Button>
+            <GmsButton Type="@BtnKind.Default" OnClick="Restart">Unggah ulang</GmsButton>
+            <GmsButton Type="@BtnKind.Primary" Disabled="@(_result.ErrorRows > 0 || _result.TotalRows == 0)" OnClick="() => _step = 3">Lanjut</GmsButton>
         </div>
     </section>
 }
@@ -85,10 +85,10 @@ else if (_step == 3 && _result is not null)
         <h2 id="imp-confirm">Konfirmasi impor</h2>
         <p>@_result.ValidRows @Title akan ditambahkan. Proses ini tidak dapat dibatalkan; koreksi dilakukan lewat daftar.</p>
         <div class="gms-formactions">
-            <AntDesign.Button Type="@AntDesign.ButtonType.Default" Disabled="_busy" OnClick="() => _step = 2">Kembali</AntDesign.Button>
-            <AntDesign.Button Type="@AntDesign.ButtonType.Primary" Loading="_busy" Disabled="_busy" OnClick="CommitAsync">
+            <GmsButton Type="@BtnKind.Default" Disabled="_busy" OnClick="() => _step = 2">Kembali</GmsButton>
+            <GmsButton Type="@BtnKind.Primary" Loading="_busy" Disabled="_busy" OnClick="CommitAsync">
                 Impor sekarang
-            </AntDesign.Button>
+            </GmsButton>
         </div>
     </section>
 }
@@ -97,7 +97,7 @@ else if (_step == 4 && _result is not null)
     <section class="gms-card" aria-labelledby="imp-done">
         <h2 id="imp-done">Impor selesai</h2>
         <p role="status">@_result.ValidRows @Title berhasil ditambahkan.</p>
-        <p><a class="ant-btn ant-btn-primary" href="@ListHref">Lihat daftar @Title</a></p>
+        <p><a class="gms-btn gms-btn-primary" href="@ListHref">Lihat daftar @Title</a></p>
     </section>
 }
 

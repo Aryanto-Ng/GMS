@@ -10,7 +10,7 @@
     <Actions>
         @if (_user.HasPermission(Permissions.AccessManagement.Role.Create))
         {
-            <a class="ant-btn ant-btn-primary" href="/admin/roles/new">Tambah Role</a>
+            <a class="gms-btn gms-btn-primary" href="/admin/roles/new">Tambah Role</a>
         }
     </Actions>
 </PageHeader>
@@ -31,17 +31,17 @@
                     <tr>
                         <th scope="row">
                             <a href="/admin/roles/@role.Id">@role.Name</a>
-                            @if (role.IsSystem) { <span title="Role sistem"><AntDesign.Icon Type="lock" /></span> <span class="gms-sr-only">(role sistem)</span> }
+                            @if (role.IsSystem) { <span title="Role sistem"><GmsIcon Name="lock" /></span> <span class="gms-sr-only">(role sistem)</span> }
                         </th>
                         <td>@role.Description</td>
                         <td class="num">@role.UserCount</td>
                         <td class="num">@role.PermissionCount</td>
                         <td class="gms-rowactions">
-                            <a class="ant-btn ant-btn-link" href="@($"/admin/roles/{role.Id}")" aria-label="@($"{(role.IsSystem ? "Lihat" : "Ubah")} {role.Name}")">@(role.IsSystem ? "Lihat" : "Ubah")</a>
+                            <a class="gms-btn gms-btn-link" href="@($"/admin/roles/{role.Id}")" aria-label="@($"{(role.IsSystem ? "Lihat" : "Ubah")} {role.Name}")">@(role.IsSystem ? "Lihat" : "Ubah")</a>
                             @if (_user.HasPermission(Permissions.AccessManagement.Role.Delete) && !role.IsSystem)
                             {
                                 var inUse = role.UserCount > 0;
-                                <span title="@(inUse ? $"Dipakai oleh {role.UserCount} pengguna" : null)"><AntDesign.Button Type="@AntDesign.ButtonType.Link" Disabled="inUse" AriaLabel="@($"Hapus {role.Name}")" OnClick="() => _deleting = role">Hapus</AntDesign.Button></span>
+                                <span title="@(inUse ? $"Dipakai oleh {role.UserCount} pengguna" : null)"><GmsButton Type="@BtnKind.Link" Disabled="inUse" AriaLabel="@($"Hapus {role.Name}")" OnClick="() => _deleting = role">Hapus</GmsButton></span>
                             }
                         </td>
                     </tr>

@@ -10,7 +10,7 @@
 
 <PageHeader Title="Periode Gaji">
     <Actions>
-        @if (_user.HasPermission(Permissions.Payroll.CreatePeriod)) { <span title="@(_defaults?.HasOpenPeriod == true ? "Sudah ada periode Open. Tutup lebih dulu." : null)"><AntDesign.Button Type="@AntDesign.ButtonType.Primary" Disabled="@(_defaults?.HasOpenPeriod == true)" OnClick="OpenCreate">Buat Periode</AntDesign.Button></span> }
+        @if (_user.HasPermission(Permissions.Payroll.CreatePeriod)) { <span title="@(_defaults?.HasOpenPeriod == true ? "Sudah ada periode Open. Tutup lebih dulu." : null)"><GmsButton Type="@BtnKind.Primary" Disabled="@(_defaults?.HasOpenPeriod == true)" OnClick="OpenCreate">Buat Periode</GmsButton></span> }
     </Actions>
 </PageHeader>
 
@@ -33,7 +33,7 @@
                     <tr>
                         <th scope="row"><a href="/payroll/@p.Id">@p.Code</a></th>
                         <td>@IdFormat.Date(p.StartDate) – @IdFormat.Date(p.EndDate)</td>
-                        <td><StatusTag Value="@p.Status" /> @if (p.IsProvisional) { <span class="gms-warn">Belum final</span> }</td>
+                        <td><StatusBadge Value="@p.Status" /> @if (p.IsProvisional) { <span class="gms-warn">Belum final</span> }</td>
                         <td class="num">@p.WorkerCount</td>
                         <td class="num">@IdFormat.Number(p.TotalPaid)@(p.IsProvisional ? " *" : string.Empty)</td>
                         <td>@(p.ClosedAt is null ? "–" : $"{IdFormat.DateTime(p.ClosedAt)} oleh {p.ClosedByName}")</td>
@@ -52,9 +52,9 @@
                    Hint="@(_defaults?.StartLocked == true ? "Terkunci — hari setelah periode sebelumnya." : _defaults?.OldestOutputDate is { } oldest ? $"Output tertua: {IdFormat.Date(oldest)}" : null)" />
         <TextField Label="Tanggal Selesai" Type="date" Value="@_end" ValueChanged="v => _end = v" Required="true" />
         <div class="gms-inline">
-            <AntDesign.Button Type="@AntDesign.ButtonType.Link" OnClick="() => Shortcut(7)">7 hari</AntDesign.Button>
-            <AntDesign.Button Type="@AntDesign.ButtonType.Link" OnClick="() => Shortcut(14)">14 hari</AntDesign.Button>
-            <AntDesign.Button Type="@AntDesign.ButtonType.Link" OnClick="MonthEnd">Akhir bulan</AntDesign.Button>
+            <GmsButton Type="@BtnKind.Link" OnClick="() => Shortcut(7)">7 hari</GmsButton>
+            <GmsButton Type="@BtnKind.Link" OnClick="() => Shortcut(14)">14 hari</GmsButton>
+            <GmsButton Type="@BtnKind.Link" OnClick="MonthEnd">Akhir bulan</GmsButton>
         </div>
         <TextField Label="Catatan" Value="@_notes" ValueChanged="v => _notes = v" MaxLength="250" />
     </div>

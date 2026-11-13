@@ -15,7 +15,9 @@ public abstract class WebTestBase : BunitContext
     protected WebTestBase()
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
-        Services.AddAntDesign();
+        Services.AddLocalization();
+        Services.AddOptions<Gms.Web.Infrastructure.AppIdentityOptions>();
+        Services.AddScoped<Gms.Web.Services.Tabs.TabManager>();
         Services.AddScoped<Gms.Web.Services.IGmsToast, Gms.Web.Services.GmsToast>();
         Services.AddScoped<ApiErrorHandler>();
         Services.AddSingleton<AuthenticationStateProvider>(new FakeAuth(User(Array.Empty<string>())));

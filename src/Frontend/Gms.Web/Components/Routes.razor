@@ -1,5 +1,6 @@
 <Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(NotFoundPage)">
     <Found Context="routeData">
+        <CascadingValue Value="routeData">
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
             <NotAuthorized>
                 @* Interaktif: tampilkan 403 di dalam shell tanpa memuat ulang. *@
@@ -9,6 +10,6 @@
                 <div class="gms-boot" role="status" aria-live="polite">Memuat…</div>
             </Authorizing>
         </AuthorizeRouteView>
-        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+        </CascadingValue>
     </Found>
 </Router>

@@ -1,4 +1,5 @@
-@* Header halaman (_Foundation-UI.md 4): breadcrumb, judul h1, subjudul/chip status, dan aksi di kanan. *@
+@* PageHeader (Design.md 7): breadcrumb 12px, judul 20/28 semibold dengan badge status di sebelahnya, subjudul, dan tombol aksi di kanan (ikon 16px di kiri teks;
+   maks. satu primary per halaman). Juga menetapkan judul TAB dokumen (Design.md 6) bila berada di dalam tab. *@
 <header class="gms-pageheader">
     @if (Breadcrumbs is { Count: > 0 })
     {
@@ -25,13 +26,10 @@
 
     <div class="gms-pageheader-row">
         <div class="gms-pageheader-title">
-            <h1>@Title</h1>
-            @if (!string.IsNullOrEmpty(Subtitle) || Chips is not null)
+            <h1>@Title @Chips</h1>
+            @if (!string.IsNullOrEmpty(Subtitle))
             {
-                <div class="gms-pageheader-sub">
-                    @if (!string.IsNullOrEmpty(Subtitle)) { <span>@Subtitle</span> }
-                    @Chips
-                </div>
+                <div class="gms-pageheader-sub"><span>@Subtitle</span></div>
             }
         </div>
         @if (Actions is not null)
@@ -44,15 +42,22 @@
 @code {
     public sealed record Crumb(string Title, string? Href = null);
 
+    [CascadingParameter] private TabContext? Tab { get; set; }
+
     [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    /// <summary>Judul tab bila berbeda dari <see cref="Title"/> (mis. nomor dokumen); bawaan = judul halaman.</summary>
+    [Parameter] public string? TabTitle { get; set; }
 
     [Parameter] public string? Subtitle { get; set; }
 
     [Parameter] public IReadOnlyList<Crumb>? Breadcrumbs { get; set; }
 
-    /// <summary>Chip status dan penanda di samping subjudul.</summary>
+    /// <summary>Badge status dan penanda di samping judul.</summary>
     [Parameter] public RenderFragment? Chips { get; set; }
 
     /// <summary>Tombol aksi (hanya yang diperbolehkan status dan permission).</summary>
     [Parameter] public RenderFragment? Actions { get; set; }
+
+    protected override void OnParametersSet() => Tab?.SetTitle(string.IsNullOrWhiteSpace(TabTitle) ? Title : TabTitle);
 }

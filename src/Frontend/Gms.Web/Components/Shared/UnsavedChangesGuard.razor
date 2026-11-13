@@ -1,18 +1,13 @@
-@inject IJSRuntime JS
-
-@* Penjaga perubahan belum tersimpan (_Foundation-UI.md 4.2): menutup tab/pindah situs dikonfirmasi browser; navigasi internal dikonfirmasi di sini. *@
-<NavigationLock ConfirmExternalNavigation="HasChanges" OnBeforeInternalNavigation="OnBeforeNavigation" />
+@* Penjaga perubahan belum tersimpan (Design.md 6): menandai TAB dengan titik oranye selama ada perubahan (menutup tab meminta konfirmasi di TabBar).
+   Berpindah tab tidak kehilangan data karena halaman tetap hidup, jadi navigasi internal TIDAK dikonfirmasi; menutup/memuat ulang browser tetap dikonfirmasi. *@
+<NavigationLock ConfirmExternalNavigation="HasChanges" />
 
 @code {
+    [CascadingParameter] private TabContext? Tab { get; set; }
+
     [Parameter] public bool HasChanges { get; set; }
 
     [Parameter] public string Message { get; set; } = "Perubahan belum disimpan akan hilang. Tinggalkan halaman ini?";
 
-    private async Task OnBeforeNavigation(LocationChangingContext context)
-    {
-        if (HasChanges && !await JS.InvokeAsync<bool>("confirm", Message))
-        {
-            context.PreventNavigation();
-        }
-    }
+    protected override void OnParametersSet() => Tab?.SetDirty(HasChanges);
 }

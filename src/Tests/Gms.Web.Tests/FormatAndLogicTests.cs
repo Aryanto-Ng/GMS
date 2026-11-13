@@ -194,7 +194,7 @@ public sealed class FormatAndLogicTests
     public void Pesan_login_tidak_membocorkan_keberadaan_username_dan_memuat_jam_kunci()
     {
         Assert.Null(LoginPage.Describe(null, null, null));
-        Assert.Equal("Username atau password salah.", LoginPage.Describe("invalid-credentials", null, null)!.Text);
+        Assert.Equal("Nama pengguna atau kata sandi salah.", LoginPage.Describe("invalid-credentials", null, null)!.Text);
         Assert.Contains("Administrator", LoginPage.Describe("account-locked", null, null)!.Text);
         var until = new DateTimeOffset(2026, 11, 8, 8, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds(); // 15:00 WIB
         Assert.Contains("15:00", LoginPage.Describe("account-locked", null, until)!.Text);
@@ -297,11 +297,14 @@ public sealed class FormatAndLogicTests
     [Fact]
     public void Status_dipetakan_ke_label_nada_dan_ikon_dan_Voided_dicoret()
     {
-        Assert.Equal(("In Progress", "blue"), (StatusPresentation.For(Gms.Shared.Enums.PoStatus.InProgress).Label, StatusPresentation.For(Gms.Shared.Enums.PoStatus.InProgress).Tone));
-        Assert.Equal("danger", StatusPresentation.For(Gms.Shared.Enums.WoStatus.Cancelled).Tone);
-        Assert.Equal("cyan", StatusPresentation.For(Gms.Shared.Enums.PoStatus.Confirmed).Tone);
-        Assert.Equal("cyan", StatusPresentation.For(Gms.Shared.Enums.WoStatus.Released).Tone);
-        Assert.Equal("closed", StatusPresentation.For(Gms.Shared.Enums.WoStatus.Closed).Tone);
+        Assert.Equal(("In Progress", "t-prog"), (StatusPresentation.For(Gms.Shared.Enums.PoStatus.InProgress).Label, StatusPresentation.For(Gms.Shared.Enums.PoStatus.InProgress).Tone));
+        Assert.Equal("t-obs", StatusPresentation.For(Gms.Shared.Enums.WoStatus.Cancelled).Tone); // abu-abu, bukan merah
+        Assert.Equal("t-proc", StatusPresentation.For(Gms.Shared.Enums.PoStatus.Confirmed).Tone);
+        Assert.Equal("t-proc", StatusPresentation.For(Gms.Shared.Enums.WoStatus.Released).Tone);
+        Assert.Equal("t-ok", StatusPresentation.For(Gms.Shared.Enums.WoStatus.Closed).Tone);
+        Assert.Equal("t-err", StatusPresentation.For("late").Tone);
+        Assert.Equal("t-warn", StatusPresentation.For("provisional").Tone);
+        Assert.Equal("t-prog", StatusPresentation.For(Gms.Shared.Enums.PayrollStatus.Open).Tone);
         var voided = StatusPresentation.For(Gms.Shared.Enums.DocStatus.Voided);
         Assert.True(voided.Strike);
         Assert.Equal("Terlambat", StatusPresentation.For("late").Label);
@@ -309,7 +312,7 @@ public sealed class FormatAndLogicTests
         Assert.Equal("Siap Produksi", StatusPresentation.For("ready").Label);
         Assert.Equal("Closed", StatusPresentation.For(Gms.Shared.Enums.PayrollStatus.Closed).Label);
         Assert.Equal("tidak dikenal", StatusPresentation.For("tidak dikenal").Label);
-        Assert.All(Enum.GetValues<Gms.Shared.Enums.PoStatus>(), s => Assert.NotNull(StatusPresentation.For(s).Icon));
-        Assert.All(Enum.GetValues<Gms.Shared.Enums.WoStatus>(), s => Assert.NotNull(StatusPresentation.For(s).Icon));
+        Assert.All(Enum.GetValues<Gms.Shared.Enums.PoStatus>(), s => Assert.NotEmpty(StatusPresentation.For(s).Label)); // teks selalu ada; ikon opsional
+        Assert.All(Enum.GetValues<Gms.Shared.Enums.WoStatus>(), s => Assert.NotEmpty(StatusPresentation.For(s).Label));
     }
 }

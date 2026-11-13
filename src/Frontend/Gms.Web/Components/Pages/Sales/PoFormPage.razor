@@ -58,7 +58,7 @@ else
                 <LookupSelect Label="FG" Items="_fgItems" @bind-Value="_addFg" ShowCode="true" />
                 <LookupSelect Label="Color" Items="_colorItems" @bind-Value="_addColor" />
                 <TextField Label="Tanggal Kirim" Type="date" @bind-Value="_addDate" />
-                <AntDesign.Button Type="@AntDesign.ButtonType.Default" Disabled="@(_addFg is null || _addColor is null || string.IsNullOrEmpty(_addDate))" OnClick="AddBlockAsync">Tambah blok FG</AntDesign.Button>
+                <GmsButton Type="@BtnKind.Default" Disabled="@(_addFg is null || _addColor is null || string.IsNullOrEmpty(_addDate))" OnClick="AddBlockAsync">Tambah blok FG</GmsButton>
             </div>
 
             @if (_blocks.Count == 0)
@@ -75,16 +75,16 @@ else
                         <strong>@block.FgLabel</strong> · @block.ColorLabel · Kirim
                         <input type="date" aria-label="@($"Tanggal kirim {block.FgLabel} {block.ColorLabel}")" value="@block.DeliveryText"
                                @onchange="e => { block.DeliveryText = e.Value?.ToString() ?? string.Empty; Changed(); }" />
-                        <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Hapus blok {block.FgLabel} {block.ColorLabel}")" OnClick="() => Remove(block)">✕</AntDesign.Button>
+                        <GmsButton Type="@BtnKind.Link" AriaLabel="@($"Hapus blok {block.FgLabel} {block.ColorLabel}")" OnClick="() => Remove(block)">✕</GmsButton>
                     </div>
-                    @if (dup) { <p class="gms-bad" role="alert"><AntDesign.Icon Type="close-circle" /> Kombinasi FG, Color, Size, dan Tanggal Kirim ganda.</p> }
-                    @if (early) { <p class="gms-warn" role="status"><AntDesign.Icon Type="warning" /> Tanggal Kirim lebih awal dari Tanggal PO.</p> }
+                    @if (dup) { <p class="gms-bad" role="alert"><GmsIcon Name="close-circle" /> Kombinasi FG, Color, Size, dan Tanggal Kirim ganda.</p> }
+                    @if (early) { <p class="gms-warn" role="status"><GmsIcon Name="warning" /> Tanggal Kirim lebih awal dari Tanggal PO.</p> }
                     <QtyGrid Caption="@($"{block.FgLabel} {block.ColorLabel}")" RowHeader="" Rows="_qtyRow" Columns="@Columns(block)" Values="block.Values"
                                     CellInfo="PoFormLogic.CellInfo" OnChanged="Changed" Compact="true" />
                     @foreach (var size in block.Sizes.Where(s => block.Existing.TryGetValue(s.Id, out var e) && e.Min > 0))
                     {
                         var e = block.Existing[size.Id];
-                        <p class="gms-note"><AntDesign.Icon Type="lock" /> Size @size.Code: minimal @IdFormat.Qty(e.Min)@(e.Locked ? " (baris terpakai, FG/Color/Size terkunci)" : string.Empty).</p>
+                        <p class="gms-note"><GmsIcon Name="lock" /> Size @size.Code: minimal @IdFormat.Qty(e.Min)@(e.Locked ? " (baris terpakai, FG/Color/Size terkunci)" : string.Empty).</p>
                     }
                 </div>
             }
@@ -93,18 +93,18 @@ else
         </section>
 
         <div class="gms-formactions">
-            <a class="ant-btn ant-btn-default" href="@(IsNew ? "/purchase-orders" : $"/purchase-orders/{Id}")">Batal</a>
+            <a class="gms-btn gms-btn-default" href="@(IsNew ? "/purchase-orders" : $"/purchase-orders/{Id}")">Batal</a>
             @if (IsNew)
             {
-                <AntDesign.Button Type="@AntDesign.ButtonType.Default" HtmlType="submit" Disabled="_saving">Simpan sebagai Draft</AntDesign.Button>
+                <GmsButton Type="@BtnKind.Default" HtmlType="submit" Disabled="_saving">Simpan sebagai Draft</GmsButton>
                 @if (_user.HasPermission(Permissions.CustomerPO.Confirm))
                 {
-                    <AntDesign.Button Type="@AntDesign.ButtonType.Primary" Disabled="_saving" OnClick="() => SaveAsync(true)">Simpan dan Konfirmasi</AntDesign.Button>
+                    <GmsButton Type="@BtnKind.Primary" Disabled="_saving" OnClick="() => SaveAsync(true)">Simpan dan Konfirmasi</GmsButton>
                 }
             }
             else
             {
-                <AntDesign.Button Type="@AntDesign.ButtonType.Primary" HtmlType="submit" Disabled="_saving">Simpan perubahan</AntDesign.Button>
+                <GmsButton Type="@BtnKind.Primary" HtmlType="submit" Disabled="_saving">Simpan perubahan</GmsButton>
             }
         </div>
     </form>

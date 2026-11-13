@@ -2,9 +2,9 @@
 <nav class="gms-pager" aria-label="Halaman data">
     <span aria-live="polite">@Summary</span>
     <div class="gms-pager-buttons">
-        <AntDesign.Button Type="@AntDesign.ButtonType.Default" Disabled="@(!HasPrevious || Busy)" OnClick="() => Go(Page - 1)" AriaLabel="Halaman sebelumnya">Sebelumnya</AntDesign.Button>
+        <GmsButton Type="@BtnKind.Default" Disabled="@(!HasPrevious || Busy)" OnClick="() => Go(Page - 1)" AriaLabel="Halaman sebelumnya">Sebelumnya</GmsButton>
         <span class="gms-pager-page">Halaman @Page dari @PageCount</span>
-        <AntDesign.Button Type="@AntDesign.ButtonType.Default" Disabled="@(!HasNext || Busy)" OnClick="() => Go(Page + 1)" AriaLabel="Halaman berikutnya">Berikutnya</AntDesign.Button>
+        <GmsButton Type="@BtnKind.Default" Disabled="@(!HasNext || Busy)" OnClick="() => Go(Page + 1)" AriaLabel="Halaman berikutnya">Berikutnya</GmsButton>
     </div>
 </nav>
 

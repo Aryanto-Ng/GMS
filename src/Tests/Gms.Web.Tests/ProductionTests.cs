@@ -245,9 +245,9 @@ public sealed class ProductionPageTests : WebTestBase
         SignIn(AllProd);
     }
 
-    private static IElement Dialog<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent => cut.FindAll(".ant-modal-wrap").Last(d => d.QuerySelector("h2") is not null);
+    private static IElement Dialog<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent => cut.FindAll(".gms-dialog-wrap").Last(d => d.QuerySelector("h2") is not null);
 
-    private static IElement DialogConfirm<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent => Dialog(cut).QuerySelectorAll("button.ant-btn").Last();
+    private static IElement DialogConfirm<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent => Dialog(cut).QuerySelectorAll("button.gms-btn").Last();
 
     private void PickWoAndStep(IRenderedComponent<InputOutputPage> cut, string stepLabel)
     {
@@ -277,12 +277,12 @@ public sealed class ProductionPageTests : WebTestBase
 
         Assert.Contains("Proses pertama: bebas", cut.Markup);
         cut.FindAll("select")[2].Change(_rig.Worker(0).ToString());
-        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Trim() == "Tambah pekerja").Click();
+        cut.FindAll("button.gms-btn").Single(b => b.TextContent.Trim() == "Tambah pekerja").Click();
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("table.gms-matrix")));
         cut.Find("table.gms-matrix input[aria-label='PKJ-001 Wati, Size Navy S']").Input("40");
         Assert.Contains("1 pekerja · 40 pcs", cut.Markup);
         Assert.Contains("Belum disimpan", cut.Markup);
-        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Trim() == "Simpan").Click();
+        cut.FindAll("button.gms-btn").Single(b => b.TextContent.Trim() == "Simpan").Click();
 
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll("table.gms-matrix")));
         Assert.Equal(40, Sync(_rig.Production.GetInputContextAsync(ProductionRig.WoId, 1, DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)))).CurrentTotal);
@@ -294,7 +294,7 @@ public sealed class ProductionPageTests : WebTestBase
         var cut = Render<InputOutputPage>();
         PickWoAndStep(cut, "3 Sewing");
         cut.FindAll("select")[2].Change(_rig.Worker(0).ToString());
-        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Trim() == "Tambah pekerja").Click();
+        cut.FindAll("button.gms-btn").Single(b => b.TextContent.Trim() == "Tambah pekerja").Click();
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("table.gms-matrix")));
 
         Assert.Contains("maks 0", cut.Find("table.gms-matrix").TextContent);
@@ -310,11 +310,11 @@ public sealed class ProductionPageTests : WebTestBase
         var cut = Render<InputOutputPage>();
         PickWoAndStep(cut, "1 Cutting");
         cut.FindAll("select")[2].Change(_rig.Worker(0).ToString());
-        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Trim() == "Tambah pekerja").Click();
+        cut.FindAll("button.gms-btn").Single(b => b.TextContent.Trim() == "Tambah pekerja").Click();
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("table.gms-matrix")));
         cut.Find("table.gms-matrix input[aria-label='PKJ-001 Wati, Size Navy S']").Input("51");
 
-        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Trim() == "Simpan").Click();
+        cut.FindAll("button.gms-btn").Single(b => b.TextContent.Trim() == "Simpan").Click();
         cut.WaitForAssertion(() => Assert.Contains("kumulatif 51 dari 50", Dialog(cut).TextContent));
         DialogConfirm(cut).Click();
 
@@ -330,7 +330,7 @@ public sealed class ProductionPageTests : WebTestBase
         var cut = Render<ProductionHistoryPage>();
         cut.WaitForAssertion(() => Assert.Equal(3, cut.FindAll("tbody tr").Count));
 
-        cut.FindAll("tbody tr").Single(r => r.TextContent.Contains("Output")).QuerySelectorAll("button.ant-btn").Single(b => b.TextContent.Trim() == "Void").Click();
+        cut.FindAll("tbody tr").Single(r => r.TextContent.Contains("Output")).QuerySelectorAll("button.gms-btn").Single(b => b.TextContent.Trim() == "Void").Click();
 
         cut.WaitForAssertion(() => Assert.Contains("Tertahan oleh Bordir (50)", Dialog(cut).TextContent));
         Assert.True(DialogConfirm(cut).HasAttribute("disabled"));
@@ -343,7 +343,7 @@ public sealed class ProductionPageTests : WebTestBase
         var cut = Render<ProductionHistoryPage>();
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll("tbody tr")));
 
-        cut.FindAll("tbody button.ant-btn").Single(b => b.TextContent.Trim() == "Void").Click();
+        cut.FindAll("tbody button.gms-btn").Single(b => b.TextContent.Trim() == "Void").Click();
         cut.WaitForAssertion(() => Assert.NotEmpty(Dialog(cut).QuerySelectorAll(".gms-impact")));
         Dialog(cut).QuerySelector("textarea")!.Input("salah input");
         DialogConfirm(cut).Click();
@@ -364,7 +364,7 @@ public sealed class ProductionPageTests : WebTestBase
         var cut = Render<ProductionHistoryPage>();
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll("tbody tr")));
 
-        var voidButton = cut.FindAll("tbody button.ant-btn").Single(b => b.TextContent.Trim() == "Void");
+        var voidButton = cut.FindAll("tbody button.gms-btn").Single(b => b.TextContent.Trim() == "Void");
 
         Assert.True(voidButton.HasAttribute("disabled"));
         Assert.Contains("Completed", voidButton.ParentElement!.GetAttribute("title")); // penjelasan nonaktif ada pada pembungkus tombol
@@ -384,7 +384,7 @@ public sealed class ProductionPageTests : WebTestBase
 
         Assert.Contains("maks 50", cut.Find("table.gms-matrix").TextContent);
         cut.Find("table.gms-matrix input[aria-label='Qty, Size Navy S']").Input("30");
-        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Trim() == "Simpan").Click();
+        cut.FindAll("button.gms-btn").Single(b => b.TextContent.Trim() == "Simpan").Click();
         cut.WaitForAssertion(() => Assert.Equal(30, Sync(_rig.Wos.GetAsync(ProductionRig.WoId)).OutstandingAtVendorQty));
 
         cut.FindAll("[role=tab]").Single(t => t.TextContent.Trim() == "Terima").Click();

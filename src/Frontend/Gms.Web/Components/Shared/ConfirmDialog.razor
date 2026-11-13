@@ -2,15 +2,17 @@
 @inject IJSRuntime JS
 @inject ApiErrorHandler Errors
 
-@* ConfirmDialog (Design.md 8.8) di atas AntDesign <Modal>: alasan WAJIB + pratinjau dampak untuk Void, Koreksi, Cancel, Reopen, Penyesuaian,
-   Pelepasan alokasi, Tutup Periode. Esc (ditangani modul JS, bukan Modal) dan tombol tutup diblok saat memproses; klik latar tidak menutup (aksi berisiko). Isi hanya dirender saat
-   terbuka dan state direset pada setiap pembukaan. JANGAN memakai DestroyOnClose (membuat DOM dirender ulang terus pada pembukaan kedua). aria-labelledby/-describedby/-modal dipasang modul JS karena Modal tidak menyediakannya. *@
-<AntDesign.Modal Visible="Open" Width="640" Closable="@(!_busy)" Keyboard="false" MaskClosable="false"
-                 WrapClassName="gms-dialog-wrap" OnCancel="CancelAsync" Footer="FooterContent">
-    <TitleTemplate><h2 id="@_titleId" class="gms-dialog-title">@Title</h2></TitleTemplate>
-    <ChildContent>
-        @if (Open)
-        {
+@* Dialog (Design.md 10): 480px, radius 8px, latar gelap 40%; varian lebar 720px (Wide) HANYA untuk pratinjau dampak (U-1). Alasan WAJIB + pratinjau dampak untuk
+   Void, Koreksi, Cancel, Reopen, Penyesuaian, Pelepasan alokasi, Tutup Periode. Esc dan fokus terkurung ditangani modul JS (diblok saat memproses); klik latar tidak menutup
+   (aksi berisiko). Isi hanya dirender saat terbuka dan state direset pada setiap pembukaan. *@
+@if (Open)
+{
+    <div class="gms-dialog-wrap" @ref="_wrap">
+        <div class="gms-dialog @(Wide || LoadPreview is not null ? "wide" : "")" role="dialog" aria-modal="true" aria-labelledby="@_titleId" aria-describedby="@(string.IsNullOrEmpty(Description) ? null : _descId)" tabindex="-1">
+            <div class="gms-dialog-header">
+                <h2 id="@_titleId" class="gms-dialog-title">@Title</h2>
+                <button type="button" class="gms-dialog-close" aria-label="Tutup" disabled="@_busy" @onclick="CancelAsync"><GmsIcon Name="dismiss" /></button>
+            </div>
             <div class="gms-dialog-body" aria-busy="@(_busy ? "true" : "false")">
                 @if (!string.IsNullOrEmpty(Description))
                 {
@@ -38,7 +40,7 @@
                 @if (ShowReason)
                 {
                     <label for="@_reasonId">Alasan @(ReasonRequired ? "" : "(opsional)") @if (ReasonRequired) { <span class="gms-required">wajib</span> }</label>
-                    <textarea id="@_reasonId" class="gms-reason" rows="3" maxlength="@MaxLength" autofocus
+                    <textarea id="@_reasonId" class="gms-reason" rows="3" maxlength="@MaxLength"
                               aria-describedby="@(_reasonId)-hint" value="@_reason" @oninput="e => _reason = e.Value?.ToString() ?? string.Empty"></textarea>
                     <small id="@(_reasonId)-hint">@_reason.Length / @MaxLength karakter</small>
                 }
@@ -48,9 +50,13 @@
                     <ProblemBanner Problem="_problem" />
                 }
             </div>
-        }
-    </ChildContent>
-</AntDesign.Modal>
+            <div class="gms-dialog-footer">
+                <GmsButton Type="BtnKind.Default" Disabled="_busy" OnClick="() => CancelAsync()">@CancelText</GmsButton>
+                <GmsButton Type="BtnKind.Primary" Danger="Danger" Loading="_busy" Disabled="!CanSubmit" OnClick="() => SubmitAsync()">@ConfirmText</GmsButton>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
     private static int _counter;
@@ -58,9 +64,11 @@
     private string _descId => _titleId.Replace("title", "desc");
     private string _reasonId => _titleId.Replace("title", "reason");
 
+    private ElementReference _wrap;
     private IJSObjectReference? _module;
     private DotNetObjectReference<ConfirmDialog>? _self;
     private bool _wasOpen;
+    private bool _attached;
     private bool _busy;
     private string _reason = string.Empty;
     private GmsProblemDetails? _problem;
@@ -78,6 +86,8 @@
 
     [Parameter] public string ConfirmText { get; set; } = "Ya, lanjutkan";
 
+    [Parameter] public string CancelText { get; set; } = "Batal";
+
     /// <summary>Aksi destruktif: tombol utama berwarna bahaya.</summary>
     [Parameter] public bool Danger { get; set; } = true;
 
@@ -87,6 +97,9 @@
     [Parameter] public bool ShowReason { get; set; } = true;
 
     [Parameter] public int MaxLength { get; set; } = 500;
+
+    /// <summary>Dialog lebar 720px (pratinjau dampak). Otomatis lebar bila <see cref="LoadPreview"/> terisi.</summary>
+    [Parameter] public bool Wide { get; set; }
 
     /// <summary>Syarat tambahan dari pemanggil (mis. konfirmasi kode periode).</summary>
     [Parameter] public bool CanConfirm { get; set; } = true;
@@ -141,33 +154,31 @@
         _previewLoading = false;
     }
 
-    /// <summary>Tombol di footer Modal: [Batal] dan tombol utama (Danger/Loading/Disabled sesuai keadaan).</summary>
-    private RenderFragment FooterContent => builder =>
-    {
-        builder.OpenComponent<AntDesign.Button>(0);
-        builder.AddAttribute(1, "Type", AntDesign.ButtonType.Default);
-        builder.AddAttribute(2, "Disabled", _busy);
-        builder.AddAttribute(3, "OnClick", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, _ => CancelAsync()));
-        builder.AddAttribute(4, "ChildContent", (RenderFragment)(b => b.AddContent(0, "Batal")));
-        builder.CloseComponent();
-
-        builder.OpenComponent<AntDesign.Button>(5);
-        builder.AddAttribute(6, "Type", AntDesign.ButtonType.Primary);
-        builder.AddAttribute(7, "Danger", Danger);
-        builder.AddAttribute(8, "Loading", _busy);
-        builder.AddAttribute(9, "Disabled", !CanSubmit);
-        builder.AddAttribute(10, "OnClick", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, _ => SubmitAsync()));
-        builder.AddAttribute(11, "ChildContent", (RenderFragment)(b => b.AddContent(0, ConfirmText)));
-        builder.CloseComponent();
-    };
-
-    /// <summary>
-    /// Setiap render saat terbuka: pasang nama dan deskripsi aksesibel pada elemen role="dialog" (Modal tidak menyediakannya).
-    /// Idempoten dan murah; tidak memakai AfterOpen karena tidak andal pada pembukaan berulang.
-    /// </summary>
+    /// <summary>Saat dialog terbuka: pasang jebakan fokus + Esc (modul JS). Idempoten dan murah; kegagalan JS tidak menggagalkan dialog.</summary>
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!Open)
+        {
+            if (_attached)
+            {
+                _attached = false;
+                try
+                {
+                    if (_module is not null)
+                    {
+                        await _module.InvokeVoidAsync("detach");
+                    }
+                }
+                catch (Exception ex) when (ex is JSException or JSDisconnectedException or InvalidOperationException)
+                {
+                    // sirkuit tertutup atau modul belum termuat
+                }
+            }
+
+            return;
+        }
+
+        if (_attached)
         {
             return;
         }
@@ -176,11 +187,12 @@
         {
             _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Shared/ConfirmDialog.razor.js");
             _self ??= DotNetObjectReference.Create(this);
-            await _module.InvokeVoidAsync("label", _titleId, string.IsNullOrEmpty(Description) ? null : _descId, _self);
+            await _module.InvokeVoidAsync("attach", _wrap, _self);
+            _attached = true;
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or InvalidOperationException)
         {
-            // pelabelan bersifat tambahan; kegagalan JS tidak boleh menggagalkan dialog
+            // jebakan fokus bersifat tambahan; kegagalan JS tidak boleh menggagalkan dialog
         }
     }
 
@@ -236,7 +248,7 @@
             _wasOpen = false; // pembukaan berikutnya (walau sangat cepat) selalu mereset isian, pratinjau, dan galat
         }
 
-        StateHasChanged(); // Modal harus melihat Visible=false sebelum induk merender ulang
+        StateHasChanged();
         await OpenChanged.InvokeAsync(value);
     }
 

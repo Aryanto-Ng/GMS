@@ -1,44 +1,62 @@
-// Pelabelan aksesibel dan penanganan Esc untuk AntDesign Modal.
-// Elemen role="dialog" (.ant-modal-wrap) tidak memiliki nama, deskripsi, maupun aria-modal. Esc ditangani di sini (bukan oleh Modal)
-// agar dapat diblok saat aksi sedang diproses. Modal dapat merender isinya sesaat setelah komponen induk, jadi bila elemen belum ada,
-// tunggu kemunculannya (maks. 3 detik).
-function apply(titleId, descId, dotNet) {
-    const title = document.getElementById(titleId);
-    const wrap = title && title.closest('[role="dialog"]');
+// Dialog: jebakan fokus, Esc, dan pengembalian fokus. Esc ditangani di sini agar dapat diblok saat aksi diproses (RequestClose di C#).
+let state = null;
+
+const FOCUSABLE = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+export function attach(wrap, dotNet) {
+    detach();
     if (!wrap) {
-        return false;
-    }
-
-    wrap.setAttribute('aria-modal', 'true');
-    wrap.setAttribute('aria-labelledby', titleId);
-    if (descId && document.getElementById(descId)) {
-        wrap.setAttribute('aria-describedby', descId);
-    }
-
-    if (!wrap.dataset.gmsEsc && dotNet) {
-        wrap.dataset.gmsEsc = '1';
-        wrap.addEventListener('keydown', e => {
-            if (e.key === 'Escape') {
-                e.preventDefault();
-                e.stopPropagation();
-                dotNet.invokeMethodAsync('RequestClose');
-            }
-        });
-    }
-
-    return true;
-}
-
-export function label(titleId, descId, dotNet) {
-    if (apply(titleId, descId, dotNet)) {
         return;
     }
 
-    const observer = new MutationObserver(() => {
-        if (apply(titleId, descId, dotNet)) {
-            observer.disconnect();
+    const dialog = wrap.querySelector('[role="dialog"]');
+    const previous = document.activeElement;
+    const onKey = e => {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            e.stopPropagation();
+            dotNet.invokeMethodAsync('RequestClose');
+            return;
         }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-    setTimeout(() => observer.disconnect(), 3000);
+
+        if (e.key !== 'Tab' || !dialog) {
+            return;
+        }
+
+        const items = [...dialog.querySelectorAll(FOCUSABLE)].filter(el => el.offsetParent !== null);
+        if (items.length === 0) {
+            e.preventDefault();
+            return;
+        }
+
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+        }
+    };
+
+    document.addEventListener('keydown', onKey, true);
+    state = { onKey, previous };
+
+    // Fokus awal: kolom alasan bila ada, selain itu kontrol pertama di dalam dialog.
+    const target = dialog && (dialog.querySelector('textarea') || dialog.querySelector(FOCUSABLE));
+    (target || dialog)?.focus();
+}
+
+export function detach() {
+    if (!state) {
+        return;
+    }
+
+    document.removeEventListener('keydown', state.onKey, true);
+    const previous = state.previous;
+    state = null;
+    if (previous && document.contains(previous) && typeof previous.focus === 'function') {
+        previous.focus();
+    }
 }

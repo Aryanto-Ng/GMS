@@ -1,9 +1,9 @@
-@* StatCard (Design.md 8.3): angka besar, label, deskripsi satu baris, tautan "Lihat". Status tidak dibedakan oleh warna saja. *@
+@* StatTile (Design.md 8.3): angka besar, label, deskripsi satu baris, tautan "Lihat". Status tidak dibedakan oleh warna saja. *@
 <section class="gms-metric @(Tone == MetricTone.Warning ? "warning" : Tone == MetricTone.Danger ? "danger" : string.Empty)" aria-label="@Label">
     <div class="gms-metric-label">
         @if (Tone != MetricTone.Neutral)
         {
-            <AntDesign.Icon Type="@(Tone == MetricTone.Danger ? "close-circle" : "warning")" />
+            <GmsIcon Name="@(Tone == MetricTone.Danger ? "close-circle" : "warning")" />
         }
         <span>@Label</span>
     </div>

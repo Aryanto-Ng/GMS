@@ -1,0 +1,155 @@
+@inject AuthenticationStateProvider Auth
+@inject NavigationManager Nav
+@inject IOptions<AppIdentityOptions> IdentityOptions
+@inject TabManager Tabs
+
+@* Global Header (Design.md 4): latar brand 48px. Kiri logo + singkatan; tengah pencarian halaman dan aksi (maks. 7 hasil); kanan, urutan tetap: bahasa, notifikasi, pengguna.
+   Hanya satu panel header terbuka pada satu waktu; klik di luar (scrim) menutup. *@
+<header class="gms-hdr" role="banner">
+    <button type="button" class="gms-hbtn gms-nav-menu" aria-label="Menu" aria-expanded="false" @onclick="OnToggleNav"><GmsIcon Name="menu" /></button>
+    <a href="/" class="gms-logo" aria-label="@($"{Identity.Abbreviation}, ke Beranda")">
+        <span class="gms-logo-mark" aria-hidden="true">@Identity.LogoLetter</span><span>@Identity.Abbreviation</span><small>@Identity.Name</small>
+    </a>
+
+    <div class="gms-hsearch" role="search">
+        <GmsIcon Name="search" />
+        <input type="search" placeholder="Cari halaman atau aksi…" aria-label="Cari halaman atau aksi" autocomplete="off"
+               value="@_query" @oninput="OnSearch" @onkeydown="OnSearchKey" />
+        @if (_results.Count > 0)
+        {
+            <div class="gms-sresults" role="listbox" aria-label="Hasil pencarian">
+                @foreach (var r in _results)
+                {
+                    <a class="gms-mitem" role="option" href="@r.Href" @onclick="ClearSearch">
+                        <span class="gms-tile @(r.Kind == NavKind.Action ? "t" : "")"><GmsIcon Name="@(r.Kind == NavKind.Action ? "plus" : "list")" /></span>
+                        <span style="flex:1"><b>@r.Label</b><span class="d">@r.Category / @r.Group</span></span>
+                        @if (r.Kind == NavKind.Action) { <span class="gms-tag t-proc tag">Aksi</span> }
+                    </a>
+                }
+            </div>
+        }
+        else if (_query.Length > 0)
+        {
+            <div class="gms-sresults"><p class="gms-muted" style="padding:var(--space-3);margin:0">Tidak ada hasil untuk pencarian ini.</p></div>
+        }
+    </div>
+
+    <div class="gms-hr">
+        <div style="position:relative">
+            <button type="button" class="gms-hbtn" aria-haspopup="menu" aria-expanded="@Bool(_panel == Panel.Language)" aria-label="@($"Bahasa: {(_isEnglish ? "English" : "Indonesia")}")" @onclick="() => Toggle(Panel.Language)">
+                <GmsIcon Name="globe" /><span class="gms-hlabel">@(_isEnglish ? "EN" : "ID")</span><GmsIcon Name="chevron-down" Class="s12" />
+            </button>
+            @if (_panel == Panel.Language)
+            {
+                <div class="gms-hmenu" role="menu" aria-label="Bahasa">
+                    <a role="menuitemradio" aria-checked="@Bool(!_isEnglish)" href="@LanguageHref("id-ID")">Indonesia</a>
+                    <a role="menuitemradio" aria-checked="@Bool(_isEnglish)" href="@LanguageHref("en-US")">English</a>
+                </div>
+            }
+        </div>
+
+        <NotificationBell Open="_panel == Panel.Notifications" OnToggle="() => Toggle(Panel.Notifications)" OnClose="() => _panel = Panel.None" />
+
+        <div style="position:relative">
+            <button type="button" class="gms-hbtn" aria-haspopup="menu" aria-expanded="@Bool(_panel == Panel.User)" aria-label="@($"Menu pengguna {_name}")" @onclick="() => Toggle(Panel.User)">
+                <span class="gms-avatar" aria-hidden="true">@Initials</span><span class="gms-hlabel">@_name</span><GmsIcon Name="chevron-down" Class="s12" />
+            </button>
+            @if (_panel == Panel.User)
+            {
+                <div class="gms-hmenu" role="menu" aria-label="Menu pengguna">
+                    <div class="gms-hmenu-info"><strong>@_name</strong><span>@_role</span></div>
+                    <a href="/account/change-password" role="menuitem">Ganti Password</a>
+                    <form method="post" action="/account/logout">
+                        <AntiforgeryToken />
+                        <button type="submit" role="menuitem">Keluar</button>
+                    </form>
+                </div>
+            }
+        </div>
+    </div>
+</header>
+
+@if (_panel != Panel.None || _results.Count > 0)
+{
+    <div class="gms-scrim" style="position:fixed;inset:0;z-index:25" @onclick="CloseAll"></div>
+}
+
+@code {
+    private enum Panel { None, Language, Notifications, User }
+
+    [Parameter, EditorRequired] public IReadOnlyList<NavCategory> Catalog { get; set; } = [];
+
+    [Parameter] public EventCallback OnToggleNav { get; set; }
+
+    private AppIdentityOptions Identity => IdentityOptions.Value;
+    private Panel _panel;
+    private string _query = string.Empty;
+    private IReadOnlyList<NavFlatEntry> _results = [];
+    private string _name = "Pengguna";
+    private string _role = string.Empty;
+    private bool _isEnglish;
+
+    private string Initials => string.Concat(_name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpperInvariant(p[0])));
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await Auth.GetAuthenticationStateAsync()).User;
+        _name = user.DisplayName();
+        _role = user.FindFirstValue(GmsClaims.RoleName) ?? string.Empty;
+        _isEnglish = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "en";
+    }
+
+    private static string Bool(bool value) => value ? "true" : "false";
+
+    private string LanguageHref(string culture) =>
+        $"/account/language?culture={culture}&returnUrl={Uri.EscapeDataString("/" + Nav.ToBaseRelativePath(Nav.Uri))}";
+
+    private void Toggle(Panel panel)
+    {
+        _panel = _panel == panel ? Panel.None : panel;
+        _results = [];
+    }
+
+    private void CloseAll()
+    {
+        _panel = Panel.None;
+        ClearSearch();
+    }
+
+    private void ClearSearch()
+    {
+        _query = string.Empty;
+        _results = [];
+    }
+
+    private void OnSearch(ChangeEventArgs e)
+    {
+        _query = e.Value?.ToString() ?? string.Empty;
+        _panel = Panel.None;
+        var words = _query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (words.Length == 0)
+        {
+            _results = [];
+            return;
+        }
+
+        _results = NavCatalog.Flatten(Catalog)
+            .Where(x => words.All(w => $"{x.Label} {x.Desc} {x.Category} {x.Group} {x.Keywords}".Contains(w, StringComparison.OrdinalIgnoreCase)))
+            .Take(7)
+            .ToList();
+    }
+
+    private void OnSearchKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            ClearSearch();
+        }
+        else if (e.Key == "Enter" && _results.Count > 0)
+        {
+            var href = _results[0].Href;
+            ClearSearch();
+            Nav.NavigateTo(href);
+        }
+    }
+}

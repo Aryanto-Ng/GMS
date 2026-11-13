@@ -3,7 +3,7 @@ using static Microsoft.Playwright.Assertions;
 
 namespace Gms.E2E.Tests;
 
-/// <summary>ConfirmDialog di atas AntDesign Modal pada browser nyata: nama aksesibel, fokus, Esc, klik latar, Batal, dan konfirmasi.</summary>
+/// <summary>Dialog (fokus terkurung, Esc, klik latar) pada browser nyata: nama aksesibel, fokus, Esc, klik latar, Batal, dan konfirmasi.</summary>
 [Collection(StackCollection.Name)]
 public sealed class DialogE2ETests(StackFixture stack)
 {

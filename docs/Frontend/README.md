@@ -1,66 +1,35 @@
-# Frontend (Blazor Web App + Fluent UI 2)
+# Frontend (Blazor Web App, Fluent 2 — komponen sendiri)
 
-Proyek: `src/Frontend/Gms.Web`; tes: `src/Tests/Gms.Web.Tests` (bUnit + xunit.v3, `dotnet test --project …`).
+Proyek: `src/Frontend/Gms.Web`; tes: `src/Tests/Gms.Web.Tests` (bUnit + xunit.v3) dan `src/Tests/Gms.E2E.Tests` (Playwright terhadap tumpukan nyata).
+Acuan visual TUNGGAL: `docs/Design.md` v2.0 (Microsoft Fluent 2) dan `docs/Design/*-UI.md`. **Tanpa pustaka UI pihak ketiga** (keputusan K-1, 2026-11-13): komponen dibangun sendiri dengan CSS token. AntDesign dan Fluent UI Blazor sudah dihapus dari proyek dan `Directory.Packages.props`.
 
 ## Autentikasi (BFF, ADR-002)
 - Token sesi opaque dari API disimpan di cookie terenkripsi `gms.auth` (HttpOnly, SameSite=Lax, geser 30 menit). Browser tidak pernah memegang token.
 - Klaim: `gms:session`, `gms:perm` (satu per izin), `gms:full-name`, `gms:role`, `gms:is-admin`, `gms:must-change-password`.
-- Halaman akun (Login, Ganti Password, 403, Error, 404) = Static SSR (`[ExcludeFromInteractiveRouting]`), form `post` ke `/account/login|logout|change-password` (antiforgery). `returnUrl` disaring `AccountEndpoints.SafeReturnUrl` (anti open-redirect). `MustChangePasswordMiddleware` memaksa ganti password.
-- Otorisasi: kebijakan fallback = harus login; kebijakan dinamis `perm:<Izin>`. Menu hanya menampilkan item yang diizinkan.
+- Halaman akun (Login, Ganti Password, 403, Error, 404) = Static SSR (`[ExcludeFromInteractiveRouting]`) dengan `AccountLayout` (latar SVG bergerak + kartu 420px, Design.md 10); form `post` ke `/account/login|logout|change-password` (antiforgery). `GET /account/language?culture=id-ID|en-US` menulis cookie bahasa lalu kembali (alamat lokal aman). `returnUrl` disaring `AccountEndpoints.SafeReturnUrl`.
+- Otorisasi: kebijakan fallback = harus login; kebijakan dinamis `perm:<Izin>`. Menu dan hasil pencarian hanya memuat entri yang diizinkan.
 
 ## Klien API
-- `GmsApiClient` (HttpClient bernama `gms-api`, Bearer dari `ISessionTokenProvider`): semua galat → `ApiException(GmsProblemDetails)`; gangguan jaringan/timeout → 503; badan non-JSON tidak dibocorkan.
-- Saklar `Api:UseMock` (ADR-014): saat ini hanya `IAuthApi` (Http/Mock). Modul lain menyusul saat halaman dibuat.
-- `ProblemPresenter` memetakan Problem Details ke jenis UI (`ProblemKind`) sesuai `docs/Design/_Foundation-UI.md` §7; `ApiErrorHandler` mengalihkan 401 ke `/account/session-ended`.
-- Format tanpa ketergantungan ICU: `IdFormat` (tanggal, qty `12.500`, `Rp 1.250.000`, tarif ≤5 desimal; zona WIB), `IdNumber` (parser ketat; "1.5" ditolak karena ambigu).
+- `GmsApiClient` (HttpClient bernama `gms-api`, Bearer dari `ISessionTokenProvider`): semua galat → `ApiException(GmsProblemDetails)`; gangguan jaringan/timeout → 503.
+- Saklar `Api:UseMock` (ADR-014): tiap antarmuka punya `HttpXxxApi` dan `MockXxxApi`.
+- `ProblemPresenter` memetakan Problem Details ke jenis UI; `ApiErrorHandler` mengalihkan 401 ke `/account/session-ended`.
+- Format tanpa ICU: `IdFormat` (tanggal, qty, `Rp`, tarif sesuai FSD; zona WIB), `IdNumber` (parser ketat).
 
-## Komponen bersama (`Components/Shared`)
-PageHeader, MetricCard, EmptyState, ErrorState, SkeletonRows, PagerBar, StatusChip, ProblemBanner, FormSummary, AsyncContent, UnsavedChangesGuard, ImpactPreviewTable, ReasonDialog (`ShowReason="false"` = konfirmasi biasa), SizeMatrixGrid (+ `SizeMatrixLogic`), MasterList (Daftar Master Generik), TextField, LookupSelect, ImportWizard. Status selalu ikon + teks; galat menampilkan `traceId`.
+## Shell dan token (Design.md 3 sampai 9)
+- `wwwroot/css/tokens.css`: satu-satunya berkas dengan nilai mentah (token Design.md bagian 8 dan 9; **tema terang saja**). `wwwroot/app.css`: semua gaya memakai `var(--token)`.
+- `MainLayout` = 4 zona: `AppHeader` (logo dari `AppIdentityOptions`, pencarian halaman/aksi maks. 7 hasil, menu bahasa, `NotificationBell`, menu pengguna) → `TopNav` (kategori, panel mega, grup dan item berikon; sumber `NavCatalog`) → `TabBar` → workspace berisi `TabHost` + footer. `ToastHost` di dasar layout.
+- **Tab Manager** (`Services/Tabs`): Router tetap menentukan halaman untuk URL aktif; `MainLayout` menyelaraskannya ke `TabManager` (buka/fokus, maks. 10, tab Beranda terpaku). `TabHost` merender SEMUA tab terbuka (yang tidak aktif `hidden`) lewat `AuthorizeRouteView` per tab sehingga isi form, filter, dan sub-tab hidup per tab. ID tab = path (`/` → `home`, `/x/{id}` dan `/x/{id}/edit` satu tab, `/x/new` satu tab per layar). `PageHeader` menetapkan judul tab; `UnsavedChangesGuard` menandai tab belum disimpan (menutup tab dirty meminta konfirmasi di `TabBar`; navigasi internal tidak ditanya karena halaman tab tetap hidup); `TabContext.SetAlert` untuk ikon alert.
+- **Query halaman:** `[SupplyParameterFromQuery]` DILARANG pada halaman interaktif (membaca URL aktif dan memengaruhi tab tersembunyi). Pakai `[Parameter, TabQuery("nama")]`; `TabManager` mengisinya dari query string tab itu sendiri (bool, Guid, int, string).
+- Header/Router: `Routes.razor` mencascade `RouteData` ke layout; `@Body` layout tidak dirender (isi halaman dari `TabHost`).
 
-## Render mode
-Interactive Server untuk halaman kerja; Static SSR untuk halaman akun (sesuai FSD).
+## Komponen (Design.md 13; pemetaan dari nama lama di `_Foundation-UI.md` bagian 8)
+`GmsButton` (Default/Primary/Link, `Danger`, `Loading`, `Icon`, `AriaLabel`), `GmsIcon` (set SVG sendiri `GmsIcons`; nama alias Ant dipertahankan), `StatusBadge` + `StatusPresentation` (peta 6 warna `t-proc/t-prog/t-ok/t-obs/t-err/t-warn`; Cancelled/Void abu), `StatTile`, `PageHeader`, `ProblemBanner`/`FormSummary` (MessageBar), `ConfirmDialog` (Dialog 480px; **lebar 720px** otomatis bila ada pratinjau dampak; fokus terkurung + Esc lewat `ConfirmDialog.razor.js`; `CancelText`), `ToastHost` + `IGmsToast`/`GmsToast`, `EmptyState`/`ErrorState`/`SkeletonRows`, `PagerBar`, `QtyGrid`, `ProgressMatrix`, `StackedProgress`, `ImportWizard`, `MasterList<T>`, `TextField`/`LookupSelect`, `AsyncContent`. Tabel memakai kelas `gms-table`.
 
-## Belum / berikutnya
-- Selesai: seluruh modul (5.0–5.9). Berikutnya: QA (smoke terhadap API nyata, Playwright) dan DevOps.
-- Komponen tersisa: Matriks Progres (bersama modul WO).
-- Perilaku JS (keyboard/tempel grid, dialog native) diuji via Playwright (QA).
+## Tes
+- bUnit: 438 lulus (`dotnet test --project src/Tests/Gms.Web.Tests`). Pemilih: tombol `button.gms-btn`; dialog `.gms-dialog-wrap`, `.gms-dialog-body`, `.gms-dialog-footer`; badge `.gms-tag.t-*`.
+- E2E: Playwright terhadap Postgres + API + Web nyata (`ShellE2ETests`: panel navigasi, pencarian header, tab menjaga isi form dan konfirmasi tutup, tema terang saja). `ScreenshotE2ETests` menangkap layar bila `GMS_SHOTS_DIR` diisi (peninjauan visual).
+- Bila `Gms.Api`/`Gms.Web` sedang berjalan dan mengunci `bin/`, bangun dan uji ke jalur lain: `-p:UseArtifactsOutput=true -p:ArtifactsPath=<folder>` (E2E mencari keluaran dengan tata letak itu).
 
-## Migrasi ke AntDesign Blazor (acuan: `docs/Design.md`)
-
-Status: **Fluent UI sudah dihapus seluruhnya (2026-11-11)**: shell, komponen bersama, dan semua halaman memakai AntDesign Blazor + token Design.md. Paket `Microsoft.FluentUI.*` dan penyedia Fluent sudah dilepas dari proyek.
-
-**Mekanisme tema (keputusan):** AntDesign Blazor 1.6.2 hanya menjadikan palet warna sebagai variabel CSS; radius, tinggi kontrol, dan warna komponen berupa nilai tetap, dan tema gelap adalah stylesheet terpisah. Karena itu token `Design.md` diterapkan dalam tiga lapis:
-1. `wwwroot/css/tokens.css`: token bagian 4 sebagai CSS variable (`--primary`, `--bg-container`, `--space-4`, ...) untuk terang dan gelap (`html[data-theme]`), plus alias `--gms-*` agar CSS halaman lama ikut palet baru.
-2. `wwwroot/css/ant-theme.css`: menimpa komponen AntDesign (Button, Input, Select, Table, Modal, Tag, Alert, Tabs, ...) memakai token; menimpa variabel palet `--ant-*`. Dimuat setelah stylesheet AntDesign.
-3. `wwwroot/js/theme-init.js` (sinkron di `<head>`): memilih stylesheet AntDesign terang (`variable.css`) atau gelap (`dark.css`) dan mengatur `data-theme` sebelum render pertama. Pilihan disimpan di `localStorage` (`gms.theme`: system/light/dark). `FluentDesignTheme` mengikuti pilihan itu selama komponen Fluent masih ada.
-
-**Shell:** `Components/Layout/MainLayout.razor` (header 56px, tanpa sider), `MegaMenu.razor` (klik, satu panel, Esc/scrim, `aria-expanded`), katalog di `NavCatalog.cs` (Kategori → Grup → Halaman/Aksi, disaring menurut izin), CommandPalette `wwwroot/js/shell.js` (`Ctrl K`, penyaringan di browser dari `#gms-catalog`, Terakhir dibuka di `localStorage`). Komponen AntDesign dipakai dengan nama penuh (`<AntDesign.Icon>`) selama namespace Fluent masih global, untuk menghindari bentrok nama (`Icon`, `Button`, `Color`).
-
-**Catatan:** AntDesign Blazor 1.x bergaya Ant Design 4 (bukan v5). Master Data memuat 13 entri katalog (batas Design.md: ±12).
-
-### Komponen bersama (langkah 2, 2026-11-11)
-
-| Nama Design.md | Implementasi (`Components/Shared/`) | Catatan |
-|---|---|---|
-| StatusTag | `StatusTag.razor` + `StatusPresentation.cs` | Ikon AntDesign + teks; nada neutral/cyan/blue/success/closed/warning/danger sesuai 4.1 |
-| StatCard | `StatCard.razor` (+ `DashboardCard.razor` untuk state per kartu) | Tanpa penanda garis kiri; peringatan/bahaya = ikon + teks |
-| ConfirmDialog | `ConfirmDialog.razor` (+ `.razor.js`) | Di atas `AntDesign.Modal` (sesuai Design.md 8.8): footer [Batal] + aksi utama (`Loading`, `Danger`), `MaskClosable=false`, `Keyboard=false` (Esc ditangani modul JS agar dapat diblok saat memproses), nama/deskripsi aksesibel dipasang JS. **Jangan** memakai `DestroyOnClose` (render ulang tak berujung pada pembukaan kedua). Tes bUnit: `.ant-modal-wrap`, `.ant-modal-body`, `.ant-modal-footer` |
-| QtyGrid | `QtyGrid.razor` (+ `.razor.js`) | Input native bergaya token (`border-control`, radius-xs) |
-| FormField / Input / Select | `TextField.razor`, `LookupSelect.razor` | Label di atas, penanda wajib, petunjuk, **Error** terhubung (`aria-invalid`, `aria-describedby`) |
-| Alert | `ProblemBanner.razor` (Problem Details), `FormSummary.razor` | Kelas `gms-banner` bernada info/success/warning/error |
-| Empty / Error state | `EmptyState.razor` (ikon `inbox`), `ErrorState.razor` | |
-| DataTable | kelas `gms-table` + `PagerBar.razor` | Komponen `DataTable<T>` dibuat saat halaman dimigrasi (tiap halaman masih menulis tabelnya sendiri) |
-
-Tombol di komponen bersama = `AntDesign.Button` (atribut `aria-label` lewat parameter `AriaLabel`); tautan bergaya tombol = `<a class="ant-btn ant-btn-*">`. Halaman yang belum dimigrasi masih memakai `FluentButton`; `app.css` menyelaraskan token Fluent (aksen, radius) dengan token GMS sebagai jembatan sementara. Pemilih tes: gunakan `button.ant-btn` bersama `fluent-button` selama masa transisi.
-
-### Halaman (langkah 3, 2026-11-11)
-Seluruh halaman (Access, Master Data, PO, WO, Produksi, Gudang, Pengiriman, Payroll, Beranda) dimigrasi: `FluentButton` → `AntDesign.Button` (jenis: Accent→Primary, Neutral→Default, aksi baris/inline→`Link`), `FluentAnchor` → `<a class="ant-btn ant-btn-*">`, `FluentIcon` → `AntDesign.Icon`, spinner → `Loading` pada tombol. Aturan penulisan:
-- `AntDesign.Button` tidak menerima atribut sembarang: gunakan parameter `AriaLabel`, `HtmlType`, `Loading`, `Danger`. Tombol yang butuh `aria-describedby`/`aria-expanded` memakai `<button class="ant-btn ant-btn-*">` biasa. Penjelasan tombol nonaktif ada pada pembungkus `<span title="...">`.
-- Notifikasi sukses: `IGmsToast` (`Services/GmsToast.cs`, membungkus `IMessageService` AntDesign); menggantikan `IToastService` Fluent.
-- Di tes bUnit, teks tombol Ant memuat spasi/indentasi: bandingkan dengan `.TextContent.Trim()`; ikon Ant berperan `img` (gunakan `[role=img][aria-label]` untuk menemukan bar progres).
-
-**Belum dikerjakan:** komponen `DataTable<T>` (halaman masih menulis `<table class="gms-table">` sendiri); peninjauan visual per halaman selain yang disampel (Beranda, Pengguna, Role, PO, FG, Master Data, Input Output, Payroll).
-
-**Dokumen desain (2026-11-12):** `_Foundation-UI.md` v2.0 dan sembilan `*-UI.md` sudah selaras dengan `Design.md` (AntDesign, MegaMenu, token, StatusTag, daftar komponen/token per modul). Tes Web (433) lulus di Linux (container SDK).
-
-**ConfirmDialog (2026-11-12):** dimigrasi dari `<dialog>` native ke `AntDesign.Modal` atas keputusan pemilik produk; deviasi dihapus. Teruji di browser nyata (`DialogE2ETests`: nama aksesibel, klik latar, Esc, Batal, konfirmasi + toast).
+## Status migrasi Fluent 2
+- **Selesai (2026-11-14):** token + CSS, ikon, tombol, toast, dialog, status/badge, shell 4 zona, Tab Manager, form masuk, penghapusan AntDesign, tes bUnit dan E2E.
+- **Berikutnya (penyempurnaan per halaman, `docs/Design/*-UI.md` bagian "Revisi Fluent 2"):** header halaman berikon dengan satu primary per status, `Stepper` (PO/WO/Periode), `MessageBar` yang dapat ditutup, filter chip berjumlah + pencarian pada semua `DataList`, Beranda (hero satu baris, `ChartStack`/`ChartBars`, kartu interaktif), alert tab per layar, dialog Koreksi/Ubah Qty menjadi halaman, kunci resource i18n ID/EN (K-2), lonceng notifikasi (FSD Notifikasi).

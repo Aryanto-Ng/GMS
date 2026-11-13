@@ -31,7 +31,7 @@ else
     @if (_readOnly)
     {
         <div class="gms-banner info" role="status">
-            <AntDesign.Icon Type="lock" />
+            <GmsIcon Name="lock" />
             <div class="gms-banner-body"><p>@(_detail?.IsSystem == true ? "Role sistem tidak dapat diubah." : "Anda hanya dapat melihat role ini.")</p></div>
         </div>
     }
@@ -81,11 +81,11 @@ else
                                 @group.Key
                                 @if (group.All(r => !r.Assignable))
                                 {
-                                    <span><AntDesign.Icon Type="lock" /> Hanya Administrator (tidak dapat diberikan)</span>
+                                    <span><GmsIcon Name="lock" /> Hanya Administrator (tidak dapat diberikan)</span>
                                 }
                                 else if (!_readOnly)
                                 {
-                                    <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Hanya baca untuk {group.Key}")" OnClick="() => ReadOnlyGroup(group)">Hanya baca</AntDesign.Button>
+                                    <GmsButton Type="@BtnKind.Link" AriaLabel="@($"Hanya baca untuk {group.Key}")" OnClick="() => ReadOnlyGroup(group)">Hanya baca</GmsButton>
                                 }
                             </th>
                         </tr>
@@ -120,10 +120,10 @@ else
         </div>
 
         <div class="gms-formactions">
-            <a class="ant-btn ant-btn-default" href="/admin/roles">@(_readOnly ? "Kembali" : "Batal")</a>
+            <a class="gms-btn gms-btn-default" href="/admin/roles">@(_readOnly ? "Kembali" : "Batal")</a>
             @if (!_readOnly)
             {
-                <AntDesign.Button Type="@AntDesign.ButtonType.Primary" HtmlType="submit" Disabled="@(_saving || _catalog.Count == 0)">Simpan</AntDesign.Button>
+                <GmsButton Type="@BtnKind.Primary" HtmlType="submit" Disabled="@(_saving || _catalog.Count == 0)">Simpan</GmsButton>
             }
         </div>
     </form>

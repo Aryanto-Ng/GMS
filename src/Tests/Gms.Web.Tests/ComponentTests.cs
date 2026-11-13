@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Bunit;
 using Gms.Shared.Common;
 using Gms.Shared.Enums;
@@ -23,7 +24,7 @@ public sealed class ComponentTests : WebTestBase
             .Add(x => x.Breadcrumbs, [new PageHeader.Crumb("Penjualan"), new PageHeader.Crumb("Customer PO", "/purchase-orders"), new PageHeader.Crumb("PO-202611-0001")])
             .Add(x => x.Actions, b => b.AddMarkupContent(0, "<button id='aksi'>Tambah PO</button>")));
 
-        Assert.Equal("Customer PO", cut.Find("h1").TextContent);
+        Assert.Equal("Customer PO", cut.Find("h1").TextContent.Trim());
         Assert.Equal("Breadcrumb", cut.Find("nav").GetAttribute("aria-label"));
         Assert.Equal(3, cut.FindAll("li").Count);
         Assert.Equal("page", cut.FindAll("li").Last().QuerySelector("span")!.GetAttribute("aria-current"));
@@ -44,8 +45,8 @@ public sealed class ComponentTests : WebTestBase
     [Fact]
     public void StatCard_menampilkan_angka_label_tautan_dan_penanda_ikon_untuk_nada_peringatan()
     {
-        var plain = Render<StatCard>(p => p.Add(x => x.Label, "PO Terlambat").Add(x => x.Value, "7").Add(x => x.Description, "Perlu tindak lanjut").Add(x => x.Href, "/purchase-orders?terlambat=true"));
-        var danger = Render<StatCard>(p => p.Add(x => x.Label, "WO Terlambat").Add(x => x.Value, "2").Add(x => x.Tone, StatCard.MetricTone.Danger));
+        var plain = Render<StatTile>(p => p.Add(x => x.Label, "PO Terlambat").Add(x => x.Value, "7").Add(x => x.Description, "Perlu tindak lanjut").Add(x => x.Href, "/purchase-orders?terlambat=true"));
+        var danger = Render<StatTile>(p => p.Add(x => x.Label, "WO Terlambat").Add(x => x.Value, "2").Add(x => x.Tone, StatTile.MetricTone.Danger));
 
         Assert.Equal("7", plain.Find(".gms-metric-value").TextContent);
         Assert.Equal("Lihat PO Terlambat", plain.Find("a").GetAttribute("aria-label"));
@@ -62,7 +63,7 @@ public sealed class ComponentTests : WebTestBase
         var none = Render<EmptyState>(p => p.Add(x => x.Title, "Tidak ada hasil untuk filter ini"));
 
         Assert.Equal("/purchase-orders/new", link.Find("a").GetAttribute("href"));
-        Assert.NotEmpty(button.FindAll("button.ant-btn"));
+        Assert.NotEmpty(button.FindAll("button.gms-btn"));
         Assert.Empty(none.FindAll("a, button"));
         Assert.Equal("status", none.Find(".gms-state").GetAttribute("role"));
     }
@@ -79,7 +80,7 @@ public sealed class ComponentTests : WebTestBase
 
         Assert.Equal("alert", cut.Find(".gms-state").GetAttribute("role"));
         Assert.Contains("00-abc-123", cut.Find("code").TextContent);
-        cut.Find("button.ant-btn").Click();
+        cut.Find("button.gms-btn").Click();
         Assert.Equal(1, retried);
     }
 
@@ -88,7 +89,7 @@ public sealed class ComponentTests : WebTestBase
     {
         var cut = Render<ErrorState>(p => p.Add(x => x.Title, "Tidak ditemukan"));
 
-        Assert.Empty(cut.FindAll("button.ant-btn"));
+        Assert.Empty(cut.FindAll("button.gms-btn"));
     }
 
     [Fact]
@@ -104,26 +105,26 @@ public sealed class ComponentTests : WebTestBase
     }
 
     [Theory]
-    [InlineData(PoStatus.Draft, "Draft", "neutral")]
-    [InlineData(PoStatus.Confirmed, "Confirmed", "cyan")]
-    [InlineData(PoStatus.InProgress, "In Progress", "blue")]
-    [InlineData(PoStatus.Completed, "Completed", "success")]
-    [InlineData(PoStatus.Cancelled, "Cancelled", "danger")]
-    public void StatusTag_PO_selalu_memuat_ikon_dan_teks(PoStatus status, string label, string tone)
+    [InlineData(PoStatus.Draft, "Draft", "t-proc")]
+    [InlineData(PoStatus.Confirmed, "Confirmed", "t-proc")]
+    [InlineData(PoStatus.InProgress, "In Progress", "t-prog")]
+    [InlineData(PoStatus.Completed, "Completed", "t-ok")]
+    [InlineData(PoStatus.Cancelled, "Cancelled", "t-obs")]
+    public void StatusBadge_PO_selalu_memuat_teks_dengan_warna_dari_peta_enam_kategori(PoStatus status, string label, string tone)
     {
-        var cut = Render<StatusTag>(p => p.Add(x => x.Value, status));
+        var cut = Render<StatusBadge>(p => p.Add(x => x.Value, status));
 
         var chip = cut.Find(".gms-tag");
         Assert.Contains(tone, chip.ClassName);
         Assert.Equal(label, chip.QuerySelector(":scope > span:last-child")!.TextContent.Trim());
-        Assert.NotNull(chip.QuerySelector("svg")); // ikon AntDesign
+        Assert.DoesNotContain("t-err", chip.ClassName); // Cancelled/Void bukan merah
     }
 
     [Fact]
-    public void StatusTag_Voided_dicoret_dan_kunci_teks_dan_tooltip_dapat_diganti()
+    public void StatusBadge_Voided_dicoret_dan_kunci_teks_dan_tooltip_dapat_diganti()
     {
-        var voided = Render<StatusTag>(p => p.Add(x => x.Value, DocStatus.Voided));
-        var late = Render<StatusTag>(p => p.Add(x => x.Value, "late").Add(x => x.Tooltip, "Lewat 3 hari"));
+        var voided = Render<StatusBadge>(p => p.Add(x => x.Value, DocStatus.Voided));
+        var late = Render<StatusBadge>(p => p.Add(x => x.Value, "late").Add(x => x.Tooltip, "Lewat 3 hari"));
 
         Assert.Contains("strike", voided.Find(".gms-tag").ClassName);
         Assert.Equal("Terlambat", late.Find(".gms-tag > span:last-child").TextContent.Trim());
@@ -150,7 +151,7 @@ public sealed class ComponentTests : WebTestBase
     {
         var target = 0;
         var first = Render<PagerBar>(p => p.Add(x => x.Page, 1).Add(x => x.PageSize, 10).Add(x => x.TotalCount, 35).Add(x => x.PageChanged, EventCallback.Factory.Create<int>(this, v => target = v)));
-        var buttons = first.FindAll("button.ant-btn");
+        var buttons = first.FindAll("button.gms-btn");
 
         Assert.True(buttons[0].HasAttribute("disabled"));
         Assert.False(buttons[1].HasAttribute("disabled"));
@@ -158,10 +159,10 @@ public sealed class ComponentTests : WebTestBase
         Assert.Equal(2, target);
 
         var last = Render<PagerBar>(p => p.Add(x => x.Page, 4).Add(x => x.PageSize, 10).Add(x => x.TotalCount, 35));
-        Assert.True(last.FindAll("button.ant-btn")[1].HasAttribute("disabled"));
+        Assert.True(last.FindAll("button.gms-btn")[1].HasAttribute("disabled"));
 
         var busy = Render<PagerBar>(p => p.Add(x => x.Page, 2).Add(x => x.PageSize, 10).Add(x => x.TotalCount, 35).Add(x => x.Busy, true));
-        Assert.All(busy.FindAll("button.ant-btn"), b => Assert.True(b.HasAttribute("disabled")));
+        Assert.All(busy.FindAll("button.gms-btn"), b => Assert.True(b.HasAttribute("disabled")));
     }
 
     [Fact]
@@ -180,7 +181,7 @@ public sealed class ComponentTests : WebTestBase
         Assert.Contains("Navy / M", cut.Find(".gms-violations li").TextContent);
         Assert.Contains("melebihi batas 20", cut.Find(".gms-violations li").TextContent);
         Assert.Contains("00-xyz", cut.Find("code").TextContent);
-        Assert.Empty(cut.FindAll("button.ant-btn")); // aturan bisnis: tidak ada "coba lagi"
+        Assert.Empty(cut.FindAll("button.gms-btn")); // aturan bisnis: tidak ada "coba lagi"
     }
 
     [Fact]
@@ -195,10 +196,10 @@ public sealed class ComponentTests : WebTestBase
             .Add(x => x.OnReload, EventCallback.Factory.Create(this, () => reloads++)));
 
         Assert.Contains("Data telah diubah pengguna lain", concurrency.Markup);
-        Assert.Contains("Muat ulang", concurrency.Find("button.ant-btn").TextContent);
-        Assert.Contains("Coba lagi", server.Find("button.ant-btn").TextContent);
-        concurrency.Find("button.ant-btn").Click();
-        server.Find("button.ant-btn").Click();
+        Assert.Contains("Muat ulang", concurrency.Find("button.gms-btn").TextContent);
+        Assert.Contains("Coba lagi", server.Find("button.gms-btn").TextContent);
+        concurrency.Find("button.gms-btn").Click();
+        server.Find("button.gms-btn").Click();
         Assert.Equal(2, reloads);
         Assert.Empty(Render<ProblemBanner>().FindAll(".gms-banner")); // tanpa galat: tidak ada banner
     }
@@ -278,86 +279,202 @@ public sealed class ComponentTests : WebTestBase
     ];
 
     [Fact]
-    public void MegaMenu_menampilkan_Beranda_dan_kategori_dalam_nav_bernama_dan_panel_tertutup_awalnya()
+    public void TopNav_menampilkan_Beranda_dan_kategori_dalam_nav_bernama_dan_panel_tertutup_awalnya()
     {
-        var cut = Render<MegaMenu>(p => p.Add(x => x.Catalog, SampleCatalog()));
+        var cut = Render<TopNav>(p => p.Add(x => x.Catalog, SampleCatalog()));
 
         Assert.Equal("Navigasi utama", cut.Find("nav").GetAttribute("aria-label"));
-        Assert.Equal("Beranda", cut.Find("a.gms-mm-trigger").TextContent.Trim());
-        Assert.Equal(["Penjualan", "Penggajian"], cut.FindAll("button.gms-mm-trigger").Select(b => b.TextContent.Trim()));
-        Assert.All(cut.FindAll("button.gms-mm-trigger"), b => Assert.Equal("false", b.GetAttribute("aria-expanded")));
-        Assert.Empty(cut.FindAll(".gms-mm-panel"));
+        Assert.Equal("Beranda", cut.Find("nav > a").TextContent.Trim());
+        Assert.Equal(["Penjualan", "Penggajian"], cut.FindAll("nav > button").Select(b => b.TextContent.Trim()));
+        Assert.All(cut.FindAll("nav > button"), b => Assert.Equal("false", b.GetAttribute("aria-expanded")));
+        Assert.Empty(cut.FindAll(".gms-mega"));
     }
 
     [Fact]
-    public void MegaMenu_dibuka_dengan_klik_satu_panel_saja_memisahkan_halaman_dan_aksi_dan_menutup_dengan_Esc_scrim_atau_klik_ulang()
+    public void TopNav_dibuka_dengan_klik_satu_panel_saja_membedakan_halaman_dan_aksi_dan_menutup_dengan_Esc_scrim_atau_klik_ulang()
     {
-        var cut = Render<MegaMenu>(p => p.Add(x => x.Catalog, SampleCatalog()));
+        var cut = Render<TopNav>(p => p.Add(x => x.Catalog, SampleCatalog()));
 
-        cut.FindAll("button.gms-mm-trigger")[0].Click();
+        cut.FindAll("nav > button")[0].Click();
 
-        Assert.Equal("true", cut.FindAll("button.gms-mm-trigger")[0].GetAttribute("aria-expanded"));
-        var panel = cut.Find(".gms-mm-panel");
+        Assert.Equal("true", cut.FindAll("nav > button")[0].GetAttribute("aria-expanded"));
+        var panel = cut.Find(".gms-mega");
         Assert.Equal("region", panel.GetAttribute("role"));
-        Assert.Equal(["Daftar PO"], panel.QuerySelectorAll("a.gms-mm-item .gms-mm-label").Select(x => x.TextContent.Trim()));
-        Assert.Equal(["Buat PO"], panel.QuerySelectorAll("a.gms-mm-action").Select(x => x.TextContent.Trim()));
-        Assert.Contains("Ctrl", cut.Find(".gms-mm-footer").TextContent);
+        var items = panel.QuerySelectorAll("a.gms-mitem").ToList();
+        Assert.Equal(["Daftar PO", "Buat PO +"], items.Select(x => x.QuerySelector("b")!.TextContent.Trim()));
+        Assert.Empty(items[0].QuerySelectorAll(".gms-tile.t")); // item halaman: tile netral
+        Assert.Single(items[1].QuerySelectorAll(".gms-tile.t")); // item aksi: tile tint brand + tanda +
+        Assert.NotEmpty(panel.QuerySelectorAll(".gms-mgrp h3 .gms-icon")); // grup berikon
 
-        cut.FindAll("button.gms-mm-trigger")[1].Click(); // kategori lain menggantikan, bukan menumpuk
-        Assert.Single(cut.FindAll(".gms-mm-panel"));
-        Assert.Equal("Penggajian", cut.Find(".gms-mm-panel").GetAttribute("aria-label"));
+        cut.FindAll("nav > button")[1].Click(); // kategori lain menggantikan, bukan menumpuk
+        Assert.Single(cut.FindAll(".gms-mega"));
+        Assert.Equal("Penggajian", cut.Find(".gms-mega").GetAttribute("aria-label"));
 
-        cut.Find(".gms-mm-panel").KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs { Key = "Escape" });
-        Assert.Empty(cut.FindAll(".gms-mm-panel"));
+        cut.Find("nav").KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs { Key = "Escape" });
+        Assert.Empty(cut.FindAll(".gms-mega"));
 
-        cut.FindAll("button.gms-mm-trigger")[0].Click();
-        cut.Find(".gms-mm-scrim").Click();
-        Assert.Empty(cut.FindAll(".gms-mm-panel"));
+        cut.FindAll("nav > button")[0].Click();
+        cut.Find(".gms-scrim").Click();
+        Assert.Empty(cut.FindAll(".gms-mega"));
 
-        cut.FindAll("button.gms-mm-trigger")[0].Click();
-        cut.FindAll("button.gms-mm-trigger")[0].Click();
-        Assert.Empty(cut.FindAll(".gms-mm-panel"));
+        cut.FindAll("nav > button")[0].Click();
+        cut.FindAll("nav > button")[0].Click();
+        Assert.Empty(cut.FindAll(".gms-mega"));
     }
 
     [Fact]
-    public void MegaMenu_menandai_kategori_dan_item_aktif_dengan_rute_terpanjang_dan_aria_current()
+    public void TopNav_menandai_kategori_aktif_dan_item_aktif_dengan_aria_current()
     {
         Nav.NavigateTo("/purchase-orders/new");
-        var cut = Render<MegaMenu>(p => p.Add(x => x.Catalog, SampleCatalog()));
+        var cut = Render<TopNav>(p => p.Add(x => x.Catalog, SampleCatalog()));
 
-        Assert.Contains("active", cut.FindAll("button.gms-mm-trigger")[0].ClassName);
-        Assert.DoesNotContain("active", cut.FindAll("button.gms-mm-trigger")[1].ClassName);
+        Assert.Contains("on", cut.FindAll("nav > button")[0].ClassName);
+        Assert.DoesNotContain("on", cut.FindAll("nav > button")[1].ClassName ?? string.Empty);
 
-        cut.FindAll("button.gms-mm-trigger")[0].Click();
-        Assert.Equal("page", cut.Find("a.gms-mm-action").GetAttribute("aria-current")); // /purchase-orders/new, bukan /purchase-orders
-        Assert.Null(cut.Find("a.gms-mm-item").GetAttribute("aria-current"));
+        cut.FindAll("nav > button")[0].Click();
+        var current = cut.FindAll("a.gms-mitem").Where(a => a.GetAttribute("aria-current") == "page").Select(a => a.GetAttribute("href"));
+        Assert.Contains("/purchase-orders/new", current);
     }
 
     [Fact]
-    public void MainLayout_memuat_skip_link_nama_pengguna_logout_berantiforgery_pengalih_tema_dan_katalog_palette_sesuai_izin()
+    public void AppHeader_memuat_logo_pencarian_terbatas_izin_bahasa_notifikasi_dan_menu_pengguna_dengan_logout_berantiforgery()
     {
         SignIn(Permissions.CustomerPO.View);
-        var cut = Render<MainLayout>(p => p.Add(x => x.Body, b => b.AddMarkupContent(0, "<p id='isi'>Halaman</p>")));
+        var catalog = NavCatalog.VisibleFor(u => u == Permissions.CustomerPO.View);
+        var cut = Render<AppHeader>(p => p.Add(x => x.Catalog, catalog));
 
-        Assert.Equal("#gms-main", cut.Find("a.gms-skip").GetAttribute("href"));
-        Assert.NotNull(cut.Find("main#gms-main #isi"));
-        Assert.Contains("Budi", cut.Markup);
-        Assert.Equal(["Penjualan"], cut.FindAll("button.gms-mm-trigger").Select(b => b.TextContent.Trim())); // hanya kategori yang boleh dilihat
-        Assert.NotNull(cut.Find("button[data-palette-open]"));
+        Assert.Equal("GMS, ke Beranda", cut.Find("a.gms-logo").GetAttribute("aria-label"));
+        Assert.NotNull(cut.Find("[role=search] input"));
+        Assert.NotNull(cut.Find("button[aria-label^='Bahasa']"));
+        Assert.NotNull(cut.Find("button[aria-label='Notifikasi']"));
+        Assert.Contains("Budi", cut.Find("button[aria-label^='Menu pengguna']").GetAttribute("aria-label"));
 
-        var catalog = cut.Find("#gms-catalog").GetAttribute("data-json")!;
-        Assert.Contains("Daftar PO", catalog);
-        Assert.DoesNotContain("Work Order", catalog); // tanpa izin tidak ada di palette
-        Assert.DoesNotContain("Buat PO", catalog);    // aksi butuh izin Create
+        // Pencarian hanya memuat entri yang boleh dilihat dan menyebut jalur menu (maks. 7).
+        cut.Find("[role=search] input").Input("po");
+        var results = cut.FindAll(".gms-sresults a").Select(a => a.QuerySelector("b")!.TextContent.Trim()).ToList();
+        Assert.Contains("Daftar PO", results);
+        Assert.DoesNotContain(results, r => r.Contains("Work Order") || r.Contains("Buat PO")); // tanpa izin Create/WorkOrder
+        Assert.InRange(results.Count, 1, 7);
+        cut.Find("[role=search] input").Input("zzzz-tidak-ada");
+        Assert.Contains("Tidak ada hasil", cut.Find(".gms-sresults").TextContent);
 
-        Assert.Contains("Tema:", cut.Find("button.gms-iconbtn").GetAttribute("title"));
-        cut.Find("button.gms-iconbtn").Click();
-        Assert.Contains("terang", cut.Find("button.gms-iconbtn").GetAttribute("title"));
-
-        cut.Find("button.gms-user-btn").Click();
+        cut.Find("button[aria-label^='Menu pengguna']").Click();
         var form = cut.Find("form[action='/account/logout']");
         Assert.Equal("post", form.GetAttribute("method"));
         Assert.Contains("Ganti Password", cut.Markup);
+
+        cut.Find("button[aria-label^='Bahasa']").Click(); // satu panel pada satu waktu
+        Assert.Empty(cut.FindAll("form[action='/account/logout']"));
+        Assert.Contains("/account/language?culture=en-US", cut.Markup);
+    }
+
+    private (Gms.Web.Services.Tabs.TabManager Tabs, Microsoft.AspNetCore.Components.NavigationManager Nav) NewTabs()
+    {
+        var tabs = Services.GetRequiredService<Gms.Web.Services.Tabs.TabManager>();
+        tabs.EnsureHome(typeof(Gms.Web.Components.Pages.Home));
+        return (tabs, Nav);
+    }
+
+    private static void Open(Gms.Web.Services.Tabs.TabManager tabs, Microsoft.AspNetCore.Components.NavigationManager nav, string path, Type? page = null)
+    {
+        nav.NavigateTo(path);
+        tabs.Sync(page ?? typeof(Gms.Web.Components.Pages.Home), new Dictionary<string, object?>(), nav.Uri);
+    }
+
+    [Fact]
+    public void TabManager_membuka_memfokuskan_dan_menyatukan_detail_dengan_mode_ubah_dalam_satu_tab()
+    {
+        var (tabs, nav) = NewTabs();
+        Assert.Equal(["home"], tabs.Tabs.Select(t => t.Id));
+        Assert.True(tabs.Tabs[0].Pinned);
+
+        Open(tabs, nav, "/purchase-orders");
+        Open(tabs, nav, "/purchase-orders/00000000-0000-0000-0000-000000000001");
+        Assert.Equal(["home", "purchase-orders", "purchase-orders:00000000-0000-0000-0000-000000000001"], tabs.Tabs.Select(t => t.Id));
+
+        // Mode Ubah memakai tab dokumen yang sama; membuka lagi memfokuskan, bukan menambah.
+        Open(tabs, nav, "/purchase-orders/00000000-0000-0000-0000-000000000001/edit");
+        Open(tabs, nav, "/purchase-orders");
+        Assert.Equal(3, tabs.Tabs.Count);
+        Assert.Equal("purchase-orders", tabs.ActiveId);
+        Assert.Equal("/purchase-orders", tabs.Tabs.Single(t => t.Id == "purchase-orders").Url);
+        Assert.Equal("/purchase-orders/00000000-0000-0000-0000-000000000001/edit", tabs.Tabs[2].Url);
+
+        // Dokumen baru: satu tab per layar.
+        Open(tabs, nav, "/purchase-orders/new");
+        Open(tabs, nav, "/purchase-orders/new");
+        Assert.Equal(1, tabs.Tabs.Count(t => t.Id == "purchase-orders:new"));
+    }
+
+    [Fact]
+    public void TabManager_menolak_tab_ke_11_tanpa_menutup_tab_lama_diam_diam_dan_beranda_tidak_dapat_ditutup()
+    {
+        var (tabs, nav) = NewTabs();
+        for (var i = 1; i <= 9; i++)
+        {
+            Open(tabs, nav, $"/work-orders/00000000-0000-0000-0000-00000000000{i}");
+        }
+
+        Assert.Equal(10, tabs.Tabs.Count);
+        Open(tabs, nav, "/work-orders/00000000-0000-0000-0000-00000000000a");
+
+        Assert.Equal(10, tabs.Tabs.Count);
+        Assert.True(tabs.LimitReached);
+        Assert.DoesNotContain(tabs.Tabs, t => t.Id.EndsWith(":00000000-0000-0000-0000-00000000000a"));
+        Assert.EndsWith("/work-orders/00000000-0000-0000-0000-000000000009", nav.Uri); // kembali ke tab aktif
+
+        tabs.Close("home");
+        Assert.Contains(tabs.Tabs, t => t.Id == "home");
+        tabs.Close("work-orders:00000000-0000-0000-0000-000000000009");
+        Assert.Equal(9, tabs.Tabs.Count);
+        Assert.NotEqual("work-orders:00000000-0000-0000-0000-000000000009", tabs.ActiveId); // tab tetangga menjadi aktif
+    }
+
+    [Fact]
+    public void TabManager_menetapkan_judul_dirty_dan_alert_lewat_konteks_tab_dan_memetakan_query_ke_parameter_halaman()
+    {
+        var (tabs, nav) = NewTabs();
+        Open(tabs, nav, "/purchase-orders?terlambat=1&jatuhTempo7=true", typeof(Gms.Web.Components.Pages.Sales.PoListPage));
+        var tab = tabs.Active!;
+
+        tab.Context.SetTitle("Customer PO");
+        tab.Context.SetDirty(true);
+        tab.Context.SetAlert(Gms.Web.Services.Tabs.TabAlertKind.Error, "Ada baris terlambat");
+
+        Assert.Equal(("Customer PO", true, Gms.Web.Services.Tabs.TabAlertKind.Error, "Ada baris terlambat"), (tab.Title, tab.Dirty, tab.Alert, tab.AlertText));
+        Assert.True(tabs.HasDirty);
+        Assert.Equal(true, tab.Parameters["QTerlambat"]);
+        Assert.Equal(true, tab.Parameters["QJatuhTempo7"]);
+        Assert.False(tab.Parameters.ContainsKey("QSisaRencana"));
+
+        tabs.Reload(tab.Id); // muat ulang membuang state dan status belum disimpan
+        Assert.False(tab.Dirty);
+        Assert.Equal(1, tab.Generation);
+    }
+
+    [Fact]
+    public void TabBar_menampilkan_titik_belum_disimpan_ikon_alert_dan_meminta_konfirmasi_saat_menutup_tab_dirty()
+    {
+        var (tabs, nav) = NewTabs();
+        Open(tabs, nav, "/purchase-orders/new");
+        tabs.Active!.Context.SetTitle("Buat PO");
+        tabs.Active.Context.SetDirty(true);
+        tabs.Active.Context.SetAlert(Gms.Web.Services.Tabs.TabAlertKind.Warning, "Peringatan");
+
+        var cut = Render<TabBar>();
+
+        Assert.Equal("Tab dokumen", cut.Find("[role=tablist]").GetAttribute("aria-label"));
+        Assert.Contains("belum disimpan", cut.Markup);
+        Assert.NotEmpty(cut.FindAll(".gms-dirty"));
+        Assert.NotEmpty(cut.FindAll(".gms-alert-warn"));
+        Assert.Contains("Semua tab (2/10)", cut.Markup);
+
+        cut.Find("button[aria-label='Tutup Buat PO']").Click();
+        Assert.Contains("Tutup tab tanpa menyimpan?", cut.Find(".gms-dialog-wrap h2").TextContent);
+        Assert.Equal(2, tabs.Tabs.Count); // belum ditutup sebelum dikonfirmasi
+        cut.Find(".gms-dialog-footer button").Click(); // "Tetap di sini"
+        Assert.Empty(cut.FindAll(".gms-dialog-wrap"));
+        Assert.Equal(2, tabs.Tabs.Count);
     }
 
     [Fact]

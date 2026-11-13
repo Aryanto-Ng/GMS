@@ -15,7 +15,7 @@
     <Actions>
         @if (_can(Permissions.AccessManagement.User.Create))
         {
-            <a class="ant-btn ant-btn-primary" href="/admin/users/new">Tambah Pengguna</a>
+            <a class="gms-btn gms-btn-primary" href="/admin/users/new">Tambah Pengguna</a>
         }
     </Actions>
 </PageHeader>
@@ -63,24 +63,24 @@
                         <th scope="row"><a href="/admin/users/@user.Id">@user.UserName</a></th>
                         <td>@user.FullName</td>
                         <td>@user.RoleName</td>
-                        <td><StatusTag Value="@user.Status" /></td>
+                        <td><StatusBadge Value="@user.Status" /></td>
                         <td>@IdFormat.DateTime(user.LastLoginAt)</td>
                         <td class="gms-rowactions">
                             @if (_can(Permissions.AccessManagement.User.Edit))
                             {
-                                <a class="ant-btn ant-btn-link" href="@($"/admin/users/{user.Id}")" aria-label="@($"Ubah {user.UserName}")">Ubah</a>
+                                <a class="gms-btn gms-btn-link" href="@($"/admin/users/{user.Id}")" aria-label="@($"Ubah {user.UserName}")">Ubah</a>
                             }
                             @if (user.Status == UserStatus.Locked && _can(Permissions.AccessManagement.User.Unlock))
                             {
-                                <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Buka kunci {user.UserName}")" OnClick="() => Ask(Pending.Unlock, user)">Buka kunci</AntDesign.Button>
+                                <GmsButton Type="@BtnKind.Link" AriaLabel="@($"Buka kunci {user.UserName}")" OnClick="() => Ask(Pending.Unlock, user)">Buka kunci</GmsButton>
                             }
                             @if (_can(Permissions.AccessManagement.User.Deactivate) && user.Status != UserStatus.Inactive)
                             {
-                                <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Nonaktifkan {user.UserName}")" OnClick="() => Ask(Pending.Deactivate, user)">Nonaktifkan</AntDesign.Button>
+                                <GmsButton Type="@BtnKind.Link" AriaLabel="@($"Nonaktifkan {user.UserName}")" OnClick="() => Ask(Pending.Deactivate, user)">Nonaktifkan</GmsButton>
                             }
                             @if (_can(Permissions.AccessManagement.User.Deactivate) && user.Status == UserStatus.Inactive)
                             {
-                                <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Aktifkan {user.UserName}")" OnClick="() => Ask(Pending.Activate, user)">Aktifkan</AntDesign.Button>
+                                <GmsButton Type="@BtnKind.Link" AriaLabel="@($"Aktifkan {user.UserName}")" OnClick="() => Ask(Pending.Activate, user)">Aktifkan</GmsButton>
                             }
                         </td>
                     </tr>

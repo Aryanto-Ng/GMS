@@ -231,7 +231,7 @@ public sealed class ImportWizardTests : WebTestBase
         Assert.Equal("1. Unggah", cut.Find("[aria-current=step]").TextContent);
         Assert.Contains("Maksimal 2.000 baris dan 2 MB", cut.Markup);
         Assert.Contains("Unduh template", cut.Markup);
-        Assert.Equal("Impor Material", cut.Find("h1").TextContent);
+        Assert.Equal("Impor Material", cut.Find("h1").TextContent.Trim());
         Assert.Equal("Material", cut.Find(".gms-breadcrumb a").TextContent);
     }
 
@@ -240,7 +240,7 @@ public sealed class ImportWizardTests : WebTestBase
     {
         var cut = Wizard();
 
-        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Unduh template")).Click();
+        cut.FindAll("button.gms-btn").Single(b => b.TextContent.Contains("Unduh template")).Click();
 
         cut.WaitForAssertion(() => Assert.Contains(JSInterop.Invocations, i => i.Identifier == "save" && (string)i.Arguments[0]! == "template-material.csv"));
     }
@@ -260,7 +260,7 @@ public sealed class ImportWizardTests : WebTestBase
         cut.Find("input[type=checkbox]").Change(false);
         Assert.Equal(3, cut.FindAll("tbody tr").Count);
         Assert.Contains("Perbaiki berkas dan unggah ulang", cut.Find("[role=alert]").TextContent);
-        Assert.True(cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Lanjut")).HasAttribute("disabled"));
+        Assert.True(cut.FindAll("button.gms-btn").Single(b => b.TextContent.Contains("Lanjut")).HasAttribute("disabled"));
     }
 
     [Fact]
@@ -270,7 +270,7 @@ public sealed class ImportWizardTests : WebTestBase
         Upload(cut, Header + "M-1,,AKS,PCS,\n");
         cut.WaitForAssertion(() => Assert.Equal("2. Periksa", cut.Find("[aria-current=step]").TextContent));
 
-        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Unggah ulang")).Click();
+        cut.FindAll("button.gms-btn").Single(b => b.TextContent.Contains("Unggah ulang")).Click();
 
         Assert.Equal("1. Unggah", cut.Find("[aria-current=step]").TextContent);
     }
@@ -283,14 +283,14 @@ public sealed class ImportWizardTests : WebTestBase
         cut.WaitForAssertion(() => Assert.Equal("2. Periksa", cut.Find("[aria-current=step]").TextContent));
         Assert.Empty(cut.FindAll("[role=alert]"));
 
-        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Lanjut")).Click();
+        cut.FindAll("button.gms-btn").Single(b => b.TextContent.Contains("Lanjut")).Click();
         Assert.Contains("2 Material akan ditambahkan", cut.Markup);
         Assert.Equal(2, (await _materials.ListAsync(new MasterListQuery())).TotalCount); // belum menulis
-        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Impor sekarang")).Click();
+        cut.FindAll("button.gms-btn").Single(b => b.TextContent.Contains("Impor sekarang")).Click();
 
         cut.WaitForAssertion(() => Assert.Contains("Impor selesai", cut.Markup));
         Assert.Equal(4, (await _materials.ListAsync(new MasterListQuery())).TotalCount);
-        Assert.Equal("/master/materials", cut.Find("a.ant-btn").GetAttribute("href"));
+        Assert.Equal("/master/materials", cut.Find("a.gms-btn").GetAttribute("href"));
     }
 
     [Fact]

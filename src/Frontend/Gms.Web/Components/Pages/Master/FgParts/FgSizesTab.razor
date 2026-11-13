@@ -30,14 +30,14 @@
             </ul>
             @if (_selected.Count == 0)
             {
-                <p class="gms-bad" role="alert"><AntDesign.Icon Type="close-circle" /> Minimal satu Size Berlaku.</p>
+                <p class="gms-bad" role="alert"><GmsIcon Name="close-circle" /> Minimal satu Size Berlaku.</p>
             }
 
             @if (CanEdit)
             {
                 <div class="gms-formactions">
-                    <AntDesign.Button Type="@AntDesign.ButtonType.Default" Disabled="@(!_dirty)" OnClick="() => _reload++">Batal</AntDesign.Button>
-                    <AntDesign.Button Type="@AntDesign.ButtonType.Primary" Disabled="@(!_dirty || _selected.Count == 0 || _saving)" OnClick="() => SaveAsync(false)">Simpan Size</AntDesign.Button>
+                    <GmsButton Type="@BtnKind.Default" Disabled="@(!_dirty)" OnClick="() => _reload++">Batal</GmsButton>
+                    <GmsButton Type="@BtnKind.Primary" Disabled="@(!_dirty || _selected.Count == 0 || _saving)" OnClick="() => SaveAsync(false)">Simpan Size</GmsButton>
                 </div>
             }
         </fieldset>

@@ -25,7 +25,7 @@ public sealed class SmokeE2ETests(StackFixture stack)
             var response = await page.GotoAsync(path);
             if (response is { Status: >= 400 }) { return $"{path}: HTTP {response.Status}"; }
             if (page.Url.Contains("/login", StringComparison.Ordinal) || page.Url.Contains("/forbidden", StringComparison.Ordinal)) { return $"{path}: dialihkan ke {page.Url}"; }
-            await page.WaitForSelectorAsync("h1", new() { Timeout = 15_000 });
+            await page.WaitForSelectorAsync(".gms-tabpanel-host:not([hidden]) h1, .gms-account h1", new() { Timeout = 15_000 }); // h1 pada tab aktif (tab Beranda tersembunyi)
             await page.WaitForFunctionAsync("() => document.querySelectorAll('[aria-busy=\"true\"]').length === 0", null, new() { Timeout = 20_000 });
             await Task.Delay(300); // beri waktu render interaktif kedua setelah prerender
             await page.WaitForFunctionAsync("() => document.querySelectorAll('[aria-busy=\"true\"]').length === 0", null, new() { Timeout = 20_000 });

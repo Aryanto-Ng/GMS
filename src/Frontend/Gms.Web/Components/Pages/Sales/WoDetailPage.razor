@@ -20,16 +20,16 @@ else if (_wo is null)
 else
 {
     <PageHeader Title="@_wo.Code" Subtitle="@($"{_wo.PoCode} · {_wo.CustomerName} · {_wo.FgCode}")" Breadcrumbs="@(new[] { new PageHeader.Crumb("Work Order", "/work-orders"), new PageHeader.Crumb(_wo.Code) })">
-        <Chips><StatusTag Value="@_wo.Status" /></Chips>
+        <Chips><StatusBadge Value="@_wo.Status" /></Chips>
         <Actions>
-            @if (Can(WoActions.Edit, Permissions.WorkOrder.Edit)) { <a class="ant-btn ant-btn-default" href="@($"/work-orders/{_wo.Id}/edit")">Ubah</a> }
-            @if (Can(WoActions.EditQuantities, Permissions.WorkOrder.Edit)) { <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="OpenQty">Ubah Qty</AntDesign.Button> }
-            @if (Can(WoActions.Release, Permissions.WorkOrder.Release)) { <AntDesign.Button Type="@AntDesign.ButtonType.Primary" OnClick="() => OpenAsync(Act.Release)">Rilis</AntDesign.Button> }
-            @if (Can(WoActions.Complete, Permissions.WorkOrder.Complete)) { <AntDesign.Button Type="@AntDesign.ButtonType.Primary" OnClick="() => OpenAsync(Act.Complete)">Tandai Selesai</AntDesign.Button> }
-            @if (Can(WoActions.Resume, Permissions.WorkOrder.Complete)) { <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => OpenAsync(Act.Resume)">Buka Kembali</AntDesign.Button> }
-            @if (Can(WoActions.Close, Permissions.WorkOrder.Close)) { <AntDesign.Button Type="@AntDesign.ButtonType.Primary" OnClick="() => OpenAsync(Act.Close)">Close</AntDesign.Button> }
-            @if (Can(WoActions.Reopen, Permissions.WorkOrder.Reopen)) { <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => OpenAsync(Act.Reopen)">Reopen</AntDesign.Button> }
-            @if (Can(WoActions.Cancel, Permissions.WorkOrder.Cancel)) { <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => OpenAsync(Act.Cancel)">Batalkan</AntDesign.Button> }
+            @if (Can(WoActions.Edit, Permissions.WorkOrder.Edit)) { <a class="gms-btn gms-btn-default" href="@($"/work-orders/{_wo.Id}/edit")">Ubah</a> }
+            @if (Can(WoActions.EditQuantities, Permissions.WorkOrder.Edit)) { <GmsButton Type="@BtnKind.Default" OnClick="OpenQty">Ubah Qty</GmsButton> }
+            @if (Can(WoActions.Release, Permissions.WorkOrder.Release)) { <GmsButton Type="@BtnKind.Primary" OnClick="() => OpenAsync(Act.Release)">Rilis</GmsButton> }
+            @if (Can(WoActions.Complete, Permissions.WorkOrder.Complete)) { <GmsButton Type="@BtnKind.Primary" OnClick="() => OpenAsync(Act.Complete)">Tandai Selesai</GmsButton> }
+            @if (Can(WoActions.Resume, Permissions.WorkOrder.Complete)) { <GmsButton Type="@BtnKind.Default" OnClick="() => OpenAsync(Act.Resume)">Buka Kembali</GmsButton> }
+            @if (Can(WoActions.Close, Permissions.WorkOrder.Close)) { <GmsButton Type="@BtnKind.Primary" OnClick="() => OpenAsync(Act.Close)">Close</GmsButton> }
+            @if (Can(WoActions.Reopen, Permissions.WorkOrder.Reopen)) { <GmsButton Type="@BtnKind.Default" OnClick="() => OpenAsync(Act.Reopen)">Reopen</GmsButton> }
+            @if (Can(WoActions.Cancel, Permissions.WorkOrder.Cancel)) { <GmsButton Type="@BtnKind.Default" OnClick="() => OpenAsync(Act.Cancel)">Batalkan</GmsButton> }
         </Actions>
     </PageHeader>
 
@@ -39,11 +39,11 @@ else
     }
 
     <div class="gms-welcome" aria-label="Ringkasan">
-        <StatCard Label="Qty WO" Value="@IdFormat.Qty(_wo.TotalQty)" />
-        <StatCard Label="Progres" Value="@($"{IdFormat.Number(_wo.ProgressPercent, 1)}%")" />
-        <StatCard Label="Diserahterimakan" Value="@IdFormat.Qty(_wo.HandedOverQty)" />
-        <StatCard Label="Belum diserahterimakan" Value="@IdFormat.Qty(_wo.UnhandedQty)" />
-        <StatCard Label="Sisa di vendor" Value="@IdFormat.Qty(_wo.OutstandingAtVendorQty)" />
+        <StatTile Label="Qty WO" Value="@IdFormat.Qty(_wo.TotalQty)" />
+        <StatTile Label="Progres" Value="@($"{IdFormat.Number(_wo.ProgressPercent, 1)}%")" />
+        <StatTile Label="Diserahterimakan" Value="@IdFormat.Qty(_wo.HandedOverQty)" />
+        <StatTile Label="Belum diserahterimakan" Value="@IdFormat.Qty(_wo.UnhandedQty)" />
+        <StatTile Label="Sisa di vendor" Value="@IdFormat.Qty(_wo.OutstandingAtVendorQty)" />
     </div>
     <p class="gms-note">Mulai @IdFormat.Date(_wo.StartDate) · Target @IdFormat.Date(_wo.TargetDate)@(string.IsNullOrEmpty(_wo.Notes) ? string.Empty : $" · {_wo.Notes}")</p>
 
@@ -118,7 +118,7 @@ else
             <ul class="gms-readiness">
                 @foreach (var c in _release.Checks)
                 {
-                    <li class="@(c.Ok ? "gms-ok" : "gms-bad")"><AntDesign.Icon Type="@(c.Ok ? "check-circle" : "close-circle")" />
+                    <li class="@(c.Ok ? "gms-ok" : "gms-bad")"><GmsIcon Name="@(c.Ok ? "check-circle" : "close-circle")" />
                         <span class="gms-sr-only">@(c.Ok ? "Terpenuhi:" : "Belum terpenuhi:")</span> @c.Message
                         @if (!c.Ok && !string.IsNullOrEmpty(c.FixTarget)) { <a href="@c.FixTarget">Perbaiki ▸</a> }</li>
                 }
@@ -141,7 +141,7 @@ else
             <p>Dalam Produksi menjadi 0. Sisa kebutuhan @IdFormat.Qty(_close.ReturnedToPoPlanQty) pcs kembali ke Sisa Rencana PO.</p>
             @if (_close.UnhandedCells.Count > 0)
             {
-                <p class="gms-warn" role="status"><AntDesign.Icon Type="warning" /> Output belum diserahterimakan:
+                <p class="gms-warn" role="status"><GmsIcon Name="warning" /> Output belum diserahterimakan:
                     @string.Join(", ", _close.UnhandedCells.Select(c => $"{c.ColorSize.ColorName} {c.ColorSize.SizeCode} {IdFormat.Qty(c.Qty)}"))</p>
             }
         }

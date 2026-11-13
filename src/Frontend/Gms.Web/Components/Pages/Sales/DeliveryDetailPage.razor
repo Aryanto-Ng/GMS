@@ -23,12 +23,12 @@ else
 {
     <PageHeader Title="@_doc.Item.Code" Subtitle="@($"{_doc.Item.PoCode} · {_doc.Item.CustomerName} ({_doc.Item.CustomerPoNumber ?? "tanpa No. PO"}) · Tgl Kirim {IdFormat.Date(_doc.Item.DeliveryDate)}")"
                 Breadcrumbs="@(new[] { new PageHeader.Crumb("Pengiriman", "/deliveries"), new PageHeader.Crumb(_doc.Item.Code) })">
-        <Chips><StatusTag Value="@_doc.Item.Status" /></Chips>
+        <Chips><StatusBadge Value="@_doc.Item.Status" /></Chips>
         <Actions>
-            @if (Can(DeliveryActions.Print, Permissions.Pengiriman.Print)) { <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="PrintAsync">Cetak PDF</AntDesign.Button> }
-            @if (Can(DeliveryActions.EditInfo, Permissions.Pengiriman.Edit)) { <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="StartEdit">Edit Info</AntDesign.Button> }
-            @if (Can(DeliveryActions.Correct, Permissions.Pengiriman.Correct)) { <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="StartCorrect">Koreksi</AntDesign.Button> }
-            @if (Can(DeliveryActions.Void, Permissions.Pengiriman.Void)) { <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _voiding = true">Void</AntDesign.Button> }
+            @if (Can(DeliveryActions.Print, Permissions.Pengiriman.Print)) { <GmsButton Type="@BtnKind.Default" OnClick="PrintAsync">Cetak PDF</GmsButton> }
+            @if (Can(DeliveryActions.EditInfo, Permissions.Pengiriman.Edit)) { <GmsButton Type="@BtnKind.Default" OnClick="StartEdit">Edit Info</GmsButton> }
+            @if (Can(DeliveryActions.Correct, Permissions.Pengiriman.Correct)) { <GmsButton Type="@BtnKind.Default" OnClick="StartCorrect">Koreksi</GmsButton> }
+            @if (Can(DeliveryActions.Void, Permissions.Pengiriman.Void)) { <GmsButton Type="@BtnKind.Default" OnClick="() => _voiding = true">Void</GmsButton> }
         </Actions>
     </PageHeader>
 
@@ -70,7 +70,7 @@ else
                 <TextField Label="@($"{l.FgCode} · {l.ColorSize.ColorName} · {l.ColorSize.SizeCode}")" InputMode="numeric" MaxLength="7" Value="@_cQty[l.PoLineId]" ValueChanged="v => { _cQty[l.PoLineId] = v ?? string.Empty; _correctPreview = null; }" />
             }
         </div>
-        <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="CheckAsync">Periksa dampak</AntDesign.Button>
+        <GmsButton Type="@BtnKind.Default" OnClick="CheckAsync">Periksa dampak</GmsButton>
         @if (_correctPreview is not null) { <ImpactPreviewTable Preview="_correctPreview" /> }
     }
 </ConfirmDialog>

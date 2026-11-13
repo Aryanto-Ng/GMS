@@ -15,19 +15,19 @@
     <Chips>
         @if (_fg is not null)
         {
-            <StatusTag Value="@(_fg.IsReady ? "ready" : "not-ready")" />
-            <StatusTag Value="@(_fg.IsActive ? "active" : "inactive")" />
+            <StatusBadge Value="@(_fg.IsReady ? "ready" : "not-ready")" />
+            <StatusBadge Value="@(_fg.IsActive ? "active" : "inactive")" />
         }
     </Chips>
     <Actions>
         @if (_fg is not null && _user.HasPermission(Permissions.MasterData.Routing.Edit) && _user.HasPermission(Permissions.MasterData.Tarif.Edit))
         {
-            <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _copyOpen = true">Salin dari FG lain</AntDesign.Button>
+            <GmsButton Type="@BtnKind.Default" OnClick="() => _copyOpen = true">Salin dari FG lain</GmsButton>
         }
 
         @if (_fg is not null && _user.HasPermission(Permissions.MasterData.FG.Deactivate))
         {
-            <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _toggleOpen = true">@(_fg.IsActive ? "Nonaktifkan" : "Aktifkan")</AntDesign.Button>
+            <GmsButton Type="@BtnKind.Default" OnClick="() => _toggleOpen = true">@(_fg.IsActive ? "Nonaktifkan" : "Aktifkan")</GmsButton>
         }
     </Actions>
 </PageHeader>

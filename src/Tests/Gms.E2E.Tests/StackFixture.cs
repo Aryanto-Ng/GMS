@@ -99,8 +99,8 @@ public sealed class StackFixture : IAsyncLifetime
     public static async Task LoginAsync(IPage page, string user, string password)
     {
         await page.GotoAsync("/login");
-        await page.GetByLabel("Username").FillAsync(user);
-        await page.GetByLabel("Password").FillAsync(password);
+        await page.GetByLabel("Nama pengguna").FillAsync(user);
+        await page.GetByLabel("Kata sandi").FillAsync(password);
         await page.GetByRole(AriaRole.Button, new() { Name = "Masuk" }).ClickAsync();
     }
 
@@ -133,6 +133,14 @@ public sealed class StackFixture : IAsyncLifetime
 
     private static string FindOutput(string group, string project)
     {
+        // Tata letak artifacts (-p:UseArtifactsOutput=true): .../bin/Gms.E2E.Tests/debug/ -> .../bin/<project>/debug/. Dipakai bila ada (mis. saat proses lain mengunci bin/ biasa).
+        var baseDir = new DirectoryInfo(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        var sibling = baseDir.Parent is { } binGroup ? Path.Combine(binGroup.Parent!.FullName, project, baseDir.Name) : null;
+        if (sibling is not null && File.Exists(Path.Combine(sibling, project + ".dll")))
+        {
+            return sibling;
+        }
+
         // .../Tests/Gms.E2E.Tests/bin/Debug/net10.0/ → .../<group>/<project>/bin/Debug/net10.0/
         var root = new DirectoryInfo(AppContext.BaseDirectory);
         while (root is not null && !File.Exists(Path.Combine(root.FullName, "Gms.slnx")))

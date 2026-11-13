@@ -21,11 +21,11 @@ else
 {
     <PageHeader Title="@(_doc.Item.DocNo ?? "Serah Terima FG")" Subtitle="@($"{_doc.Item.WoCode} · {_doc.Item.PoCode} · {_doc.Item.FgCode} · {IdFormat.Date(_doc.Item.Date)}")"
                 Breadcrumbs="@(new[] { new PageHeader.Crumb("Serah Terima FG", "/handovers/fg"), new PageHeader.Crumb(_doc.Item.DocNo ?? "Detail") })">
-        <Chips><StatusTag Value="@_doc.Item.Status" /></Chips>
+        <Chips><StatusBadge Value="@_doc.Item.Status" /></Chips>
         <Actions>
             @if (_doc.Item.Status == DocStatus.Active && _user.HasPermission(Permissions.SerahTerimaFG.Void))
             {
-                <span title="@_doc.DisabledReason"><AntDesign.Button Type="@AntDesign.ButtonType.Default" Disabled="@(!_doc.CanVoid)" OnClick="() => _voiding = true">Void</AntDesign.Button></span>
+                <span title="@_doc.DisabledReason"><GmsButton Type="@BtnKind.Default" Disabled="@(!_doc.CanVoid)" OnClick="() => _voiding = true">Void</GmsButton></span>
             }
         </Actions>
     </PageHeader>

@@ -1,0 +1,14 @@
+@* Lonceng notifikasi (Design.md 4; Notifikasi-UI.md 2). Diisi penuh pada tahap Notifikasi; sementara hanya tombol tanpa data. *@
+<div style="position:relative">
+    <button type="button" class="gms-hbtn" aria-haspopup="dialog" aria-expanded="@(Open ? "true" : "false")" aria-label="Notifikasi" @onclick="OnToggle">
+        <GmsIcon Name="bell" Class="s20" />
+    </button>
+</div>
+
+@code {
+    [Parameter] public bool Open { get; set; }
+
+    [Parameter] public EventCallback OnToggle { get; set; }
+
+    [Parameter] public EventCallback OnClose { get; set; }
+}

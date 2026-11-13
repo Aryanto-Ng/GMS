@@ -29,7 +29,7 @@
         <section class="gms-card" aria-labelledby="hf-qty">
             <h2 id="hf-qty">Qty diserahterimakan (@_ctx.FgCode · @_ctx.PoCode)</h2>
             <QtyGrid Caption="Qty serah terima" RowHeader="" Rows="_row" Columns="_columns" Values="_values" CellInfo="CellInfo" ShowMax="true" OnChanged="() => { _dirty = true; _preview = null; }" />
-            <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="PreviewAsync">Perkiraan alokasi</AntDesign.Button>
+            <GmsButton Type="@BtnKind.Default" OnClick="PreviewAsync">Perkiraan alokasi</GmsButton>
             @if (_preview is not null)
             {
                 <p role="status">Perkiraan alokasi otomatis ke @_preview.PoCode: <strong>@IdFormat.Qty(_preview.AutoAllocatedQty) pcs</strong> · Stok bebas (kelebihan produksi): <strong>@IdFormat.Qty(_preview.FreeStockQty) pcs</strong></p>
@@ -37,8 +37,8 @@
         </section>
 
         <div class="gms-formactions">
-            <a class="ant-btn ant-btn-default" href="/handovers/fg">Batal</a>
-            <AntDesign.Button Type="@AntDesign.ButtonType.Primary" HtmlType="submit" Disabled="@(_saving || _ctx.BlockedReason is not null)">Simpan</AntDesign.Button>
+            <a class="gms-btn gms-btn-default" href="/handovers/fg">Batal</a>
+            <GmsButton Type="@BtnKind.Primary" HtmlType="submit" Disabled="@(_saving || _ctx.BlockedReason is not null)">Simpan</GmsButton>
         </div>
     }
     else
@@ -50,7 +50,7 @@
 @code {
     private static readonly IReadOnlyList<MatrixRow> _row = [new("qty", "Qty")];
 
-    [SupplyParameterFromQuery(Name = "woId")] public Guid? QueryWoId { get; set; }
+    [Parameter, TabQuery("woId")] public Guid? QueryWoId { get; set; }
 
     private IReadOnlyList<LookupItem> _woItems = [];
     private HandoverFgContextDto? _ctx;

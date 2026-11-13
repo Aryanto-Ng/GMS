@@ -8,7 +8,7 @@
 
 <PageHeader Title="Serah Terima FG" Subtitle="@(_total is null ? null : $"{IdFormat.Qty(_total)} dokumen")">
     <Actions>
-        @if (_user.HasPermission(Permissions.SerahTerimaFG.Create)) { <a class="ant-btn ant-btn-primary" href="/handovers/fg/new">Buat Serah Terima</a> }
+        @if (_user.HasPermission(Permissions.SerahTerimaFG.Create)) { <a class="gms-btn gms-btn-primary" href="/handovers/fg/new">Buat Serah Terima</a> }
     </Actions>
 </PageHeader>
 
@@ -45,7 +45,7 @@
                         <td>@IdFormat.Date(h.Date)</td>
                         <th scope="row"><a href="/handovers/fg/@h.Id">@(h.DocNo ?? "—")</a></th>
                         <td>@h.WoCode</td><td>@h.PoCode</td><td>@h.FgCode</td><td class="num">@IdFormat.Qty(h.TotalQty)</td>
-                        <td><StatusTag Value="@h.Status" /></td><td>@(h.CreatedByName ?? "—")</td>
+                        <td><StatusBadge Value="@h.Status" /></td><td>@(h.CreatedByName ?? "—")</td>
                     </tr>
                 }
             </tbody>

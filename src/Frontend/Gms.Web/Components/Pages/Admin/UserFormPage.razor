@@ -18,7 +18,7 @@
 <PageHeader Title="@(IsNew ? "Tambah Pengguna" : _detail?.UserName ?? "Pengguna")"
             Breadcrumbs="@(new[] { new PageHeader.Crumb("Pengguna", "/admin/users"), new PageHeader.Crumb(IsNew ? "Baru" : _detail?.UserName ?? "…") })">
     <Chips>
-        @if (_detail is not null) { <StatusTag Value="@_detail.Status" /> }
+        @if (_detail is not null) { <StatusBadge Value="@_detail.Status" /> }
     </Chips>
 </PageHeader>
 
@@ -28,8 +28,8 @@
         <div>
             <p>Password sementara — <strong>catat sekarang, tidak ditampilkan lagi</strong>:</p>
             <p><code class="gms-temp" id="temp-password">@_tempPassword</code>
-               <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => CopyAsync(_tempPassword)">Salin</AntDesign.Button>
-               <AntDesign.Button Type="@AntDesign.ButtonType.Link" OnClick="() => _tempPassword = null">Tutup</AntDesign.Button></p>
+               <GmsButton Type="@BtnKind.Default" OnClick="() => CopyAsync(_tempPassword)">Salin</GmsButton>
+               <GmsButton Type="@BtnKind.Link" OnClick="() => _tempPassword = null">Tutup</GmsButton></p>
             <p class="gms-sr-only" aria-live="polite">@_copyNote</p>
         </div>
     </div>
@@ -78,24 +78,24 @@ else
                     <label for="u-pass">Password awal <span class="gms-required">wajib</span></label>
                     <div class="gms-inline">
                         <input id="u-pass" type="text" value="@_password" autocomplete="off" aria-describedby="u-pass-hint" @oninput="e => { _password = e.Value?.ToString() ?? string.Empty; _dirty = true; }" />
-                        <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="Generate">Buat otomatis</AntDesign.Button>
-                        <AntDesign.Button Type="@AntDesign.ButtonType.Default" Disabled="@(_password.Length == 0)" OnClick="() => CopyAsync(_password)">Salin</AntDesign.Button>
+                        <GmsButton Type="@BtnKind.Default" OnClick="Generate">Buat otomatis</GmsButton>
+                        <GmsButton Type="@BtnKind.Default" Disabled="@(_password.Length == 0)" OnClick="() => CopyAsync(_password)">Salin</GmsButton>
                     </div>
                     <small id="u-pass-hint">Pengguna wajib mengganti password saat login pertama.</small>
                     <ul class="gms-rules" aria-live="polite">
-                        <li class="@(_password.Length >= 8 ? "gms-ok" : "gms-bad")"><AntDesign.Icon Type="@Rule(_password.Length >= 8)" /> Minimal 8 karakter</li>
-                        <li class="@(_password.Any(char.IsLetter) ? "gms-ok" : "gms-bad")"><AntDesign.Icon Type="@Rule(_password.Any(char.IsLetter))" /> Ada huruf</li>
-                        <li class="@(_password.Any(char.IsDigit) ? "gms-ok" : "gms-bad")"><AntDesign.Icon Type="@Rule(_password.Any(char.IsDigit))" /> Ada angka</li>
+                        <li class="@(_password.Length >= 8 ? "gms-ok" : "gms-bad")"><GmsIcon Name="@Rule(_password.Length >= 8)" /> Minimal 8 karakter</li>
+                        <li class="@(_password.Any(char.IsLetter) ? "gms-ok" : "gms-bad")"><GmsIcon Name="@Rule(_password.Any(char.IsLetter))" /> Ada huruf</li>
+                        <li class="@(_password.Any(char.IsDigit) ? "gms-ok" : "gms-bad")"><GmsIcon Name="@Rule(_password.Any(char.IsDigit))" /> Ada angka</li>
                     </ul>
                 }
 
                 <div class="gms-formactions">
-                    <a class="ant-btn ant-btn-default" href="/admin/users">Batal</a>
+                    <a class="gms-btn gms-btn-default" href="/admin/users">Batal</a>
                     @if (_canEdit)
                     {
-                        <AntDesign.Button Type="@AntDesign.ButtonType.Primary" HtmlType="submit" Disabled="_saving">
+                        <GmsButton Type="@BtnKind.Primary" HtmlType="submit" Disabled="_saving">
                             Simpan
-                        </AntDesign.Button>
+                        </GmsButton>
                     }
                 </div>
             </form>
@@ -114,20 +114,20 @@ else
                 <div class="gms-stack">
                     @if (_user.HasPermission(Permissions.AccessManagement.User.ResetPassword))
                     {
-                        <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _resetOpen = true">Reset Password</AntDesign.Button>
+                        <GmsButton Type="@BtnKind.Default" OnClick="() => _resetOpen = true">Reset Password</GmsButton>
                     }
                     @if (_detail.Status == UserStatus.Locked && _user.HasPermission(Permissions.AccessManagement.User.Unlock))
                     {
-                        <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _confirm = Confirm.Unlock">Buka Kunci</AntDesign.Button>
+                        <GmsButton Type="@BtnKind.Default" OnClick="() => _confirm = Confirm.Unlock">Buka Kunci</GmsButton>
                     }
                     @if (_detail.HasActiveSession && _user.HasPermission(Permissions.AccessManagement.User.EndSession))
                     {
-                        <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _confirm = Confirm.EndSession">Akhiri Sesi</AntDesign.Button>
+                        <GmsButton Type="@BtnKind.Default" OnClick="() => _confirm = Confirm.EndSession">Akhiri Sesi</GmsButton>
                     }
                     @if (_user.HasPermission(Permissions.AccessManagement.User.Deactivate))
                     {
                         var blocked = _detail.Status != UserStatus.Inactive && (_detail.IsLastActiveAdministrator || _detail.Id == _selfId);
-                        <button type="button" class="ant-btn ant-btn-default" disabled="@blocked" aria-describedby="@(blocked ? "deact-why" : null)" @onclick="() => _confirm = _detail.Status == UserStatus.Inactive ? Confirm.Activate : Confirm.Deactivate">
+                        <button type="button" class="gms-btn gms-btn-default" disabled="@blocked" aria-describedby="@(blocked ? "deact-why" : null)" @onclick="() => _confirm = _detail.Status == UserStatus.Inactive ? Confirm.Activate : Confirm.Deactivate">
                             <span>@(_detail.Status == UserStatus.Inactive ? "Aktifkan" : "Nonaktifkan")</span>
                         </button>
                         @if (blocked)

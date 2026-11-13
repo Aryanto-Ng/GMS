@@ -6,7 +6,7 @@
 
 <PageHeader Title="@($"Selamat datang, {_name}")" Subtitle="@($"Diperbarui {_updated}")">
     <Actions>
-        <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="RefreshAsync">Segarkan</AntDesign.Button>
+        <GmsButton Type="@BtnKind.Default" OnClick="RefreshAsync">Segarkan</GmsButton>
     </Actions>
 </PageHeader>
 <p class="gms-sr-only" role="status" aria-live="polite">@_announce</p>
@@ -16,7 +16,7 @@
     <section class="gms-dcard wide" role="region" aria-label="Aksi Cepat">
         <h3>Aksi Cepat</h3>
         <div class="gms-inline">
-            @foreach (var (label, href) in _quick.Take(6)) { <a class="ant-btn ant-btn-default" href="@href">@label</a> }
+            @foreach (var (label, href) in _quick.Take(6)) { <a class="gms-btn gms-btn-default" href="@href">@label</a> }
         </div>
     </section>
 }
@@ -35,7 +35,7 @@
             case "Produksi":
                 <DashboardCard T="OutputTodayWidget" Title="Output Hari Ini" Permission="@Permissions.ProductionOutput.View" Loader="Dashboard.GetOutputTodayAsync" Href="/production/history" Refresh="_refresh" SizeClass="medium">
                     <p class="gms-big">@IdFormat.Qty(context.TotalQty) <small>pcs</small></p>
-                    @if (context.TotalQty == 0) { <p class="gms-ok"><AntDesign.Icon Type="check-circle" /> Belum ada output hari ini</p> }
+                    @if (context.TotalQty == 0) { <p class="gms-ok"><GmsIcon Name="check-circle" /> Belum ada output hari ini</p> }
                     <ul>@foreach (var p in context.ByProcess) { <li>@p.ProcessName @IdFormat.Qty(p.Qty)</li> }</ul>
                 </DashboardCard>
                 <DashboardCard T="WoRunningWidget" Title="WO Berjalan" Permission="@Permissions.WorkOrder.View" Loader="Dashboard.GetWoRunningAsync" Href="/work-orders" Refresh="_refresh" SizeClass="wide">
@@ -55,26 +55,26 @@
                 </DashboardCard>
                 <DashboardCard T="UnhandedOverWidget" Title="Belum Diserahterimakan" Permission="@Permissions.SerahTerimaFG.View" Loader="Dashboard.GetUnhandedOverAsync" Href="/handovers/fg" Refresh="_refresh" SizeClass="wide">
                     <p class="gms-big">@IdFormat.Qty(context.TotalQty) <small>pcs</small></p>
-                    @if (context.TotalQty == 0) { <p class="gms-ok"><AntDesign.Icon Type="check-circle" /> Semua output sudah diserahterimakan</p> }
+                    @if (context.TotalQty == 0) { <p class="gms-ok"><GmsIcon Name="check-circle" /> Semua output sudah diserahterimakan</p> }
                     <ul>@foreach (var i in context.Items) { <li><a href="/work-orders/@i.WoId">@i.WoCode</a> · @IdFormat.Qty(i.Qty)</li> }</ul>
                 </DashboardCard>
                 <DashboardCard T="WoLateWidget" Title="WO Terlambat" Permission="@Permissions.WorkOrder.View" Loader="Dashboard.GetWoLateAsync" Href="/work-orders?terlambat=true" Refresh="_refresh" SizeClass="small">
-                    @if (context.Count == 0) { <p class="gms-ok"><AntDesign.Icon Type="check-circle" /> 0 WO terlambat</p> }
-                    else { <p class="gms-big gms-bad"><AntDesign.Icon Type="clock-circle" /> @context.Count WO terlambat</p> }
+                    @if (context.Count == 0) { <p class="gms-ok"><GmsIcon Name="check-circle" /> 0 WO terlambat</p> }
+                    else { <p class="gms-big gms-bad"><GmsIcon Name="clock-circle" /> @context.Count WO terlambat</p> }
                 </DashboardCard>
                 break;
             case "Penjualan":
                 <DashboardCard T="PoLateWidget" Title="PO Terlambat" Permission="@Permissions.CustomerPO.View" Loader="Dashboard.GetPoLateAsync" Href="/purchase-orders?terlambat=true" Refresh="_refresh" SizeClass="medium">
-                    @if (context.PoCount == 0) { <p class="gms-ok"><AntDesign.Icon Type="check-circle" /> 0 PO terlambat</p> }
-                    else { <p class="gms-big gms-bad"><AntDesign.Icon Type="clock-circle" /> @context.PoCount PO terlambat · @IdFormat.Qty(context.ShortageQty) pcs</p> }
+                    @if (context.PoCount == 0) { <p class="gms-ok"><GmsIcon Name="check-circle" /> 0 PO terlambat</p> }
+                    else { <p class="gms-big gms-bad"><GmsIcon Name="clock-circle" /> @context.PoCount PO terlambat · @IdFormat.Qty(context.ShortageQty) pcs</p> }
                     <ul>@foreach (var i in context.Items) { <li><a href="/purchase-orders/@i.PoId">@i.Code</a> @i.CustomerName −@(i.DaysLate)h</li> }</ul>
                 </DashboardCard>
                 <DashboardCard T="DueSoonWidget" Title="Jatuh Tempo 7 Hari" Permission="@Permissions.CustomerPO.View" Loader="Dashboard.GetDueSoonAsync" Href="/purchase-orders?jatuhTempo7=true" Refresh="_refresh" SizeClass="small">
                     <p class="gms-big">@context.PoCount PO · @IdFormat.Qty(context.Qty) pcs</p>
                 </DashboardCard>
                 <DashboardCard T="PoNoCustomerNumberWidget" Title="PO Belum Ada No. Customer" Permission="@Permissions.CustomerPO.View" Loader="Dashboard.GetPoNoCustomerNumberAsync" Href="/purchase-orders?poCustomerKosong=true" Refresh="_refresh" SizeClass="small">
-                    @if (context.PoCount == 0) { <p class="gms-ok"><AntDesign.Icon Type="check-circle" /> Semua PO punya nomor</p> }
-                    else { <p class="gms-big gms-warn"><AntDesign.Icon Type="warning" /> @context.PoCount PO</p> }
+                    @if (context.PoCount == 0) { <p class="gms-ok"><GmsIcon Name="check-circle" /> Semua PO punya nomor</p> }
+                    else { <p class="gms-big gms-warn"><GmsIcon Name="warning" /> @context.PoCount PO</p> }
                 </DashboardCard>
                 <DashboardCard T="UnplannedDemandWidget" Title="Kebutuhan Belum Terencana" Permission="@Permissions.CustomerPO.View" Loader="Dashboard.GetUnplannedDemandAsync" Href="/purchase-orders?sisaRencana=true" Refresh="_refresh" SizeClass="small">
                     <p class="gms-big">@IdFormat.Qty(context.Qty) pcs · @context.PoCount PO</p>
@@ -91,19 +91,19 @@
                     @if (!context.HasOpenPeriod)
                     {
                         <p>Belum ada periode terbuka.@(context.SuggestedNextStart is { } next ? $" Mulai periode berikutnya mulai {IdFormat.Date(next)}." : string.Empty)</p>
-                        <a class="ant-btn ant-btn-default" href="/payroll">Buat Periode</a>
+                        <a class="gms-btn gms-btn-default" href="/payroll">Buat Periode</a>
                     }
                     else
                     {
                         <p><strong>@context.Code</strong> · Open <span class="gms-warn">(BELUM FINAL)</span></p>
                         <p>@context.WorkerCount pekerja · Rp @IdFormat.Number(context.ProvisionalTotal)* · sisa @context.DaysLeft hari</p>
-                        <a class="ant-btn ant-btn-default" href="@($"/payroll/{context.PeriodId}")">Buka</a>
+                        <a class="gms-btn gms-btn-default" href="@($"/payroll/{context.PeriodId}")">Buka</a>
                     }
                 </DashboardCard>
                 break;
             default:
                 <DashboardCard T="SecurityWidget" Title="Keamanan Akun" Permission="@Permissions.AccessManagement.AuditLog.View" Loader="Dashboard.GetSecurityAsync" Href="/admin/audit" Refresh="_refresh" SizeClass="small">
-                    <p><AntDesign.Icon Type="lock" /> <strong>@context.LockedAccounts</strong> akun terkunci · <strong>@context.FailedLogins24h</strong> login gagal (24 jam)</p>
+                    <p><GmsIcon Name="lock" /> <strong>@context.LockedAccounts</strong> akun terkunci · <strong>@context.FailedLogins24h</strong> login gagal (24 jam)</p>
                     <a href="/admin/users">Lihat pengguna</a>
                 </DashboardCard>
                 break;

@@ -59,7 +59,7 @@
                             @if (issue is not null)
                             {
                                 <div class="gms-cellmsg @(issue.IsError ? "error" : "warning")" id="@messageId">
-                                    <AntDesign.Icon Type="@(issue.IsError ? "close-circle" : "warning")" />
+                                    <GmsIcon Name="@(issue.IsError ? "close-circle" : "warning")" />
                                     @(issue.IsError ? "melebihi batas" : "melebihi Qty WO")
                                 </div>
                             }

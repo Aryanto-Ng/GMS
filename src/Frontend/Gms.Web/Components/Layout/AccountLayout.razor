@@ -1,10 +1,54 @@
 @inherits LayoutComponentBase
+@inject IOptions<AppIdentityOptions> IdentityOptions
+@inject NavigationManager Nav
 
-@* Tata letak halaman akun (Login, Ganti Password, 403): Static SSR tanpa shell dan tanpa JavaScript interaktif. *@
+@* Halaman penuh di luar layout 4 zona (Design.md 10, Form masuk): Login, Ganti Password, 403. Static SSR tanpa JavaScript interaktif.
+   Latar SVG bergerak bertema bisnis (mati pada prefers-reduced-motion), kartu putih 420px di tengah layar, pilihan ID/EN di pojok kanan atas, footer di dasar layar. *@
 <a class="gms-skip" href="#gms-account">Lewati ke konten utama</a>
 <div class="gms-account">
+    <svg class="gms-account-bg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+        <defs>
+            <linearGradient id="gms-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--brand-p)" /><stop offset="1" stop-color="var(--brand)" /></linearGradient>
+            <pattern id="gms-grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="var(--on-brand)" stroke-opacity=".07" /></pattern>
+        </defs>
+        <rect width="1600" height="900" fill="url(#gms-g)" /><rect width="1600" height="900" fill="url(#gms-grid)" />
+        <g fill="var(--on-brand)" fill-opacity=".10">
+            <rect class="gms-bar" x="120" y="520" width="46" height="300" /><rect class="gms-bar b2" x="190" y="440" width="46" height="380" /><rect class="gms-bar b3" x="260" y="580" width="46" height="240" />
+            <rect class="gms-bar b4" x="330" y="400" width="46" height="420" /><rect class="gms-bar b5" x="400" y="500" width="46" height="320" />
+            <rect class="gms-bar b3" x="1160" y="560" width="46" height="260" /><rect class="gms-bar" x="1230" y="470" width="46" height="350" /><rect class="gms-bar b5" x="1300" y="520" width="46" height="300" />
+            <rect class="gms-bar b2" x="1370" y="410" width="46" height="410" /><rect class="gms-bar b4" x="1440" y="480" width="46" height="340" />
+        </g>
+        <polyline class="gms-trend" fill="none" stroke="var(--on-brand)" stroke-opacity=".28" stroke-width="3" points="80,700 260,610 420,650 620,470 820,520 1020,330 1220,390 1420,220 1540,260" />
+        <g fill="var(--on-brand)" fill-opacity=".35"><circle cx="260" cy="610" r="5" /><circle cx="620" cy="470" r="5" /><circle cx="1020" cy="330" r="5" /><circle cx="1420" cy="220" r="5" /></g>
+        <g class="gms-wave" fill="none" stroke="var(--on-brand)" stroke-opacity=".12" stroke-width="2">
+            <path d="M-200 780 q100 -40 200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0" />
+            <path d="M-200 820 q100 -30 200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0" />
+        </g>
+        <g fill="var(--on-brand)" fill-opacity=".08"><circle class="gms-float" cx="1250" cy="160" r="70" /><rect class="gms-float f2" x="180" y="120" width="90" height="90" rx="14" transform="rotate(18 225 165)" /><circle class="gms-float f2" cx="720" cy="130" r="26" /></g>
+    </svg>
+
+    <div class="gms-account-lang" role="group" aria-label="Bahasa">
+        <a class="@(IsEnglish ? "" : "on")" href="@LanguageHref("id-ID")" aria-current="@(IsEnglish ? null : "true")">ID</a>
+        <a class="@(IsEnglish ? "on" : "")" href="@LanguageHref("en-US")" aria-current="@(IsEnglish ? "true" : null)">EN</a>
+    </div>
+
     <main id="gms-account" tabindex="-1" class="gms-account-card">
-        <div class="gms-account-brand">GMS <span>Garment Management System</span></div>
+        <div class="gms-account-brand">
+            <span class="gms-logo-mark" aria-hidden="true">@Identity.LogoLetter</span>
+            <div>@Identity.Abbreviation <span>@Identity.Name</span></div>
+        </div>
         @Body
     </main>
+
+    <div class="gms-account-foot">@Identity.Footer</div>
 </div>
+<script src="js/account.js"></script>
+
+@code {
+    private AppIdentityOptions Identity => IdentityOptions.Value;
+
+    private bool IsEnglish => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "en";
+
+    private string LanguageHref(string culture) =>
+        $"/account/language?culture={culture}&returnUrl={Uri.EscapeDataString("/" + Nav.ToBaseRelativePath(Nav.Uri))}";
+}

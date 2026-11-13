@@ -47,7 +47,7 @@ else
     {
         <QtyGrid Caption="@(_kind == VendorMovementKind.Send ? "Qty kirim" : "Qty terima")" RowHeader="" Rows="_row" Columns="_columns" Values="_values" CellInfo="CellInfo" ShowMax="true" Compact="true" OnChanged="() => _dirty = true" />
         <div class="gms-formactions">
-            <AntDesign.Button Type="@AntDesign.ButtonType.Primary" Disabled="@(_saving || _ctx.BlockedReason is not null)" OnClick="SaveAsync">Simpan</AntDesign.Button>
+            <GmsButton Type="@BtnKind.Primary" Disabled="@(_saving || _ctx.BlockedReason is not null)" OnClick="SaveAsync">Simpan</GmsButton>
         </div>
     }
 

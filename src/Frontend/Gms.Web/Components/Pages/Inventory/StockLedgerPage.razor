@@ -37,11 +37,11 @@ else
 }
 
 @code {
-    [SupplyParameterFromQuery(Name = "fgId")] public Guid? FgId { get; set; }
+    [Parameter, TabQuery("fgId")] public Guid? FgId { get; set; }
 
-    [SupplyParameterFromQuery(Name = "colorId")] public Guid? ColorId { get; set; }
+    [Parameter, TabQuery("colorId")] public Guid? ColorId { get; set; }
 
-    [SupplyParameterFromQuery(Name = "sizeId")] public Guid? SizeId { get; set; }
+    [Parameter, TabQuery("sizeId")] public Guid? SizeId { get; set; }
 
     private int _page = 1;
 

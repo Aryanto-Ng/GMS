@@ -7,7 +7,7 @@
 
 <PageHeader Title="Pengiriman" Subtitle="@(_total is null ? null : $"{IdFormat.Qty(_total)} surat jalan")">
     <Actions>
-        @if (_user.HasPermission(Permissions.Pengiriman.Create)) { <a class="ant-btn ant-btn-primary" href="/deliveries/new">Buat Surat Jalan</a> }
+        @if (_user.HasPermission(Permissions.Pengiriman.Create)) { <a class="gms-btn gms-btn-primary" href="/deliveries/new">Buat Surat Jalan</a> }
     </Actions>
 </PageHeader>
 
@@ -38,7 +38,7 @@
                     <tr class="@(d.Status == DocStatus.Voided ? "gms-inactive" : null)">
                         <th scope="row"><a href="/deliveries/@d.Id">@d.Code</a></th><td>@IdFormat.Date(d.DeliveryDate)</td><td>@d.PoCode</td><td>@(d.CustomerPoNumber ?? "—")</td><td>@d.CustomerName</td>
                         <td class="num">@if (d.Status == DocStatus.Voided) { <s>@IdFormat.Qty(d.TotalQty)</s> } else { @IdFormat.Qty(d.TotalQty) }</td>
-                        <td><StatusTag Value="@d.Status" /></td>
+                        <td><StatusBadge Value="@d.Status" /></td>
                     </tr>
                 }
             </tbody>

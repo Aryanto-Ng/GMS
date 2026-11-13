@@ -16,14 +16,18 @@
     <AntiforgeryToken />
     <input type="hidden" name="ReturnUrl" value="@SafeReturn" />
 
-    <label for="username">Username <span class="gms-required">wajib</span></label>
+    <label for="username">Nama pengguna <span class="gms-required">wajib</span></label>
     <input id="username" name="Username" type="text" autocomplete="username" autofocus required maxlength="100" />
 
-    <label for="password">Password <span class="gms-required">wajib</span></label>
-    <input id="password" name="Password" type="password" autocomplete="current-password" required maxlength="200" />
+    <label for="password">Kata sandi <span class="gms-required">wajib</span></label>
+    <div class="gms-pwrow">
+        <input id="password" name="Password" type="password" autocomplete="current-password" required maxlength="200" style="padding-right:72px" />
+        <button type="button" class="gms-pwtoggle" data-pw-toggle="password" data-show="Tampil" data-hide="Sembunyi" aria-pressed="false" aria-controls="password">Tampil</button>
+    </div>
 
     <button type="submit" class="gms-primary">Masuk</button>
 </form>
+<p class="gms-account-help">Lupa kata sandi? Hubungi Administrator.</p>
 
 @code {
     [SupplyParameterFromQuery] private string? Error { get; set; }
@@ -51,8 +55,8 @@
         return error switch
         {
             null or "" => null,
-            "invalid-credentials" => new LoginMessage("error", "Login gagal.", "Username atau password salah."),
-            "required" => new LoginMessage("error", "Lengkapi isian.", "Username dan password wajib diisi."),
+            "invalid-credentials" => new LoginMessage("error", "Login gagal.", "Nama pengguna atau kata sandi salah."),
+            "required" => new LoginMessage("error", "Lengkapi isian.", "Nama pengguna dan kata sandi wajib diisi."),
             "account-locked" => new LoginMessage("error", "Akun terkunci.",
                 until is { } u
                     ? $"Terlalu banyak percobaan. Coba lagi pukul {IdFormat.Time(DateTimeOffset.FromUnixTimeSeconds(u))} atau hubungi Administrator."

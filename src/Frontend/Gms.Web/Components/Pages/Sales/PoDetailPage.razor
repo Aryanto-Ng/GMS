@@ -21,13 +21,13 @@ else
 {
     <PageHeader Title="@_po.Code" Subtitle="@($"{_po.CustomerName} · Tgl PO {IdFormat.Date(_po.PoDate)}")"
                 Breadcrumbs="@(new[] { new PageHeader.Crumb("Customer PO", "/purchase-orders"), new PageHeader.Crumb(_po.Code) })">
-        <Chips><StatusTag Value="@_po.Status" /></Chips>
+        <Chips><StatusBadge Value="@_po.Status" /></Chips>
         <Actions>
-            @if (Can(PoActions.Edit, Permissions.CustomerPO.Edit)) { <a class="ant-btn ant-btn-default" href="@($"/purchase-orders/{_po.Id}/edit")">Ubah</a> }
-            @if (Can(PoActions.Confirm, Permissions.CustomerPO.Confirm)) { <AntDesign.Button Type="@AntDesign.ButtonType.Primary" OnClick="() => _dialog = Dialog.Confirm">Konfirmasi</AntDesign.Button> }
-            @if (Can(PoActions.CreateWorkOrder, Permissions.WorkOrder.Create)) { <a class="ant-btn ant-btn-default" href="@($"/work-orders/new?poId={_po.Id}")">Buat WO</a> }
-            @if (Can(PoActions.CreateDelivery, Permissions.Pengiriman.Create)) { <a class="ant-btn ant-btn-default" href="@($"/deliveries/new?poId={_po.Id}")">Buat Pengiriman</a> }
-            @if (Can(PoActions.Cancel, Permissions.CustomerPO.Cancel)) { <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _dialog = Dialog.Cancel">Batalkan</AntDesign.Button> }
+            @if (Can(PoActions.Edit, Permissions.CustomerPO.Edit)) { <a class="gms-btn gms-btn-default" href="@($"/purchase-orders/{_po.Id}/edit")">Ubah</a> }
+            @if (Can(PoActions.Confirm, Permissions.CustomerPO.Confirm)) { <GmsButton Type="@BtnKind.Primary" OnClick="() => _dialog = Dialog.Confirm">Konfirmasi</GmsButton> }
+            @if (Can(PoActions.CreateWorkOrder, Permissions.WorkOrder.Create)) { <a class="gms-btn gms-btn-default" href="@($"/work-orders/new?poId={_po.Id}")">Buat WO</a> }
+            @if (Can(PoActions.CreateDelivery, Permissions.Pengiriman.Create)) { <a class="gms-btn gms-btn-default" href="@($"/deliveries/new?poId={_po.Id}")">Buat Pengiriman</a> }
+            @if (Can(PoActions.Cancel, Permissions.CustomerPO.Cancel)) { <GmsButton Type="@BtnKind.Default" OnClick="() => _dialog = Dialog.Cancel">Batalkan</GmsButton> }
         </Actions>
     </PageHeader>
 
@@ -46,27 +46,27 @@ else
         @if (_editingNumber)
         {
             <input id="po-number" aria-label="No. PO Customer" value="@_number" maxlength="50" @oninput="e => _number = e.Value?.ToString()" />
-            <AntDesign.Button Type="@AntDesign.ButtonType.Primary" OnClick="SaveNumberAsync">Simpan</AntDesign.Button>
-            <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="() => _editingNumber = false">Batal</AntDesign.Button>
+            <GmsButton Type="@BtnKind.Primary" OnClick="SaveNumberAsync">Simpan</GmsButton>
+            <GmsButton Type="@BtnKind.Default" OnClick="() => _editingNumber = false">Batal</GmsButton>
             @if (_numberProblem is not null) { <ProblemBanner Problem="_numberProblem" /> }
         }
         else
         {
-            @if (string.IsNullOrEmpty(_po.CustomerPoNumber)) { <span class="gms-warn"><AntDesign.Icon Type="warning" /> Belum ada</span> }
+            @if (string.IsNullOrEmpty(_po.CustomerPoNumber)) { <span class="gms-warn"><GmsIcon Name="warning" /> Belum ada</span> }
             else { <span>@_po.CustomerPoNumber</span> }
             @if (Can(PoActions.SetCustomerPoNumber, Permissions.CustomerPO.Edit))
             {
-                <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="Ubah No. PO Customer" OnClick="StartEditNumber">✎</AntDesign.Button>
+                <GmsButton Type="@BtnKind.Link" AriaLabel="Ubah No. PO Customer" OnClick="StartEditNumber">✎</GmsButton>
             }
         }
     </div>
 
     <div class="gms-welcome" aria-label="Ringkasan">
-        <StatCard Label="Total" Value="@IdFormat.Qty(_po.TotalQty)" />
-        <StatCard Label="Terkirim" Value="@IdFormat.Qty(_po.DeliveredQty)" />
-        <StatCard Label="Dialokasikan" Value="@IdFormat.Qty(_po.AllocatedQty)" />
-        <StatCard Label="Dalam Produksi" Value="@IdFormat.Qty(_po.InProductionQty)" />
-        <StatCard Label="Sisa Rencana" Value="@IdFormat.Qty(_po.RemainingPlanQty)" />
+        <StatTile Label="Total" Value="@IdFormat.Qty(_po.TotalQty)" />
+        <StatTile Label="Terkirim" Value="@IdFormat.Qty(_po.DeliveredQty)" />
+        <StatTile Label="Dialokasikan" Value="@IdFormat.Qty(_po.AllocatedQty)" />
+        <StatTile Label="Dalam Produksi" Value="@IdFormat.Qty(_po.InProductionQty)" />
+        <StatTile Label="Sisa Rencana" Value="@IdFormat.Qty(_po.RemainingPlanQty)" />
     </div>
 
     <div role="tablist" aria-label="Bagian PO" class="gms-tabs">
@@ -90,17 +90,17 @@ else
                 {
                     <tr>
                         <th scope="row">@line.FgCode</th><td>@line.ColorSize.ColorName</td><td>@line.ColorSize.SizeCode</td>
-                        <td>@IdFormat.Date(line.DeliveryDate) @if (line.IsLate) { <span class="gms-bad"><AntDesign.Icon Type="clock-circle" /> Terlambat</span> }</td>
+                        <td>@IdFormat.Date(line.DeliveryDate) @if (line.IsLate) { <span class="gms-bad"><GmsIcon Name="clock-circle" /> Terlambat</span> }</td>
                         <td class="num">@IdFormat.Qty(line.Qty)</td><td class="num">@IdFormat.Qty(line.DeliveredQty)</td><td class="num">@IdFormat.Qty(line.AllocatedQty)</td>
                         <td class="num">@IdFormat.Qty(line.InProductionQty)</td><td class="num">@IdFormat.Qty(line.RemainingPlanQty)</td>
                         <td class="gms-rowactions">
                             @if (Can(PoActions.Allocate, Permissions.CustomerPO.Alokasi.Allocate))
                             {
-                                <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Alokasi {line.FgCode} {line.ColorSize.ColorName} {line.ColorSize.SizeCode}")" OnClick="() => Open(line, true)">Alokasi</AntDesign.Button>
+                                <GmsButton Type="@BtnKind.Link" AriaLabel="@($"Alokasi {line.FgCode} {line.ColorSize.ColorName} {line.ColorSize.SizeCode}")" OnClick="() => Open(line, true)">Alokasi</GmsButton>
                             }
                             @if (Can(PoActions.Allocate, Permissions.CustomerPO.Alokasi.Release) && line.AllocatedQty > 0)
                             {
-                                <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Lepas alokasi {line.FgCode} {line.ColorSize.ColorName} {line.ColorSize.SizeCode}")" OnClick="() => Open(line, false)">Lepas</AntDesign.Button>
+                                <GmsButton Type="@BtnKind.Link" AriaLabel="@($"Lepas alokasi {line.FgCode} {line.ColorSize.ColorName} {line.ColorSize.SizeCode}")" OnClick="() => Open(line, false)">Lepas</GmsButton>
                             }
                         </td>
                     </tr>

@@ -25,7 +25,7 @@
             }
         </select>
     </div>
-    <AntDesign.Button Type="@AntDesign.ButtonType.Primary" HtmlType="submit">Terapkan</AntDesign.Button>
+    <GmsButton Type="@BtnKind.Primary" HtmlType="submit">Terapkan</GmsButton>
 </form>
 
 @if (_rangeError is not null)
@@ -58,7 +58,7 @@ else
                             <td>
                                 @if (hasDetail)
                                 {
-                                    <button type="button" class="ant-btn ant-btn-link" aria-expanded="@(expanded ? "true" : "false")" aria-controls="@($"audit-{item.Id}")" aria-label="@($"Detail {AuditLabels.For(item.EventType)}")" @onclick="() => Toggle(item.Id)"><span>@(expanded ? "Tutup" : "Detail")</span></button>
+                                    <button type="button" class="gms-btn gms-btn-link" aria-expanded="@(expanded ? "true" : "false")" aria-controls="@($"audit-{item.Id}")" aria-label="@($"Detail {AuditLabels.For(item.EventType)}")" @onclick="() => Toggle(item.Id)"><span>@(expanded ? "Tutup" : "Detail")</span></button>
                                 }
                             </td>
                         </tr>

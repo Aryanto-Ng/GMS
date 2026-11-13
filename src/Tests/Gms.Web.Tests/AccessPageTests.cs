@@ -25,7 +25,7 @@ public sealed class AccessPageTests : WebTestBase
         SignIn(AllAdmin);
     }
 
-    private static IElement DialogConfirm(IRenderedComponent<IComponent> cut) => cut.FindAll(".ant-modal-wrap button.ant-btn").Last();
+    private static IElement DialogConfirm(IRenderedComponent<IComponent> cut) => cut.FindAll(".gms-dialog-wrap button.gms-btn").Last();
 
     private static void WaitRows<T>(IRenderedComponent<T> cut, int count) where T : IComponent =>
         cut.WaitForAssertion(() => Assert.Equal(count, cut.FindAll("tbody tr").Count));
@@ -54,7 +54,7 @@ public sealed class AccessPageTests : WebTestBase
 
         WaitRows(cut, 4);
         Assert.DoesNotContain("Tambah Pengguna", cut.Markup);
-        Assert.Empty(cut.FindAll("tbody button.ant-btn")); // Buka kunci/Nonaktifkan/Aktifkan
+        Assert.Empty(cut.FindAll("tbody button.gms-btn")); // Buka kunci/Nonaktifkan/Aktifkan
         Assert.DoesNotContain(">Ubah<", cut.Markup);
     }
 
@@ -79,9 +79,9 @@ public sealed class AccessPageTests : WebTestBase
         var cut = Render<UsersPage>();
         WaitRows(cut, 4);
 
-        cut.FindAll("tbody button.ant-btn").Single(b => b.TextContent.Contains("Buka kunci")).Click();
-        Assert.Contains("Buka kunci siti?", cut.Find(".ant-modal-wrap h2").TextContent);
-        Assert.Empty(cut.FindAll(".ant-modal-body textarea")); // konfirmasi biasa tanpa alasan
+        cut.FindAll("tbody button.gms-btn").Single(b => b.TextContent.Contains("Buka kunci")).Click();
+        Assert.Contains("Buka kunci siti?", cut.Find(".gms-dialog-wrap h2").TextContent);
+        Assert.Empty(cut.FindAll(".gms-dialog-body textarea")); // konfirmasi biasa tanpa alasan
         DialogConfirm(cut).Click();
 
         cut.WaitForAssertion(() => Assert.DoesNotContain("Terkunci", cut.Find("tbody").TextContent));
@@ -93,7 +93,7 @@ public sealed class AccessPageTests : WebTestBase
         var cut = Render<UsersPage>();
         WaitRows(cut, 4);
 
-        cut.FindAll("tbody button.ant-btn").Single(b => b.GetAttribute("aria-label") == "Aktifkan andi").Click();
+        cut.FindAll("tbody button.gms-btn").Single(b => b.GetAttribute("aria-label") == "Aktifkan andi").Click();
         DialogConfirm(cut).Click();
 
         cut.WaitForAssertion(() => Assert.DoesNotContain("Nonaktif", cut.Find("tbody").TextContent.Replace("Nonaktifkan", "")));
@@ -105,11 +105,11 @@ public sealed class AccessPageTests : WebTestBase
         var cut = Render<UsersPage>();
         WaitRows(cut, 4);
 
-        cut.FindAll("tbody button.ant-btn").Single(b => b.GetAttribute("aria-label") == "Nonaktifkan admin").Click();
+        cut.FindAll("tbody button.gms-btn").Single(b => b.GetAttribute("aria-label") == "Nonaktifkan admin").Click();
         DialogConfirm(cut).Click();
 
-        cut.WaitForAssertion(() => Assert.Contains("tidak dapat menonaktifkan diri sendiri", cut.Find(".ant-modal-wrap").TextContent));
-        Assert.Contains("Nonaktifkan admin?", cut.Find(".ant-modal-wrap h2").TextContent);
+        cut.WaitForAssertion(() => Assert.Contains("tidak dapat menonaktifkan diri sendiri", cut.Find(".gms-dialog-wrap").TextContent));
+        Assert.Contains("Nonaktifkan admin?", cut.Find(".gms-dialog-wrap h2").TextContent);
     }
 
     // ===== Form Pengguna =====
@@ -127,7 +127,7 @@ public sealed class AccessPageTests : WebTestBase
         Assert.Equal(3, cut.FindAll(".gms-rules .gms-ok").Count);
 
         cut.Find("#u-pass").Input("");
-        cut.FindAll("button.ant-btn").Single(b => b.TextContent.Contains("Buat otomatis")).Click();
+        cut.FindAll("button.gms-btn").Single(b => b.TextContent.Contains("Buat otomatis")).Click();
         Assert.StartsWith("Gms-", cut.Find("#u-pass").GetAttribute("value"));
         Assert.Contains("wajib mengganti password", cut.Markup);
     }
@@ -182,7 +182,7 @@ public sealed class AccessPageTests : WebTestBase
 
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find("#u-name")));
         Assert.True(cut.Find("#u-name").HasAttribute("disabled"));
-        var deactivate = cut.FindAll("aside button.ant-btn").Single(b => b.TextContent.Contains("Nonaktifkan"));
+        var deactivate = cut.FindAll("aside button.gms-btn").Single(b => b.TextContent.Contains("Nonaktifkan"));
         Assert.True(deactivate.HasAttribute("disabled"));
         Assert.Equal("deact-why", deactivate.GetAttribute("aria-describedby"));
         Assert.Contains("Administrator aktif terakhir", cut.Find("#deact-why").TextContent);
@@ -210,13 +210,13 @@ public sealed class AccessPageTests : WebTestBase
         var cut = Form(MockAccessStore.AdminUserId);
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find("aside")));
 
-        cut.FindAll("aside button.ant-btn").Single(b => b.TextContent.Contains("Reset Password")).Click();
-        Assert.Contains("Reset password admin", cut.Find(".ant-modal-wrap h2").TextContent);
+        cut.FindAll("aside button.gms-btn").Single(b => b.TextContent.Contains("Reset Password")).Click();
+        Assert.Contains("Reset password admin", cut.Find(".gms-dialog-wrap h2").TextContent);
         DialogConfirm(cut).Click();
 
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find("#temp-password")));
         Assert.Contains("tidak ditampilkan lagi", cut.Markup);
-        cut.FindAll(".gms-banner button.ant-btn").Single(b => b.TextContent.Contains("Tutup")).Click();
+        cut.FindAll(".gms-banner button.gms-btn").Single(b => b.TextContent.Contains("Tutup")).Click();
         Assert.Empty(cut.FindAll("#temp-password"));
     }
 
@@ -225,7 +225,7 @@ public sealed class AccessPageTests : WebTestBase
     {
         var cut = Form(MockAccessStore.AdminUserId);
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find("aside")));
-        cut.FindAll("aside button.ant-btn").Single(b => b.TextContent.Contains("Reset Password")).Click();
+        cut.FindAll("aside button.gms-btn").Single(b => b.TextContent.Contains("Reset Password")).Click();
 
         cut.Find("#reset-pass").Input("abc");
 
@@ -237,7 +237,7 @@ public sealed class AccessPageTests : WebTestBase
     {
         var cut = Form(Guid.NewGuid());
 
-        cut.WaitForAssertion(() => { Assert.Contains("Data tidak ditemukan", cut.Markup); Assert.Empty(cut.FindAll(".gms-state button.ant-btn")); });
+        cut.WaitForAssertion(() => { Assert.Contains("Data tidak ditemukan", cut.Markup); Assert.Empty(cut.FindAll(".gms-state button.gms-btn")); });
     }
 
     // ===== Role =====
@@ -252,7 +252,7 @@ public sealed class AccessPageTests : WebTestBase
         Assert.Contains("role sistem", system.TextContent);
         Assert.DoesNotContain("Hapus", system.TextContent);
         var staf = cut.FindAll("tbody tr").Single(r => r.TextContent.Contains("Staf Comfi"));
-        var delete = staf.QuerySelector("button.ant-btn")!;
+        var delete = staf.QuerySelector("button.gms-btn")!;
         Assert.True(delete.HasAttribute("disabled"));
         Assert.Contains("Dipakai oleh 3 pengguna", delete.ParentElement!.GetAttribute("title"));
     }
@@ -264,8 +264,8 @@ public sealed class AccessPageTests : WebTestBase
         var cut = Render<RolesPage>();
         WaitRows(cut, 3);
 
-        cut.FindAll("tbody button.ant-btn").Single(b => b.GetAttribute("aria-label") == "Hapus Sementara").Click();
-        Assert.Contains("Hapus role Sementara?", cut.Find(".ant-modal-wrap h2").TextContent);
+        cut.FindAll("tbody button.gms-btn").Single(b => b.GetAttribute("aria-label") == "Hapus Sementara").Click();
+        Assert.Contains("Hapus role Sementara?", cut.Find(".gms-dialog-wrap h2").TextContent);
         DialogConfirm(cut).Click();
 
         cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll("tbody tr").Count));
@@ -317,7 +317,7 @@ public sealed class AccessPageTests : WebTestBase
         var po = PermissionCatalog.All.First(p => p.Key == Permissions.CustomerPO.View).Resource;
         Box(cut, $"{po}, Lihat").Change(true);
         cut.Find("form").Submit();
-        Assert.Contains("Role baru dengan 1 permission", cut.Find(".ant-modal-wrap").TextContent);
+        Assert.Contains("Role baru dengan 1 permission", cut.Find(".gms-dialog-wrap").TextContent);
         DialogConfirm(cut).Click();
 
         cut.WaitForAssertion(() => Assert.Matches("/admin/roles/[0-9a-f-]{36}$", Nav.Uri));
@@ -331,7 +331,7 @@ public sealed class AccessPageTests : WebTestBase
 
         cut.WaitForAssertion(() => Assert.Contains("Role sistem tidak dapat diubah", cut.Markup));
         Assert.All(cut.FindAll("table.gms-perm input[type=checkbox]"), c => Assert.True(c.HasAttribute("disabled")));
-        Assert.DoesNotContain(cut.FindAll("form button.ant-btn"), b => b.TextContent.Contains("Simpan"));
+        Assert.DoesNotContain(cut.FindAll("form button.gms-btn"), b => b.TextContent.Contains("Simpan"));
         Assert.True(cut.Find("#r-name").HasAttribute("disabled"));
     }
 
@@ -347,7 +347,7 @@ public sealed class AccessPageTests : WebTestBase
         Box(cut, $"{po}, Hanya".Replace("Hanya", "Konfirmasi")).Change(true); // menambah Confirm (+View sudah ada)
         cut.Find("form").Submit();
 
-        var text = cut.Find(".ant-modal-wrap").TextContent;
+        var text = cut.Find(".gms-dialog-wrap").TextContent;
         Assert.Contains("Tambah 1, lepas 1 permission.", text);
         Assert.Contains("Berlaku untuk 3 pengguna", text);
     }
@@ -363,11 +363,11 @@ public sealed class AccessPageTests : WebTestBase
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("tbody tr")));
         Assert.Contains("Login berhasil", cut.Markup);
         Assert.Contains("Role diubah", cut.Markup);
-        var detail = cut.FindAll("tbody button.ant-btn").First(b => b.GetAttribute("aria-label")!.Contains("Role diubah"));
+        var detail = cut.FindAll("tbody button.gms-btn").First(b => b.GetAttribute("aria-label")!.Contains("Role diubah"));
         Assert.Equal("false", detail.GetAttribute("aria-expanded"));
         detail.Click();
         Assert.Contains("Sebelum", cut.Find(".gms-auditdetail").TextContent);
-        Assert.Equal("true", cut.FindAll("tbody button.ant-btn").First(b => b.GetAttribute("aria-label")!.Contains("Role diubah")).GetAttribute("aria-expanded"));
+        Assert.Equal("true", cut.FindAll("tbody button.gms-btn").First(b => b.GetAttribute("aria-label")!.Contains("Role diubah")).GetAttribute("aria-expanded"));
     }
 
     [Fact]

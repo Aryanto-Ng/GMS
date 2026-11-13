@@ -1,0 +1,41 @@
+@* Tombol Design.md 10: 32px, radius 4px, teks 600. Primary = latar brand (maks. satu per halaman); Link = aksi inline; Danger = hanya aksi merusak.
+   Parameter meniru tombol sebelumnya (Type/OnClick/Disabled/AriaLabel/HtmlType/Loading) agar halaman cukup berganti nama komponen. *@
+<button type="@HtmlType" class="gms-btn gms-btn-@KindClass @(Danger ? "is-danger" : "") @(Loading ? "is-loading" : "") @Class"
+        disabled="@(Disabled || Loading)" aria-label="@AriaLabel" aria-busy="@(Loading ? "true" : null)" title="@Title" @onclick="OnClick" @attributes="AdditionalAttributes">
+    @if (Icon is not null)
+    {
+        <GmsIcon Name="@Icon" />
+    }
+    @ChildContent
+</button>
+
+@code {
+    [Parameter] public BtnKind Type { get; set; } = BtnKind.Default;
+
+    [Parameter] public EventCallback<Microsoft.AspNetCore.Components.Web.MouseEventArgs> OnClick { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+
+    [Parameter] public bool Loading { get; set; }
+
+    /// <summary>Aksi merusak (Void, Batalkan): teks merah, atau latar merah bila Primary.</summary>
+    [Parameter] public bool Danger { get; set; }
+
+    [Parameter] public string HtmlType { get; set; } = "button";
+
+    /// <summary>Wajib untuk tombol hanya-ikon (Design.md 7).</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>Ikon 16px di kiri teks (tombol header halaman; Design.md 7). Tombol footer form tanpa ikon.</summary>
+    [Parameter] public string? Icon { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string KindClass => Type switch { BtnKind.Primary => "primary", BtnKind.Link => "link", _ => "default" };
+}

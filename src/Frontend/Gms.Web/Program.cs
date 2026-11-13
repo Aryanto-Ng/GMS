@@ -13,6 +13,8 @@ using Gms.Web.Infrastructure;
 using Gms.Web.Infrastructure.Auth;
 using Gms.Web.Infrastructure.Http;
 using Gms.Web.Services.Api;
+using Gms.Web.Services.Tabs;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
@@ -27,8 +29,10 @@ services.Configure<ApiOptions>(builder.Configuration.GetSection(ApiOptions.Secti
 var api = builder.Configuration.GetSection(ApiOptions.SectionName).Get<ApiOptions>() ?? new ApiOptions();
 
 services.AddRazorComponents().AddInteractiveServerComponents();
-services.AddAntDesign();
 services.AddScoped<Gms.Web.Services.IGmsToast, Gms.Web.Services.GmsToast>();
+services.AddScoped<TabManager>();
+services.Configure<AppIdentityOptions>(builder.Configuration.GetSection(AppIdentityOptions.SectionName));
+services.AddLocalization(options => options.ResourcesPath = "Resources");
 services.AddHttpContextAccessor();
 
 // SEC-004: pembatasan percobaan login per alamat IP (melengkapi lockout per akun yang dapat disalahgunakan untuk password spraying).
@@ -150,6 +154,11 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+// Bahasa UI: Indonesia (bawaan) dan English; dipilih lewat cookie (menu bahasa di header dan form masuk). Culture ditetapkan EKSPLISIT, bukan culture server.
+app.UseRequestLocalization(new RequestLocalizationOptions()
+    .SetDefaultCulture(AccountEndpoints.DefaultCulture)
+    .AddSupportedCultures(AccountEndpoints.SupportedCultures)
+    .AddSupportedUICultures(AccountEndpoints.SupportedCultures));
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 app.UseAuthentication();

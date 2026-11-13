@@ -13,7 +13,7 @@
     <Actions>
         @if (_user.HasPermission(Permissions.CustomerPO.Create))
         {
-            <a class="ant-btn ant-btn-primary" href="/purchase-orders/new">Buat PO</a>
+            <a class="gms-btn gms-btn-primary" href="/purchase-orders/new">Buat PO</a>
         }
     </Actions>
 </PageHeader>
@@ -72,13 +72,13 @@
                         <td>
                             @if (string.IsNullOrEmpty(po.CustomerPoNumber))
                             {
-                                <span class="gms-warn"><AntDesign.Icon Type="warning" /> Belum ada</span>
+                                <span class="gms-warn"><GmsIcon Name="warning" /> Belum ada</span>
                             }
                             else { @po.CustomerPoNumber }
                         </td>
                         <td>@po.CustomerName</td>
                         <td>@IdFormat.Date(po.PoDate)</td>
-                        <td><StatusTag Value="@po.Status" /> @if (po.HasLateLines) { <span class="gms-bad"><AntDesign.Icon Type="clock-circle" /> Terlambat</span> }</td>
+                        <td><StatusBadge Value="@po.Status" /> @if (po.HasLateLines) { <span class="gms-bad"><GmsIcon Name="clock-circle" /> Terlambat</span> }</td>
                         <td>
                             <StackedProgress Total="po.TotalQty" Segments="@(new StackedProgress.Segment[] { new("Kirim", po.DeliveredQty, "success"), new("Alok", po.AllocatedQty, "info"), new("Prod", po.InProductionQty, "warning") })" />
                         </td>
@@ -106,13 +106,13 @@
     private int? _total;
     private System.Security.Claims.ClaimsPrincipal _user = new();
 
-    [SupplyParameterFromQuery(Name = "terlambat")] public bool? QTerlambat { get; set; }
+    [Parameter, TabQuery("terlambat")] public bool? QTerlambat { get; set; }
 
-    [SupplyParameterFromQuery(Name = "jatuhTempo7")] public bool? QJatuhTempo7 { get; set; }
+    [Parameter, TabQuery("jatuhTempo7")] public bool? QJatuhTempo7 { get; set; }
 
-    [SupplyParameterFromQuery(Name = "poCustomerKosong")] public bool? QPoCustomerKosong { get; set; }
+    [Parameter, TabQuery("poCustomerKosong")] public bool? QPoCustomerKosong { get; set; }
 
-    [SupplyParameterFromQuery(Name = "sisaRencana")] public bool? QSisaRencana { get; set; }
+    [Parameter, TabQuery("sisaRencana")] public bool? QSisaRencana { get; set; }
 
     protected override async Task OnInitializedAsync()
     {

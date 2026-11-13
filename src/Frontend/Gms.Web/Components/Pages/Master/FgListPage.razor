@@ -19,7 +19,7 @@
     <Row Context="d">
         <th scope="row"><a href="/master/fgs/@d.Id">@d.Code</a></th>
         <td>@d.Name</td><td>@(d.Kind ?? "—")</td><td>@(d.CustomerName ?? "—")</td>
-        <td><StatusTag Value="@(d.IsReady ? "ready" : "not-ready")" /></td>
+        <td><StatusBadge Value="@(d.IsReady ? "ready" : "not-ready")" /></td>
     </Row>
 </MasterList>
 

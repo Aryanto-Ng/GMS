@@ -1,10 +1,8 @@
-using AntDesign;
-
 namespace Gms.Web.Services;
 
 /// <summary>
-/// Pemberitahuan singkat setelah aksi berhasil (Design.md 8.7: success menyebut dampaknya). Membungkus <see cref="IMessageService"/> AntDesign
-/// agar halaman tidak bergantung pada pustaka UI. Tidak pernah melempar: kegagalan menampilkan toast tidak boleh menggagalkan aksi yang sudah berhasil.
+/// Pemberitahuan singkat setelah aksi (Design.md 10 Toast): sukses menyebut dampaknya; pemanggil memberi jenis SECARA EKSPLISIT.
+/// Tidak pernah melempar: kegagalan menampilkan toast tidak boleh menggagalkan aksi yang sudah berhasil.
 /// </summary>
 public interface IGmsToast
 {
@@ -15,23 +13,68 @@ public interface IGmsToast
     void ShowError(string text);
 }
 
-public sealed class GmsToast(IMessageService messages) : IGmsToast
+public enum ToastKind { Success, Info, Error }
+
+public sealed record ToastItem(Guid Id, ToastKind Kind, string Text);
+
+/// <summary>Toast per sirkuit. <see cref="ToastHost"/> berlangganan <see cref="Changed"/>; setiap toast hilang otomatis (galat lebih lama).</summary>
+public sealed class GmsToast : IGmsToast
 {
-    public void ShowSuccess(string text) => Safe(() => messages.Success(text, 4));
+    private static readonly TimeSpan Short = TimeSpan.FromMilliseconds(2800);
+    private static readonly TimeSpan Long = TimeSpan.FromSeconds(4);
+    private readonly List<ToastItem> _items = [];
+    private readonly object _lock = new();
 
-    public void ShowInfo(string text) => Safe(() => messages.Info(text, 4));
+    public event Action? Changed;
 
-    public void ShowError(string text) => Safe(() => messages.Error(text, 8));
+    public IReadOnlyList<ToastItem> Items
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _items.ToList();
+            }
+        }
+    }
 
-    private static void Safe(Action show)
+    public void ShowSuccess(string text) => Add(ToastKind.Success, text, Short);
+
+    public void ShowInfo(string text) => Add(ToastKind.Info, text, Short);
+
+    public void ShowError(string text) => Add(ToastKind.Error, text, Long);
+
+    public void Dismiss(Guid id)
+    {
+        lock (_lock)
+        {
+            _items.RemoveAll(i => i.Id == id);
+        }
+
+        Raise();
+    }
+
+    private void Add(ToastKind kind, string text, TimeSpan life)
+    {
+        var item = new ToastItem(Guid.NewGuid(), kind, text);
+        lock (_lock)
+        {
+            _items.Add(item);
+        }
+
+        Raise();
+        _ = Task.Delay(life).ContinueWith(_ => Dismiss(item.Id), TaskScheduler.Default);
+    }
+
+    private void Raise()
     {
         try
         {
-            show();
+            Changed?.Invoke();
         }
-        catch (Exception ex) when (ex is InvalidOperationException or NullReferenceException or ObjectDisposedException)
+        catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException)
         {
-            // kontainer AntDesign belum/tidak aktif (mis. prerender atau sirkuit tertutup)
+            // sirkuit sudah tertutup
         }
     }
 }

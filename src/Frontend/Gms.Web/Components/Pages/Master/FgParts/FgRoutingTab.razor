@@ -32,9 +32,9 @@
                             @if (CanEdit)
                             {
                                 <span class="gms-rowactions">
-                                    <AntDesign.Button Type="@AntDesign.ButtonType.Link" Disabled="@(index == 0)" AriaLabel="@($"Naikkan {step.Name}")" OnClick="() => Move(index, -1)">↑</AntDesign.Button>
-                                    <AntDesign.Button Type="@AntDesign.ButtonType.Link" Disabled="@(index == _steps.Count - 1)" AriaLabel="@($"Turunkan {step.Name}")" OnClick="() => Move(index, 1)">↓</AntDesign.Button>
-                                    <AntDesign.Button Type="@AntDesign.ButtonType.Link" AriaLabel="@($"Hapus langkah {step.Name}")" OnClick="() => Remove(index)">✕</AntDesign.Button>
+                                    <GmsButton Type="@BtnKind.Link" Disabled="@(index == 0)" AriaLabel="@($"Naikkan {step.Name}")" OnClick="() => Move(index, -1)">↑</GmsButton>
+                                    <GmsButton Type="@BtnKind.Link" Disabled="@(index == _steps.Count - 1)" AriaLabel="@($"Turunkan {step.Name}")" OnClick="() => Move(index, 1)">↓</GmsButton>
+                                    <GmsButton Type="@BtnKind.Link" AriaLabel="@($"Hapus langkah {step.Name}")" OnClick="() => Remove(index)">✕</GmsButton>
                                 </span>
                             }
                         </li>
@@ -55,11 +55,11 @@
                             }
                         </select>
                     </div>
-                    <AntDesign.Button Type="@AntDesign.ButtonType.Default" Disabled="@(_toAdd is null)" OnClick="Add">Tambah</AntDesign.Button>
+                    <GmsButton Type="@BtnKind.Default" Disabled="@(_toAdd is null)" OnClick="Add">Tambah</GmsButton>
                 </div>
             }
 
-            <p class="gms-note"><AntDesign.Icon Type="info-circle" /> Perubahan hanya berlaku untuk Work Order yang dirilis setelah ini.</p>
+            <p class="gms-note"><GmsIcon Name="info-circle" /> Perubahan hanya berlaku untuk Work Order yang dirilis setelah ini.</p>
             @if (_steps.Count == 0 && _dirty)
             {
                 <p class="gms-bad" role="alert">Minimal 1 langkah.</p>
@@ -68,8 +68,8 @@
             @if (CanEdit)
             {
                 <div class="gms-formactions">
-                    <AntDesign.Button Type="@AntDesign.ButtonType.Default" Disabled="@(!_dirty)" OnClick="() => _reload++">Batal</AntDesign.Button>
-                    <AntDesign.Button Type="@AntDesign.ButtonType.Primary" Disabled="@(!_dirty || _steps.Count == 0 || _saving)" OnClick="() => SaveAsync(false)">Simpan routing</AntDesign.Button>
+                    <GmsButton Type="@BtnKind.Default" Disabled="@(!_dirty)" OnClick="() => _reload++">Batal</GmsButton>
+                    <GmsButton Type="@BtnKind.Primary" Disabled="@(!_dirty || _steps.Count == 0 || _saving)" OnClick="() => SaveAsync(false)">Simpan routing</GmsButton>
                 </div>
             }
         </section>

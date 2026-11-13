@@ -25,7 +25,7 @@ public sealed class SecurityE2ETests(StackFixture stack)
         Assert.Equal("DENY", headers["x-frame-options"]);
         Assert.Equal("strict-origin-when-cross-origin", headers["referrer-policy"]);
 
-        // Alur interaktif nyata: login, Blazor Server (WebSocket), MegaMenu, palette, tema, dialog.
+        // Alur interaktif nyata: login, Blazor Server (WebSocket), Top Navigation, pencarian header, tab, dialog.
         var (user, password) = await stack.Seed.CreateReadyUserAsync();
         await StackFixture.LoginAsync(page, user, password);
         await Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToContainTextAsync("Selamat datang");
@@ -33,10 +33,10 @@ public sealed class SecurityE2ETests(StackFixture stack)
         await page.GetByRole(AriaRole.Button, new() { Name = "Produksi" }).ClickAsync();
         await Expect(page.GetByRole(AriaRole.Region, new() { Name = "Produksi" })).ToBeVisibleAsync();
         await page.Keyboard.PressAsync("Escape");
-        await page.Keyboard.PressAsync("Control+k");
-        await Expect(page.GetByRole(AriaRole.Combobox, new() { Name = "Cari menu" })).ToBeVisibleAsync();
+        await page.GetByRole(AriaRole.Searchbox, new() { Name = "Cari halaman atau aksi" }).FillAsync("po");
+        await Expect(page.GetByRole(AriaRole.Listbox, new() { Name = "Hasil pencarian" })).ToBeVisibleAsync();
         await page.Keyboard.PressAsync("Escape");
-        await page.GetByRole(AriaRole.Button, new() { Name = "Tema" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new() { Name = "Bahasa" }).ClickAsync();
 
         Assert.Empty(violations);
     }

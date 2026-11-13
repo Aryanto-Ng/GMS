@@ -1,0 +1,40 @@
+@implements IDisposable
+@inject IGmsToast Toast
+
+@* ToastHost (Design.md 10): tengah atas; sukses hijau (ikon centang), error merah (role="alert"), info biru. *@
+<div class="gms-toasts" aria-live="polite">
+    @foreach (var item in _service?.Items ?? [])
+    {
+        <div class="gms-toast @Css(item.Kind)" role="@(item.Kind == ToastKind.Error ? "alert" : "status")">
+            <GmsIcon Name="@Icon(item.Kind)" />
+            <span>@item.Text</span>
+        </div>
+    }
+</div>
+
+@code {
+    private GmsToast? _service;
+
+    protected override void OnInitialized()
+    {
+        _service = Toast as GmsToast;
+        if (_service is not null)
+        {
+            _service.Changed += OnChanged;
+        }
+    }
+
+    private void OnChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private static string Css(ToastKind kind) => kind switch { ToastKind.Error => "err", ToastKind.Info => "info", _ => "ok" };
+
+    private static string Icon(ToastKind kind) => kind switch { ToastKind.Error => "dismiss-circle", ToastKind.Info => "info", _ => "check-circle" };
+
+    public void Dispose()
+    {
+        if (_service is not null)
+        {
+            _service.Changed -= OnChanged;
+        }
+    }
+}

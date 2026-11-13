@@ -1,0 +1,79 @@
+@inject NavigationManager Nav
+
+@* Top Navigation (Design.md 5): satu tombol per kategori (ikon 16px + label), aktif = teks tebal + garis bawah brand 3px; panel lebar penuh berisi grup (kartu berbingkai) dan
+   item (tile ikon, judul, deskripsi); item aksi bertanda "+" dengan tile tint brand. Entri tanpa izin tidak dirender (katalog sudah disaring). Beranda = tautan langsung. *@
+<nav class="gms-nav @(Open ? "open" : "")" aria-label="Navigasi utama" @onkeydown="OnKey">
+    <a href="/" class="@(IsHome ? "on" : "")" aria-current="@(IsHome ? "page" : null)"><GmsIcon Name="home" />Beranda</a>
+    @foreach (var category in Catalog)
+    {
+        var active = IsActive(category);
+        <button type="button" class="@(_open == category.Key || (_open is null && active) ? "on" : "")" aria-haspopup="true" aria-expanded="@(_open == category.Key ? "true" : "false")"
+                @onclick="() => Toggle(category.Key)">
+            <GmsIcon Name="@category.Icon" />@category.Title<GmsIcon Name="chevron-down" Class="s12" />
+        </button>
+    }
+
+    @if (_open is not null && Catalog.FirstOrDefault(c => c.Key == _open) is { } current)
+    {
+        <div class="gms-mega" role="region" aria-label="@current.Title">
+            @foreach (var group in current.Groups)
+            {
+                <section class="gms-mgrp">
+                    <h3><span class="gms-tile b"><GmsIcon Name="@GroupIcon(group.Title)" /></span>@group.Title</h3>
+                    @foreach (var entry in group.Entries)
+                    {
+                        var isAction = entry.Kind == NavKind.Action;
+                        <a class="gms-mitem" href="@entry.Href" @onclick="Close" aria-current="@(IsCurrent(entry) ? "page" : null)">
+                            <span class="gms-tile @(isAction ? "t" : "")"><GmsIcon Name="@(isAction ? "plus" : "list")" /></span>
+                            <span><b>@entry.Label@(isAction ? " +" : "")</b><span class="d">@entry.Desc</span></span>
+                        </a>
+                    }
+                </section>
+            }
+        </div>
+        <div class="gms-scrim" style="position:fixed;inset:calc(var(--header-height) + var(--nav-height)) 0 0 0;z-index:15" @onclick="Close"></div>
+    }
+</nav>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<NavCategory> Catalog { get; set; } = [];
+
+    [Parameter] public bool Open { get; set; }
+
+    [Parameter] public EventCallback OnNavigate { get; set; }
+
+    private string? _open;
+
+    private string CurrentPath => "/" + Nav.ToBaseRelativePath(Nav.Uri).Split('?')[0];
+
+    private bool IsHome => CurrentPath == "/";
+
+    private static readonly Dictionary<string, string> GroupIcons = new(StringComparer.Ordinal)
+    {
+        ["Customer PO"] = "doc", ["Pengiriman"] = "truck", ["Work Order"] = "task", ["Production Output"] = "chart", ["Vendor"] = "people",
+        ["Finished Goods"] = "box", ["Material"] = "layers", ["Impor"] = "download", ["Payroll Borongan"] = "money", ["Produk"] = "doc",
+        ["Atribut"] = "settings", ["Mitra & SDM"] = "people", ["Hak Akses"] = "lock", ["Notifikasi"] = "bell",
+    };
+
+    private static string GroupIcon(string title) => GroupIcons.GetValueOrDefault(title, "doc");
+
+    private bool IsCurrent(NavEntry entry) => CurrentPath.StartsWith(entry.Href, StringComparison.OrdinalIgnoreCase) && entry.Href != "/";
+
+    private bool IsActive(NavCategory category) => category.Groups.Any(g => g.Entries.Any(IsCurrent));
+
+    private void Toggle(string key) => _open = _open == key ? null : key;
+
+    private void Close()
+    {
+        _open = null;
+        _ = OnNavigate.InvokeAsync();
+    }
+
+    private void OnKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            _open = null;
+        }
+    }
+}

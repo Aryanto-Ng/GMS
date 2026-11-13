@@ -19,10 +19,23 @@ public static class AccountEndpoints
     public const string LoginPath = "/login";
     public const string LoginRateLimitPolicy = "login";
     public const string ChangePasswordPath = "/account/change-password";
+    public const string DefaultCulture = "id-ID";
+    public static readonly string[] SupportedCultures = ["id-ID", "en-US"];
 
     public static void Map(IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/account");
+
+        // Pilihan bahasa (Design.md 4, 12): menulis cookie culture lalu kembali ke halaman asal (alamat lokal yang aman).
+        group.MapGet("/language", (string? culture, string? returnUrl, HttpContext http) =>
+        {
+            var chosen = SupportedCultures.Contains(culture, StringComparer.OrdinalIgnoreCase) ? SupportedCultures.First(c => c.Equals(culture, StringComparison.OrdinalIgnoreCase)) : DefaultCulture;
+            http.Response.Cookies.Append(
+                Microsoft.AspNetCore.Localization.CookieRequestCultureProvider.DefaultCookieName,
+                Microsoft.AspNetCore.Localization.CookieRequestCultureProvider.MakeCookieValue(new Microsoft.AspNetCore.Localization.RequestCulture(chosen)),
+                new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1), IsEssential = true, SameSite = SameSiteMode.Lax, HttpOnly = false });
+            return Results.LocalRedirect(SafeReturnUrl(returnUrl));
+        }).AllowAnonymous();
 
         group.MapPost("/login", async ([FromForm] LoginForm form, HttpContext http, IAuthApi auth, ISessionTokenProvider tokens, CancellationToken ct) =>
         {

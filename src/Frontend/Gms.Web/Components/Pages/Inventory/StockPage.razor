@@ -12,8 +12,8 @@
 
 <PageHeader Title="Stok FG">
     <Actions>
-        @if (_user.HasPermission(Permissions.StokFG.Adjust)) { <AntDesign.Button Type="@AntDesign.ButtonType.Default" OnClick="OpenAdjust">Penyesuaian</AntDesign.Button> }
-        @if (_user.HasPermission(Permissions.StokFG.Import)) { <a class="ant-btn ant-btn-default" href="/stock/import">Import Saldo Awal</a> }
+        @if (_user.HasPermission(Permissions.StokFG.Adjust)) { <GmsButton Type="@BtnKind.Default" OnClick="OpenAdjust">Penyesuaian</GmsButton> }
+        @if (_user.HasPermission(Permissions.StokFG.Import)) { <a class="gms-btn gms-btn-default" href="/stock/import">Import Saldo Awal</a> }
     </Actions>
 </PageHeader>
 
@@ -40,8 +40,8 @@
                     <tr>
                         <th scope="row">@r.FgCode</th><td>@r.ColorSize.ColorName</td><td>@r.ColorSize.SizeCode</td>
                         <td class="num">@IdFormat.Qty(r.OnHand)</td><td class="num">@IdFormat.Qty(r.Allocated)</td>
-                        <td class="num">@IdFormat.Qty(r.Available) @if (r.Available == 0 && r.OnHand > 0) { <span class="gms-muted" title="Seluruhnya dialokasikan"><AntDesign.Icon Type="info-circle" /> seluruhnya dialokasikan</span> }</td>
-                        <td class="gms-rowactions"><a class="ant-btn ant-btn-link" href="@LedgerHref(r)" aria-label="@($"Kartu stok {r.FgCode} {r.ColorSize.ColorName} {r.ColorSize.SizeCode}")">Kartu Stok</a></td>
+                        <td class="num">@IdFormat.Qty(r.Available) @if (r.Available == 0 && r.OnHand > 0) { <span class="gms-muted" title="Seluruhnya dialokasikan"><GmsIcon Name="info-circle" /> seluruhnya dialokasikan</span> }</td>
+                        <td class="gms-rowactions"><a class="gms-btn gms-btn-link" href="@LedgerHref(r)" aria-label="@($"Kartu stok {r.FgCode} {r.ColorSize.ColorName} {r.ColorSize.SizeCode}")">Kartu Stok</a></td>
                     </tr>
                 }
             </tbody>
@@ -59,7 +59,7 @@
         <TextField Label="Qty (±)" InputMode="numeric" MaxLength="8" Value="@_aQty" ValueChanged="v => { _aQty = v; _adjPreview = null; }" Required="true" />
         <TextField Label="Tanggal" Type="date" Value="@_aDate" ValueChanged="v => { _aDate = v; _adjPreview = null; }" Required="true" />
     </div>
-    <AntDesign.Button Type="@AntDesign.ButtonType.Default" Disabled="@(!CanCheck)" OnClick="CheckAdjustAsync">Periksa hasil</AntDesign.Button>
+    <GmsButton Type="@BtnKind.Default" Disabled="@(!CanCheck)" OnClick="CheckAdjustAsync">Periksa hasil</GmsButton>
     @if (_adjPreview is not null) { <ImpactPreviewTable Preview="_adjPreview" /> }
 </ConfirmDialog>
 
