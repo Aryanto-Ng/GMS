@@ -129,6 +129,10 @@ public static class NavCatalog
                 P("roles", "Role & Hak Akses", "Role dan matriks izin", "/admin/roles", Permissions.AccessManagement.Role.View, "peran permission izin"),
                 P("audit", "Audit Log", "Jejak perubahan data", "/admin/audit", Permissions.AccessManagement.AuditLog.View, "log riwayat audit"),
             ]),
+            new("Notifikasi",
+            [
+                P("notif.settings", "Pengaturan Notifikasi", "Jenis, ambang, jam, masa simpan", "/admin/notifications", Permissions.Notifikasi.Pengaturan.View, "notifikasi lonceng pemberitahuan"),
+            ]),
         ]),
     ];
 

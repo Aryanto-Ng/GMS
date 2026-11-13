@@ -1,14 +1,246 @@
-@* Lonceng notifikasi (Design.md 4; Notifikasi-UI.md 2). Diisi penuh pada tahap Notifikasi; sementara hanya tombol tanpa data. *@
+@implements IAsyncDisposable
+@inject INotificationsApi Api
+@inject NotificationText Text
+@inject IStringLocalizer<NotificationResource> L
+@inject ApiErrorHandler Errors
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject IGmsToast Toast
+@inject TimeProvider Time
+
+@* Lonceng notifikasi (Design.md 4; Notifikasi-UI.md 2). Lencana = jumlah belum dibaca (maks. 9+, hilang bila 0, juga ada di label tombol), diperbarui polling 60 detik yang
+   dijeda saat tab browser tersembunyi. Panel 380px: 20 terbaru, "Tandai semua dibaca", "Lihat semua notifikasi"; klik item menandainya terbaca lalu membuka dokumen
+   di tab. Teks dirakit dari kunci resource + parameter (bahasa aktif). Kegagalan polling tidak menampilkan apa pun; panel yang gagal dimuat menampilkan MessageBar error. *@
 <div style="position:relative">
-    <button type="button" class="gms-hbtn" aria-haspopup="dialog" aria-expanded="@(Open ? "true" : "false")" aria-label="Notifikasi" @onclick="OnToggle">
+    <button type="button" class="gms-hbtn" aria-haspopup="dialog" aria-expanded="@(Open ? "true" : "false")"
+            aria-label="@(_unread > 0 ? string.Format(L["Panel.ButtonUnread"].Value, _unread) : L["Panel.Button"].Value)" @onclick="Toggle">
         <GmsIcon Name="bell" Class="s20" />
+        @if (_unread > 0)
+        {
+            <span class="gms-badge-dot" aria-hidden="true">@(_unread > 9 ? "9+" : _unread.ToString())</span>
+        }
     </button>
+
+    @if (Open)
+    {
+        <div class="gms-npanel" role="dialog" aria-label="@L["Panel.Title"]" @onkeydown="OnKey">
+            <div class="gms-nhead">
+                <strong>@L["Panel.Title"]</strong>
+                <span class="gms-muted" style="font-size:12px" aria-live="polite">@(_unread > 0 ? string.Format(L["Panel.Unread"].Value, _unread) : L["Panel.NoUnread"].Value)</span>
+                <GmsButton Class="gms-btn-sm" Disabled="@(_unread == 0)" OnClick="MarkAllAsync" Style="margin-left:auto">@L["Panel.MarkAll"]</GmsButton>
+            </div>
+
+            @if (_loading && _items.Count == 0)
+            {
+                <div style="padding:var(--space-3)"><SkeletonRows Rows="3" Columns="2" Label="@L["Panel.Title"]" /></div>
+            }
+            else if (_error is not null)
+            {
+                <div style="padding:var(--space-3)">
+                    <div class="gms-banner error" role="alert">
+                        <GmsIcon Name="error" />
+                        <div class="gms-banner-body">
+                            <strong>@L["Panel.Error"]</strong>
+                            @if (!string.IsNullOrEmpty(_error.TraceId)) { <p class="gms-trace">ID: <code>@_error.TraceId</code></p> }
+                            <GmsButton OnClick="LoadAsync">@L["Panel.Retry"]</GmsButton>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (_items.Count == 0)
+            {
+                <div class="gms-state" style="padding:var(--space-8) var(--space-4)">
+                    <GmsIcon Name="bell" />
+                    <strong>@L["Panel.Empty"]</strong>
+                    <p>@L["Panel.EmptyHint"]</p>
+                </div>
+            }
+            else
+            {
+                <div role="list">
+                    @foreach (var item in _items)
+                    {
+                        var view = Text.For(item);
+                        <button type="button" role="listitem" class="gms-nitem @(item.IsRead ? "" : "unread")" @onclick="() => OpenItemAsync(item)">
+                            @if (!item.IsRead) { <span class="gms-udot" aria-hidden="true"></span><span class="gms-sr-only">@L["Item.Unread"]. </span> } else { <span style="width:8px;flex:none"></span> }
+                            <span style="flex:1">
+                                <span class="nt">@view.Title</span>
+                                <span class="nd">@view.Body</span>
+                                <span class="nw"><time datetime="@item.CreatedAt.UtcDateTime.ToString("o")" title="@NotificationText.FormatDate(item.CreatedAt)">@Text.Relative(item.CreatedAt, Time.GetUtcNow())</time></span>
+                            </span>
+                            @if (view.BadgeLabel is not null) { <span class="gms-tag @view.BadgeTone" style="align-self:flex-start">@view.BadgeLabel</span> }
+                        </button>
+                    }
+                </div>
+            }
+
+            <div class="gms-nfoot"><a href="/notifications" @onclick="CloseAsync">@L["Panel.SeeAll"]</a></div>
+        </div>
+    }
 </div>
 
 @code {
+    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(60);
+
+    private IReadOnlyList<NotificationItem> _items = [];
+    private int _unread;
+    private bool _loading;
+    private GmsProblemDetails? _error;
+    private CancellationTokenSource? _cts;
+    private bool _wasOpen;
+
     [Parameter] public bool Open { get; set; }
 
     [Parameter] public EventCallback OnToggle { get; set; }
 
     [Parameter] public EventCallback OnClose { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Open && !_wasOpen)
+        {
+            _wasOpen = true;
+            await LoadAsync();
+        }
+        else if (!Open)
+        {
+            _wasOpen = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await RefreshCountAsync();
+        _cts = new CancellationTokenSource();
+        _ = PollAsync(_cts.Token);
+    }
+
+    /// <summary>Polling ringan (jumlah belum dibaca); dijeda saat tab browser tersembunyi; galat polling diabaikan (nilai terakhir dipertahankan).</summary>
+    private async Task PollAsync(CancellationToken ct)
+    {
+        using var timer = new PeriodicTimer(PollInterval);
+        try
+        {
+            while (await timer.WaitForNextTickAsync(ct))
+            {
+                if (await IsHiddenAsync())
+                {
+                    continue;
+                }
+
+                await InvokeAsync(async () =>
+                {
+                    var before = _unread;
+                    await RefreshCountAsync();
+                    if (Open && _unread != before)
+                    {
+                        await LoadAsync();
+                    }
+                });
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // komponen dibuang
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or InvalidOperationException)
+        {
+            // sirkuit ditutup
+        }
+    }
+
+    private async Task<bool> IsHiddenAsync()
+    {
+        try
+        {
+            return await JS.InvokeAsync<bool>("gms.isHidden");
+        }
+        catch (Exception ex) when (ex is JSException or InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
+    private async Task RefreshCountAsync()
+    {
+        try
+        {
+            _unread = (await Api.GetSummaryAsync()).UnreadCount;
+            StateHasChanged();
+        }
+        catch (Exception ex) when (ex is ApiException or HttpRequestException or TaskCanceledException)
+        {
+            // tanpa pesan: lencana mempertahankan nilai terakhir
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        StateHasChanged();
+        _error = await Errors.RunAsync(async () =>
+        {
+            var page = await Api.ListAsync(new NotificationListQuery { Page = 1, PageSize = NotificationLimits.PanelSize });
+            _items = page.Items;
+            _unread = (await Api.GetSummaryAsync()).UnreadCount;
+        });
+        _loading = false;
+    }
+
+    private Task Toggle() => OnToggle.InvokeAsync();
+
+    private Task CloseAsync() => OnClose.InvokeAsync();
+
+    private async Task OnKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            await CloseAsync();
+        }
+    }
+
+    private async Task OpenItemAsync(NotificationItem item)
+    {
+        if (!item.IsRead)
+        {
+            try
+            {
+                await Api.MarkReadAsync(item.Id);
+                _unread = Math.Max(0, _unread - 1);
+            }
+            catch (ApiException)
+            {
+                // tetap buka dokumen; status baca dicoba lagi pada polling berikutnya
+            }
+        }
+
+        await CloseAsync();
+        Nav.NavigateTo(NotificationLinks.UrlFor(item.Target));
+    }
+
+    private async Task MarkAllAsync()
+    {
+        var problem = await Errors.RunAsync(async () => await Api.MarkAllReadAsync());
+        if (problem is null)
+        {
+            _unread = 0;
+            _items = _items.Select(i => i with { IsRead = true }).ToList();
+            Toast.ShowSuccess(L["Panel.AllMarked"].Value);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_cts is not null)
+        {
+            await _cts.CancelAsync();
+            _cts.Dispose();
+        }
+    }
 }

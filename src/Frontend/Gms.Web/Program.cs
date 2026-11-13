@@ -32,7 +32,8 @@ services.AddRazorComponents().AddInteractiveServerComponents();
 services.AddScoped<Gms.Web.Services.IGmsToast, Gms.Web.Services.GmsToast>();
 services.AddScoped<TabManager>();
 services.Configure<AppIdentityOptions>(builder.Configuration.GetSection(AppIdentityOptions.SectionName));
-services.AddLocalization(options => options.ResourcesPath = "Resources");
+services.AddLocalization();
+services.AddScoped<Gms.Web.Services.Notifications.NotificationText>();
 services.AddHttpContextAccessor();
 
 // SEC-004: pembatasan percobaan login per alamat IP (melengkapi lockout per akun yang dapat disalahgunakan untuk password spraying).
@@ -138,6 +139,10 @@ services.AddScoped<ICustomerApi>(sp => api.UseMock ? sp.GetRequiredService<MockC
 services.AddScoped<IVendorApi>(sp => api.UseMock ? sp.GetRequiredService<MockVendorApi>() : ActivatorUtilities.CreateInstance<HttpVendorApi>(sp));
 services.AddScoped<IProcessApi>(sp => api.UseMock ? sp.GetRequiredService<MockProcessApi>() : ActivatorUtilities.CreateInstance<HttpProcessApi>(sp));
 services.AddScoped<IWorkerApi>(sp => api.UseMock ? sp.GetRequiredService<MockWorkerApi>() : ActivatorUtilities.CreateInstance<HttpWorkerApi>(sp));
+services.AddSingleton<MockNotificationsApi>();
+services.AddSingleton<MockNotificationSettingsApi>();
+services.AddScoped<Gms.Shared.Notifications.INotificationsApi>(sp => api.UseMock ? sp.GetRequiredService<MockNotificationsApi>() : ActivatorUtilities.CreateInstance<HttpNotificationsApi>(sp));
+services.AddScoped<Gms.Shared.Notifications.INotificationSettingsApi>(sp => api.UseMock ? sp.GetRequiredService<MockNotificationSettingsApi>() : ActivatorUtilities.CreateInstance<HttpNotificationSettingsApi>(sp));
 services.AddSingleton<MockAccessStore>();
 services.AddScoped<IUsersApi>(sp => api.UseMock ? ActivatorUtilities.CreateInstance<MockUsersApi>(sp) : ActivatorUtilities.CreateInstance<HttpUsersApi>(sp));
 services.AddScoped<IRolesApi>(sp => api.UseMock ? ActivatorUtilities.CreateInstance<MockRolesApi>(sp) : ActivatorUtilities.CreateInstance<HttpRolesApi>(sp));

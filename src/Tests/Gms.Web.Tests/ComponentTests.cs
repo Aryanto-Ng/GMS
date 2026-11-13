@@ -339,6 +339,7 @@ public sealed class ComponentTests : WebTestBase
     [Fact]
     public void AppHeader_memuat_logo_pencarian_terbatas_izin_bahasa_notifikasi_dan_menu_pengguna_dengan_logout_berantiforgery()
     {
+        System.Globalization.CultureInfo.CurrentUICulture = new System.Globalization.CultureInfo("id-ID"); // bahasa UI aplikasi (mesin uji dapat berbahasa lain)
         SignIn(Permissions.CustomerPO.View);
         var catalog = NavCatalog.VisibleFor(u => u == Permissions.CustomerPO.View);
         var cut = Render<AppHeader>(p => p.Add(x => x.Catalog, catalog));
@@ -346,7 +347,7 @@ public sealed class ComponentTests : WebTestBase
         Assert.Equal("GMS, ke Beranda", cut.Find("a.gms-logo").GetAttribute("aria-label"));
         Assert.NotNull(cut.Find("[role=search] input"));
         Assert.NotNull(cut.Find("button[aria-label^='Bahasa']"));
-        Assert.NotNull(cut.Find("button[aria-label='Notifikasi']"));
+        Assert.NotNull(cut.Find("button[aria-label^='Notifikasi']"));
         Assert.Contains("Budi", cut.Find("button[aria-label^='Menu pengguna']").GetAttribute("aria-label"));
 
         // Pencarian hanya memuat entri yang boleh dilihat dan menyebut jalur menu (maks. 7).

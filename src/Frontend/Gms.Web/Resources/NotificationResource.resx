@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="NE-01.Title" xml:space="preserve"><value>{code} dirilis</value></data>
+  <data name="NE-01.Body" xml:space="preserve"><value>{fg} · {customer} siap dikerjakan.</value></data>
+  <data name="NE-01.Badge" xml:space="preserve"><value>Released</value></data>
+  <data name="NE-02.Title" xml:space="preserve"><value>{code} selesai</value></data>
+  <data name="NE-02.Body" xml:space="preserve"><value>Menunggu Close.</value></data>
+  <data name="NE-02.Badge" xml:space="preserve"><value>Completed</value></data>
+  <data name="NE-03.Title" xml:space="preserve"><value>Serah Terima FG {qty} pcs</value></data>
+  <data name="NE-03.Body" xml:space="preserve"><value>{wo}: {allocatedQty} pcs dialokasikan ke PO, {freeQty} pcs stok bebas.</value></data>
+  <data name="NE-03.Badge" xml:space="preserve"><value></value></data>
+  <data name="NE-04.Title" xml:space="preserve"><value>Periode {code} ditutup</value></data>
+  <data name="NE-04.Body" xml:space="preserve"><value>Angka sudah final.</value></data>
+  <data name="NE-04.Badge" xml:space="preserve"><value>Closed</value></data>
+  <data name="NE-05.Title" xml:space="preserve"><value>Entri output {actionText}</value></data>
+  <data name="NE-05.Body" xml:space="preserve"><value>{wo} · {process} · {worker} · {workDate} · {qty} pcs.</value></data>
+  <data name="NE-05.Badge" xml:space="preserve"><value></value></data>
+  <data name="NE-06.Title" xml:space="preserve"><value>Serah terima {actionText}</value></data>
+  <data name="NE-06.Body" xml:space="preserve"><value>{wo} · {qty} pcs.</value></data>
+  <data name="NE-06.Badge" xml:space="preserve"><value></value></data>
+  <data name="NE-07.Title" xml:space="preserve"><value>{code} {actionText}</value></data>
+  <data name="NE-07.Body" xml:space="preserve"><value>PO {po}.</value></data>
+  <data name="NE-07.Badge" xml:space="preserve"><value></value></data>
+  <data name="NE-08.Title" xml:space="preserve"><value>{code} dibatalkan</value></data>
+  <data name="NE-08.Body" xml:space="preserve"><value>Alokasi {releasedQty} pcs dilepas.</value></data>
+  <data name="NE-08.Badge" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="NE-09.Title" xml:space="preserve"><value>Akun {username} terkunci</value></data>
+  <data name="NE-09.Body" xml:space="preserve"><value>{attempts} percobaan login gagal.</value></data>
+  <data name="NE-09.Badge" xml:space="preserve"><value>Terkunci</value></data>
+  <data name="NE-10.Title" xml:space="preserve"><value>Sesi {username} diakhiri paksa</value></data>
+  <data name="NE-10.Body" xml:space="preserve"><value>Oleh Administrator pada {at}.</value></data>
+  <data name="NE-10.Badge" xml:space="preserve"><value></value></data>
+  <data name="NE-11.Title" xml:space="preserve"><value>Stok habis: {fg} · {color} · {size}</value></data>
+  <data name="NE-11.Body" xml:space="preserve"><value>Stok tersedia kini 0.</value></data>
+  <data name="NE-11.Badge" xml:space="preserve"><value>Habis</value></data>
+  <data name="NE-12.Title" xml:space="preserve"><value>Alokasi {po} dilepas</value></data>
+  <data name="NE-12.Body" xml:space="preserve"><value>{qty} pcs karena serah terima di-void.</value></data>
+  <data name="NE-12.Badge" xml:space="preserve"><value>Void</value></data>
+  <data name="NC-01.Title" xml:space="preserve"><value>{code} terlambat</value></data>
+  <data name="NC-01.Body" xml:space="preserve"><value>{lines} baris melewati tanggal kirim.</value></data>
+  <data name="NC-01.Badge" xml:space="preserve"><value>Terlambat</value></data>
+  <data name="NC-02.Title" xml:space="preserve"><value>{code} jatuh tempo {dueDate}</value></data>
+  <data name="NC-02.Body" xml:space="preserve"><value>{qty} pcs belum terkirim.</value></data>
+  <data name="NC-02.Badge" xml:space="preserve"><value>Jatuh tempo</value></data>
+  <data name="NC-03.Title" xml:space="preserve"><value>{code} terlambat</value></data>
+  <data name="NC-03.Body" xml:space="preserve"><value>Target selesai {targetDate}.</value></data>
+  <data name="NC-03.Badge" xml:space="preserve"><value>Terlambat</value></data>
+  <data name="NC-04.Title" xml:space="preserve"><value>Periode {code} perlu ditutup</value></data>
+  <data name="NC-04.Body" xml:space="preserve"><value>Tanggal selesai {endDate} sudah lewat.</value></data>
+  <data name="NC-04.Badge" xml:space="preserve"><value>Open</value></data>
+  <data name="Action.void" xml:space="preserve"><value>di-void</value></data>
+  <data name="Action.correct" xml:space="preserve"><value>dikoreksi</value></data>
+  <data name="Badge.void" xml:space="preserve"><value>Void</value></data>
+  <data name="Badge.correct" xml:space="preserve"><value>Koreksi</value></data>
+  <data name="Panel.Title" xml:space="preserve"><value>Notifikasi</value></data>
+  <data name="Panel.Button" xml:space="preserve"><value>Notifikasi</value></data>
+  <data name="Panel.ButtonUnread" xml:space="preserve"><value>Notifikasi, {0} belum dibaca</value></data>
+  <data name="Panel.Unread" xml:space="preserve"><value>{0} belum dibaca</value></data>
+  <data name="Panel.NoUnread" xml:space="preserve"><value>Semua sudah dibaca</value></data>
+  <data name="Panel.MarkAll" xml:space="preserve"><value>Tandai semua dibaca</value></data>
+  <data name="Panel.SeeAll" xml:space="preserve"><value>Lihat semua notifikasi</value></data>
+  <data name="Panel.Empty" xml:space="preserve"><value>Tidak ada notifikasi</value></data>
+  <data name="Panel.EmptyHint" xml:space="preserve"><value>Peristiwa penting akan muncul di sini.</value></data>
+  <data name="Panel.Error" xml:space="preserve"><value>Tidak dapat memuat notifikasi.</value></data>
+  <data name="Panel.Retry" xml:space="preserve"><value>Coba lagi</value></data>
+  <data name="Panel.Unavailable" xml:space="preserve"><value>Dokumen tidak tersedia</value></data>
+  <data name="Panel.AllMarked" xml:space="preserve"><value>Semua notifikasi ditandai terbaca</value></data>
+  <data name="Panel.NewOne" xml:space="preserve"><value>1 notifikasi baru</value></data>
+  <data name="Item.Unread" xml:space="preserve"><value>Belum dibaca</value></data>
+  <data name="Time.Now" xml:space="preserve"><value>baru saja</value></data>
+  <data name="Time.Minutes" xml:space="preserve"><value>{0} menit lalu</value></data>
+  <data name="Time.Hours" xml:space="preserve"><value>{0} jam lalu</value></data>
+  <data name="Time.Yesterday" xml:space="preserve"><value>kemarin</value></data>
+  <data name="Page.Title" xml:space="preserve"><value>Semua notifikasi</value></data>
+  <data name="Page.Search" xml:space="preserve"><value>Cari judul atau dokumen</value></data>
+  <data name="Page.Empty" xml:space="preserve"><value>Belum ada notifikasi</value></data>
+  <data name="Page.EmptyFilter" xml:space="preserve"><value>Tidak ada notifikasi untuk filter ini</value></data>
+  <data name="Page.Reset" xml:space="preserve"><value>Reset filter</value></data>
+  <data name="Page.Retention" xml:space="preserve"><value>Notifikasi disimpan selama {0} hari.</value></data>
+  <data name="Filter.All" xml:space="preserve"><value>Semua</value></data>
+  <data name="Filter.Unread" xml:space="preserve"><value>Belum dibaca</value></data>
+  <data name="Category.Produksi" xml:space="preserve"><value>Produksi</value></data>
+  <data name="Category.Penjualan" xml:space="preserve"><value>Penjualan</value></data>
+  <data name="Category.Gudang" xml:space="preserve"><value>Gudang</value></data>
+  <data name="Category.Penggajian" xml:space="preserve"><value>Penggajian</value></data>
+  <data name="Category.Keamanan" xml:space="preserve"><value>Keamanan</value></data>
+</root>

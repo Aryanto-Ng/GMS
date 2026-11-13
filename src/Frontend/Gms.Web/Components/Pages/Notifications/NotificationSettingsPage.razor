@@ -1,0 +1,199 @@
+@page "/admin/notifications"
+@attribute [Authorize(Policy = PermissionPolicyProvider.Prefix + Permissions.Notifikasi.Pengaturan.View)]
+@inject INotificationSettingsApi Api
+@inject AuthenticationStateProvider Auth
+@inject ApiErrorHandler Errors
+@inject IGmsToast Toast
+
+<PageTitle>Pengaturan Notifikasi · GMS</PageTitle>
+
+@* Pengaturan Notifikasi (Notifikasi-UI.md 4): Administrator. Aktif/nonaktif per jenis (checkbox), ambang jatuh tempo, jam pemeriksaan, masa simpan.
+   Titik belum disimpan pada tab; konflik 409 = Muat ulang; tanpa izin Edit semua kontrol hanya baca. *@
+<UnsavedChangesGuard HasChanges="_dirty" />
+
+<PageHeader Title="Pengaturan Notifikasi" Breadcrumbs="@Crumbs" />
+
+<div class="gms-banner info" role="status" @key="@("info")">
+    <GmsIcon Name="info" />
+    <div class="gms-banner-body">Perubahan berlaku untuk pemeriksaan berikutnya dan tidak menghapus notifikasi yang sudah ada.</div>
+</div>
+
+<AsyncContent T="NotificationSettingsDto" Key="@_rev" Loader="LoadAsync">
+    <ChildContent Context="loaded">
+        @if (_form is not null)
+        {
+            @if (_summary.Count > 0)
+            {
+                <div class="gms-banner error gms-formsummary" role="alert" tabindex="-1">
+                    <GmsIcon Name="error" />
+                    <div class="gms-banner-body"><strong>Periksa isian berikut.</strong><ul>@foreach (var m in _summary) { <li>@m</li> }</ul></div>
+                </div>
+            }
+
+            @if (_problem is not null)
+            {
+                <ProblemBanner Problem="_problem" OnReload="ReloadAsync" />
+            }
+
+            <div class="gms-card">
+                <h2>Pengaturan umum</h2>
+                <div class="gms-form" style="flex-direction:row;flex-wrap:wrap;gap:var(--space-4)">
+                    <TextField Label="Ambang jatuh tempo (hari)" Required="true" Hint="Rentang 1–14. Dipakai NC-02." Error="@Error("dueSoonDays")" Value="@_form.DueSoon" ValueChanged="v => Change(() => _form.DueSoon = v)" Disabled="!_canEdit" InputMode="numeric" />
+                    <TextField Label="Jam pemeriksaan harian" Required="true" Hint="Zona waktu aplikasi (WIB)." Error="@Error("scheduleTime")" Value="@_form.Time" ValueChanged="v => Change(() => _form.Time = v)" Disabled="!_canEdit" />
+                    <TextField Label="Masa simpan (hari)" Required="true" Hint="Rentang 30–365." Error="@Error("retentionDays")" Value="@_form.Retention" ValueChanged="v => Change(() => _form.Retention = v)" Disabled="!_canEdit" InputMode="numeric" />
+                </div>
+            </div>
+
+            <div class="gms-card" style="padding:0">
+                <h2 style="padding:var(--space-4) var(--space-4) 0">Jenis notifikasi</h2>
+                <table class="gms-table" style="border:0;border-radius:0">
+                    <caption class="gms-sr-only">Jenis notifikasi dan penerimanya</caption>
+                    <thead><tr><th scope="col" style="width:80px">Aktif</th><th scope="col">Jenis</th><th scope="col">Penerima (izin)</th></tr></thead>
+                    <tbody>
+                        @foreach (var (title, kind) in new[] { ("KEJADIAN (DIPICU AKSI PENGGUNA)", NotificationKind.Event), ("KONDISI TERJADWAL (DICEK HARIAN)", NotificationKind.Condition) })
+                        {
+                            <tr class="gms-groupheader"><th colspan="3" style="font-size:12px;letter-spacing:.04em;background:var(--bg2)">@title</th></tr>
+                            @foreach (var def in NotificationCatalog.All.Where(d => d.Kind == kind))
+                            {
+                                <tr>
+                                    <td><input type="checkbox" checked="@_form.Enabled[def.TypeCode]" disabled="@(!_canEdit)" aria-label="@($"Aktif {def.Name}")" @onchange="e => Change(() => _form.Enabled[def.TypeCode] = (bool)(e.Value ?? false))" /></td>
+                                    <td><span class="doc-number">@def.TypeCode</span> &nbsp;@def.Name</td>
+                                    <td class="gms-muted">@string.Join(", ", def.RequiredPermissions)</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="gms-formactions">
+                <span class="gms-muted" style="margin-right:auto;font-size:12px">
+                    @if (_dirty) { <span class="gms-dirty" aria-hidden="true"></span> <span>Belum disimpan · </span> }
+                    @if (_loaded?.UpdatedAt is { } at) { <span>Terakhir diubah @IdFormat.DateTime(at)@(_loaded.UpdatedByName is null ? "" : $" oleh {_loaded.UpdatedByName}")</span> }
+                    @if (!_canEdit) { <span>Anda hanya dapat melihat pengaturan ini.</span> }
+                </span>
+                @if (_canEdit)
+                {
+                    <GmsButton Disabled="@(!_dirty || _saving)" OnClick="ReloadAsync">Batal</GmsButton>
+                    <GmsButton Type="@BtnKind.Primary" Loading="_saving" Disabled="!_dirty" OnClick="SaveAsync">Simpan</GmsButton>
+                }
+            </div>
+        }
+    </ChildContent>
+</AsyncContent>
+
+@code {
+    private sealed class Form
+    {
+        public string DueSoon { get; set; } = string.Empty;
+        public string Time { get; set; } = string.Empty;
+        public string Retention { get; set; } = string.Empty;
+        public Dictionary<string, bool> Enabled { get; } = [];
+    }
+
+    [CascadingParameter] private TabContext? Tab { get; set; }
+
+    private Form? _form;
+    private NotificationSettingsDto? _loaded;
+    private bool _canEdit;
+    private bool _dirty;
+    private bool _saving;
+    private int _rev;
+    private GmsProblemDetails? _problem;
+    private IReadOnlyDictionary<string, string[]> _errors = new Dictionary<string, string[]>();
+    private List<string> _summary = [];
+
+    private IReadOnlyList<PageHeader.Crumb> Crumbs => [new PageHeader.Crumb("Administrasi"), new PageHeader.Crumb("Notifikasi"), new PageHeader.Crumb("Pengaturan Notifikasi")];
+
+    protected override async Task OnInitializedAsync() =>
+        _canEdit = (await Auth.GetAuthenticationStateAsync()).User.HasPermission(Permissions.Notifikasi.Pengaturan.Edit);
+
+    private async Task<NotificationSettingsDto> LoadAsync(CancellationToken ct)
+    {
+        var dto = await Api.GetAsync(ct);
+        Apply(dto);
+        return dto;
+    }
+
+    private void Apply(NotificationSettingsDto dto)
+    {
+        _loaded = dto;
+        _form = new Form
+        {
+            DueSoon = dto.DueSoonDays.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            Time = dto.ScheduleTime,
+            Retention = dto.RetentionDays.ToString(System.Globalization.CultureInfo.InvariantCulture),
+        };
+        foreach (var def in NotificationCatalog.All)
+        {
+            _form.Enabled[def.TypeCode] = dto.Types.FirstOrDefault(t => t.TypeCode == def.TypeCode)?.Enabled ?? def.DefaultEnabled;
+        }
+
+        _dirty = false;
+        _problem = null;
+        _errors = new Dictionary<string, string[]>();
+        _summary = [];
+    }
+
+    private string? Error(string key) => _errors.TryGetValue(key, out var m) ? m[0] : null;
+
+    private void Change(Action apply)
+    {
+        apply();
+        _dirty = true;
+    }
+
+    private void ReloadAsync() => _rev++;
+
+    private async Task SaveAsync()
+    {
+        if (_form is null || _loaded is null)
+        {
+            return;
+        }
+
+        _summary = [];
+        var errors = new Dictionary<string, string[]>();
+        if (!IdNumber.TryParseInt(_form.DueSoon, out var due, out _) || due is < NotificationLimits.DueSoonDaysMin or > NotificationLimits.DueSoonDaysMax)
+        {
+            errors["dueSoonDays"] = [$"Ambang jatuh tempo harus {NotificationLimits.DueSoonDaysMin} sampai {NotificationLimits.DueSoonDaysMax} hari."];
+        }
+
+        if (!TimeOnly.TryParseExact(_form.Time, "HH:mm", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out _))
+        {
+            errors["scheduleTime"] = ["Jam pemeriksaan harus berformat HH:mm."];
+        }
+
+        if (!IdNumber.TryParseInt(_form.Retention, out var keep, out _) || keep is < NotificationLimits.RetentionDaysMin or > NotificationLimits.RetentionDaysMax)
+        {
+            errors["retentionDays"] = [$"Masa simpan harus {NotificationLimits.RetentionDaysMin} sampai {NotificationLimits.RetentionDaysMax} hari."];
+        }
+
+        if (errors.Count > 0)
+        {
+            _errors = errors;
+            _summary = errors.Values.Select(v => v[0]).ToList();
+            return;
+        }
+
+        _saving = true;
+        _problem = null;
+        StateHasChanged();
+        var request = new UpdateNotificationSettingsRequest(
+            due, _form.Time, keep, _form.Enabled.Select(e => new NotificationTypeSettingDto(e.Key, e.Value)).ToList(), _loaded.RowVersion);
+        _problem = await Errors.RunAsync(async () =>
+        {
+            var saved = await Api.UpdateAsync(request);
+            Apply(saved);
+            Toast.ShowSuccess("Pengaturan notifikasi disimpan.");
+        });
+        if (_problem is { Errors: { Count: > 0 } server })
+        {
+            _errors = server;
+            _summary = server.Values.Select(v => v[0]).ToList();
+            _problem = null;
+        }
+
+        _saving = false;
+    }
+}

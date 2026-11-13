@@ -17,6 +17,9 @@ public abstract class WebTestBase : BunitContext
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddLocalization();
         Services.AddOptions<Gms.Web.Infrastructure.AppIdentityOptions>();
+        Services.AddSingleton<Gms.Shared.Notifications.INotificationsApi>(new Gms.Web.Services.Api.MockNotificationsApi());
+        Services.AddScoped<Gms.Web.Services.Notifications.NotificationText>();
+        Services.AddSingleton(TimeProvider.System);
         Services.AddScoped<Gms.Web.Services.Tabs.TabManager>();
         Services.AddScoped<Gms.Web.Services.IGmsToast, Gms.Web.Services.GmsToast>();
         Services.AddScoped<ApiErrorHandler>();

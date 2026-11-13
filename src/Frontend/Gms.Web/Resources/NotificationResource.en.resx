@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="NE-01.Title" xml:space="preserve"><value>{code} released</value></data>
+  <data name="NE-01.Body" xml:space="preserve"><value>{fg} · {customer} is ready to be worked on.</value></data>
+  <data name="NE-01.Badge" xml:space="preserve"><value>Released</value></data>
+  <data name="NE-02.Title" xml:space="preserve"><value>{code} completed</value></data>
+  <data name="NE-02.Body" xml:space="preserve"><value>Waiting to be closed.</value></data>
+  <data name="NE-02.Badge" xml:space="preserve"><value>Completed</value></data>
+  <data name="NE-03.Title" xml:space="preserve"><value>FG handover {qty} pcs</value></data>
+  <data name="NE-03.Body" xml:space="preserve"><value>{wo}: {allocatedQty} pcs allocated to the PO, {freeQty} pcs free stock.</value></data>
+  <data name="NE-03.Badge" xml:space="preserve"><value></value></data>
+  <data name="NE-04.Title" xml:space="preserve"><value>Period {code} closed</value></data>
+  <data name="NE-04.Body" xml:space="preserve"><value>Figures are final.</value></data>
+  <data name="NE-04.Badge" xml:space="preserve"><value>Closed</value></data>
+  <data name="NE-05.Title" xml:space="preserve"><value>Output entry {actionText}</value></data>
+  <data name="NE-05.Body" xml:space="preserve"><value>{wo} · {process} · {worker} · {workDate} · {qty} pcs.</value></data>
+  <data name="NE-05.Badge" xml:space="preserve"><value></value></data>
+  <data name="NE-06.Title" xml:space="preserve"><value>Handover {actionText}</value></data>
+  <data name="NE-06.Body" xml:space="preserve"><value>{wo} · {qty} pcs.</value></data>
+  <data name="NE-06.Badge" xml:space="preserve"><value></value></data>
+  <data name="NE-07.Title" xml:space="preserve"><value>{code} {actionText}</value></data>
+  <data name="NE-07.Body" xml:space="preserve"><value>PO {po}.</value></data>
+  <data name="NE-07.Badge" xml:space="preserve"><value></value></data>
+  <data name="NE-08.Title" xml:space="preserve"><value>{code} cancelled</value></data>
+  <data name="NE-08.Body" xml:space="preserve"><value>{releasedQty} pcs of allocation released.</value></data>
+  <data name="NE-08.Badge" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="NE-09.Title" xml:space="preserve"><value>Account {username} locked</value></data>
+  <data name="NE-09.Body" xml:space="preserve"><value>{attempts} failed sign-in attempts.</value></data>
+  <data name="NE-09.Badge" xml:space="preserve"><value>Locked</value></data>
+  <data name="NE-10.Title" xml:space="preserve"><value>Session of {username} ended</value></data>
+  <data name="NE-10.Body" xml:space="preserve"><value>Ended by an administrator on {at}.</value></data>
+  <data name="NE-10.Badge" xml:space="preserve"><value></value></data>
+  <data name="NE-11.Title" xml:space="preserve"><value>Out of stock: {fg} · {color} · {size}</value></data>
+  <data name="NE-11.Body" xml:space="preserve"><value>Available stock is now 0.</value></data>
+  <data name="NE-11.Badge" xml:space="preserve"><value>Depleted</value></data>
+  <data name="NE-12.Title" xml:space="preserve"><value>Allocation of {po} released</value></data>
+  <data name="NE-12.Body" xml:space="preserve"><value>{qty} pcs because a handover was voided.</value></data>
+  <data name="NE-12.Badge" xml:space="preserve"><value>Void</value></data>
+  <data name="NC-01.Title" xml:space="preserve"><value>{code} is late</value></data>
+  <data name="NC-01.Body" xml:space="preserve"><value>{lines} lines are past their delivery date.</value></data>
+  <data name="NC-01.Badge" xml:space="preserve"><value>Late</value></data>
+  <data name="NC-02.Title" xml:space="preserve"><value>{code} due {dueDate}</value></data>
+  <data name="NC-02.Body" xml:space="preserve"><value>{qty} pcs not yet delivered.</value></data>
+  <data name="NC-02.Badge" xml:space="preserve"><value>Due soon</value></data>
+  <data name="NC-03.Title" xml:space="preserve"><value>{code} is late</value></data>
+  <data name="NC-03.Body" xml:space="preserve"><value>Target finish date {targetDate}.</value></data>
+  <data name="NC-03.Badge" xml:space="preserve"><value>Late</value></data>
+  <data name="NC-04.Title" xml:space="preserve"><value>Period {code} needs closing</value></data>
+  <data name="NC-04.Body" xml:space="preserve"><value>End date {endDate} has passed.</value></data>
+  <data name="NC-04.Badge" xml:space="preserve"><value>Open</value></data>
+  <data name="Action.void" xml:space="preserve"><value>voided</value></data>
+  <data name="Action.correct" xml:space="preserve"><value>corrected</value></data>
+  <data name="Badge.void" xml:space="preserve"><value>Void</value></data>
+  <data name="Badge.correct" xml:space="preserve"><value>Correction</value></data>
+  <data name="Panel.Title" xml:space="preserve"><value>Notifications</value></data>
+  <data name="Panel.Button" xml:space="preserve"><value>Notifications</value></data>
+  <data name="Panel.ButtonUnread" xml:space="preserve"><value>Notifications, {0} unread</value></data>
+  <data name="Panel.Unread" xml:space="preserve"><value>{0} unread</value></data>
+  <data name="Panel.NoUnread" xml:space="preserve"><value>All caught up</value></data>
+  <data name="Panel.MarkAll" xml:space="preserve"><value>Mark all as read</value></data>
+  <data name="Panel.SeeAll" xml:space="preserve"><value>See all notifications</value></data>
+  <data name="Panel.Empty" xml:space="preserve"><value>No notifications</value></data>
+  <data name="Panel.EmptyHint" xml:space="preserve"><value>Important events will appear here.</value></data>
+  <data name="Panel.Error" xml:space="preserve"><value>Notifications could not be loaded.</value></data>
+  <data name="Panel.Retry" xml:space="preserve"><value>Try again</value></data>
+  <data name="Panel.Unavailable" xml:space="preserve"><value>Document unavailable</value></data>
+  <data name="Panel.AllMarked" xml:space="preserve"><value>All notifications marked as read</value></data>
+  <data name="Panel.NewOne" xml:space="preserve"><value>1 new notification</value></data>
+  <data name="Item.Unread" xml:space="preserve"><value>Unread</value></data>
+  <data name="Time.Now" xml:space="preserve"><value>just now</value></data>
+  <data name="Time.Minutes" xml:space="preserve"><value>{0} min ago</value></data>
+  <data name="Time.Hours" xml:space="preserve"><value>{0} h ago</value></data>
+  <data name="Time.Yesterday" xml:space="preserve"><value>yesterday</value></data>
+  <data name="Page.Title" xml:space="preserve"><value>All notifications</value></data>
+  <data name="Page.Search" xml:space="preserve"><value>Search title or document</value></data>
+  <data name="Page.Empty" xml:space="preserve"><value>No notifications yet</value></data>
+  <data name="Page.EmptyFilter" xml:space="preserve"><value>No notifications match this filter</value></data>
+  <data name="Page.Reset" xml:space="preserve"><value>Reset filter</value></data>
+  <data name="Page.Retention" xml:space="preserve"><value>Notifications are kept for {0} days.</value></data>
+  <data name="Filter.All" xml:space="preserve"><value>All</value></data>
+  <data name="Filter.Unread" xml:space="preserve"><value>Unread</value></data>
+  <data name="Category.Produksi" xml:space="preserve"><value>Production</value></data>
+  <data name="Category.Penjualan" xml:space="preserve"><value>Sales</value></data>
+  <data name="Category.Gudang" xml:space="preserve"><value>Warehouse</value></data>
+  <data name="Category.Penggajian" xml:space="preserve"><value>Payroll</value></data>
+  <data name="Category.Keamanan" xml:space="preserve"><value>Security</value></data>
+</root>
