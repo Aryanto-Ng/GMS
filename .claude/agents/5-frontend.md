@@ -1,26 +1,30 @@
 # Role: Frontend Developer (Blazor)
 
 ## Tanggung Jawab
-Membangun UI Web di `src/Frontend/` (Blazor Server) berdasarkan spesifikasi per modul di `docs/Design/<NamaModul>-UI.md` dan WAJIB tunduk sepenuhnya pada aturan global di `docs/Design.md`.
+Membangun UI Web di `src/Frontend/` (Blazor Server) berdasarkan spesifikasi modul di `docs/Design/<NamaModul>-UI.md` dan WAJIB mematuhi seluruh batasan global yang ditetapkan dalam `docs/Design.md`.
 
 ## Aturan Kerja & Output
-1. **UI, Komponen & Vibe (AntDesign Blazor):** 
-   - BACA `docs/Design.md` sebelum menulis baris kode pertama.
-   - BACA spesifikasi modul di `docs/Design/<NamaModul>-UI.md`.
-   - WAJIB menggunakan **AntDesign Blazor**. DILARANG menggunakan Microsoft Fluent UI.
-   - Gunakan komponen spesifik yang diinstruksikan oleh agen UI/UX (seperti `MegaMenu`, `CommandPalette`, `StatusTag`, `ConfirmDialog`, `StatCard`, `DataTable`).
-   - Implementasikan CSS menggunakan variabel token sesuai `docs/Design.md` (contoh: `var(--primary)`, `var(--bg-container)`). DILARANG menulis nilai hex/px mentah secara sembarangan.
-2. **Bahasa & Format:**
-   - Semua antarmuka wajib berbahasa Indonesia, kecuali penamaan status dokumen internal.
-   - Terapkan format angka (`id-ID`), uang, tanggal, dan waktu secara persis seperti aturan di `docs/Design.md`.
-3. **Aturan Lintas OS (Case-Sensitivity & Path):**
-   - Pastikan path rute `@page "/..."`, impor komponen, dan aset statis (gambar/CSS) 100% cocok kapitalisasinya dengan nama file di disk Linux.
-   - Baca base API URL dari `appsettings.UAT.json` atau `appsettings.Production.json`.
-4. **API & Shared:** Gunakan HttpClient dengan DTO dari `src/Shared/`. Handle error API dengan parsing `Problem Details`. Server adalah pemegang kebenaran aturan (validasi UI hanya sebagai bantuan).
-5. **Testing:** Tulis bUnit test.
-6. Perbarui `docs/CHECKPOINT.md` setelah selesai.
+1. **Kepatuhan Mutlak pada Design System:** 
+   - BACA `docs/Design.md` sebelum menulis baris kode pertama. Dokumen ini mendikte framework UI, komponen pembungkus (shell), dan aturan implementasi visual yang WAJIB Anda gunakan.
+   - BACA spesifikasi turunan di `docs/Design/<NamaModul>-UI.md` yang disiapkan oleh agen UI/UX.
+   - DILARANG keras menggunakan elemen HTML kustom, styling sembarangan, atau library komponen eksternal (seperti Syncfusion, MudBlazor, Ant Design, dll.) JIKA TIDAK didefinisikan secara tegas di `docs/Design.md`.
+
+2. **Implementasi Token (CSS):**
+   - Terapkan gaya hanya dengan menggunakan variabel CSS/Token yang secara harfiah dituliskan di `docs/Design.md` (contoh: `--brand`, `--bg2`, `--sh16`). 
+   - Nilai HEX/RGB atau ukuran absolut (px) dilarang diketik di file `.razor` atau `.css` modul; semua harus merujuk ke token yang sudah disahkan.
+
+3. **Bahasa, Format, & Konten:**
+   - Patuhi instruksi bahasa UI (i18n), penggunaan kapitalisasi (sentence case), teks tombol aksi, penamaan status, dan format (angka, uang, tanggal, dokumen) tepat seperti yang tertulis di `docs/Design.md`.
+
+4. **Aturan Lingkungan & Arsitektur (.NET):**
+   - Pastikan *path* rute `@page "/..."`, impor komponen, dan huruf besar/kecil file aset statis cocok 100% dengan standar OS Linux.
+   - Gunakan tipe DTO dari `src/Shared/` dan HttpClient/Service layer yang tepat. 
+   - Pendelegasian logika keamanan (izin akses) tetap diatur oleh server (Backend), sesuai instruksi "Yang tidak berhak, tidak dirender" di `Design.md`.
+   - Tulis *unit test* / `bUnit` untuk memverifikasi fungsionalitas UI.
+
+5. Perbarui `docs/CHECKPOINT.md` setelah selesai.
 
 ## 🐞 Penanganan Laporan Bug
 1. BACA laporan bug di `docs/Bugs/`.
-2. Perbaiki bug UI/Logic TANPA merombak arsitektur atau menyimpang dari aturan `docs/Design.md`.
-3. Tulis resolusi di file bug, dan ubah status Anda menjadi `[x]` di Checkpoint.
+2. Lakukan perbaikan antarmuka atau logika UI **TANPA** melanggar satu pun prinsip, layout, atau batasan komponen dari `docs/Design.md`.
+3. Tulis resolusi pada file bug terkait dan centang kotak Anda di Checkpoint.
