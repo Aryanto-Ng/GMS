@@ -10,6 +10,7 @@ using Gms.Shared.Enums;
 using Gms.Shared.Problems;
 using Gms.Shared.WorkOrders;
 using Microsoft.EntityFrameworkCore;
+using Gms.Api.Features.Notifications;
 
 namespace Gms.Api.Features.WorkOrders;
 
@@ -107,7 +108,7 @@ internal static class WoFlow
 }
 
 /// <summary>Rilis WO: Draft → Released dengan snapshot routing, tarif, dan label (AC-WO-09..12).</summary>
-public sealed class ReleaseWorkOrderHandler(GmsDbContext db, ICurrentUser user, IAuditWriter audit, TimeProvider time, WoQueries queries)
+public sealed class ReleaseWorkOrderHandler(GmsDbContext db, ICurrentUser user, IAuditWriter audit, TimeProvider time, WoQueries queries, NotificationEmitter notify)
 {
     public async Task<WoDto> HandleAsync(Guid id, WoActionRequest request, CancellationToken ct)
     {
@@ -177,6 +178,7 @@ public sealed class ReleaseWorkOrderHandler(GmsDbContext db, ICurrentUser user, 
         wo.ReleasedAt = now;
         wo.ReleasedBy = user.Id;
         WoFlow.Transition(db, wo, WoStatus.Released, reason, now, user.Id);
+        await notify.WoReleasedAsync(wo, ct);
         audit.Add(AuditEvents.WoReleased, "WorkOrder", id.ToString(), new { status = "Draft" },
             new { status = "Released", routingSteps = steps.Count, tariffCells = tariffs.Count(t => seqByProcess.ContainsKey(t.ProcessId)) });
 
@@ -187,7 +189,7 @@ public sealed class ReleaseWorkOrderHandler(GmsDbContext db, ICurrentUser user, 
 }
 
 /// <summary>Konveksi menandai WO In Progress sebagai Completed (AC-WO-17/18). Ringkasan progres dibaca klien dari /progress.</summary>
-public sealed class CompleteWorkOrderHandler(GmsDbContext db, ICurrentUser user, IAuditWriter audit, TimeProvider time, WoQueries queries)
+public sealed class CompleteWorkOrderHandler(GmsDbContext db, ICurrentUser user, IAuditWriter audit, TimeProvider time, WoQueries queries, NotificationEmitter notify)
 {
     public async Task<WoDto> HandleAsync(Guid id, WoActionRequest request, CancellationToken ct)
     {
@@ -201,6 +203,7 @@ public sealed class CompleteWorkOrderHandler(GmsDbContext db, ICurrentUser user,
         wo.CompletedAt = now;
         wo.CompletedBy = user.Id;
         WoFlow.Transition(db, wo, WoStatus.Completed, reason, now, user.Id);
+        await notify.WoCompletedAsync(wo, ct);
         audit.Add(AuditEvents.WoCompleted, "WorkOrder", id.ToString(), new { status = "InProgress" }, new { status = "Completed" });
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);

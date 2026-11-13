@@ -16,7 +16,10 @@ public sealed class ApiFixture : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        _container = new PostgreSqlBuilder("postgres:17").Build();
+        _container = new PostgreSqlBuilder("postgres:17")
+            // Banyak host terisolasi hidup bersamaan sampai akhir proses tes; batas bawaan 100 koneksi habis ("too many clients").
+            .WithCommand("-c", "max_connections=600")
+            .Build();
         await _container.StartAsync();
         Main = await TestHost.StartAsync(_container.GetConnectionString());
     }

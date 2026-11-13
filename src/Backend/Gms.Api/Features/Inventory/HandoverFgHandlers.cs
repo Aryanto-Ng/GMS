@@ -9,6 +9,7 @@ using Gms.Shared.Enums;
 using Gms.Shared.Inventory;
 using Gms.Shared.Security;
 using Microsoft.EntityFrameworkCore;
+using Gms.Api.Features.Notifications;
 
 namespace Gms.Api.Features.Inventory;
 
@@ -96,7 +97,8 @@ public sealed class GetHandoverFgContextHandler(GmsDbContext db)
 
 /// <summary>Satu inti untuk pratinjau dan simpan: pratinjau = jalur yang sama lalu rollback.</summary>
 public sealed class CreateHandoverFgHandler(
-    GmsDbContext db, HandoverEngine engine, ICurrentUser user, IAuditWriter audit, TimeProvider time)
+    GmsDbContext db, HandoverEngine engine, ICurrentUser user, IAuditWriter audit, TimeProvider time,
+    NotificationEmitter notify)
 {
     public async Task<HandoverFgPreviewDto> PreviewAsync(SaveHandoverFgRequest request, CancellationToken ct) =>
         (await RunAsync(request, dryRun: true, ct)).Preview!;
@@ -140,6 +142,7 @@ public sealed class CreateHandoverFgHandler(
             return (null, new HandoverFgPreviewDto(auto, free, state.PoCode, estimates.Select(e => new HandoverCellEstimate(e.WoLineId, e.Auto, e.Free)).ToList()));
         }
 
+        await notify.FgHandoverCreatedAsync(doc, auto, free, ct);
         audit.Add(AuditEvents.HandoverFgCreated, "FgHandover", doc.Id.ToString(), null,
             new { request.WoId, request.Date, totalQty = auto + free, autoAllocated = auto, freeStock = free });
         await engine.SaveAsync(ct);
@@ -149,7 +152,7 @@ public sealed class CreateHandoverFgHandler(
 }
 
 /// <summary>Void: alokasi otomatis dilepas, stok dikurangi, kondisi akhir diperiksa (AC-ST-07/08/10/11).</summary>
-public sealed class VoidHandoverFgHandler(GmsDbContext db, HandoverEngine engine, ICurrentUser user, IAuditWriter audit, TimeProvider time)
+public sealed class VoidHandoverFgHandler(GmsDbContext db, HandoverEngine engine, ICurrentUser user, IAuditWriter audit, TimeProvider time, NotificationEmitter notify)
 {
     public async Task<ImpactPreview> PreviewAsync(Guid id, CancellationToken ct) => (await RunAsync(id, null, dryRun: true, ct))!;
 
@@ -179,6 +182,7 @@ public sealed class VoidHandoverFgHandler(GmsDbContext db, HandoverEngine engine
         }
 
         HandoverEngine.ThrowIfAny(violations);
+        await notify.FgHandoverChangedAsync(doc, "void", ct);
         audit.Add(AuditEvents.HandoverFgVoided, "FgHandover", id.ToString(), new { status = "Active" }, new { status = "Voided", reason });
         await engine.SaveAsync(ct);
         await tx.CommitAsync(ct);
@@ -187,7 +191,7 @@ public sealed class VoidHandoverFgHandler(GmsDbContext db, HandoverEngine engine
 }
 
 /// <summary>Koreksi = void dokumen lama + dokumen baru dalam satu transaksi; pemeriksaan hanya pada kondisi akhir (AC-ST-09).</summary>
-public sealed class CorrectHandoverFgHandler(GmsDbContext db, HandoverEngine engine, ICurrentUser user, IAuditWriter audit, TimeProvider time)
+public sealed class CorrectHandoverFgHandler(GmsDbContext db, HandoverEngine engine, ICurrentUser user, IAuditWriter audit, TimeProvider time, NotificationEmitter notify)
 {
     public async Task<ImpactPreview> PreviewAsync(Guid id, CorrectHandoverFgRequest request, CancellationToken ct) =>
         (await RunAsync(id, request, dryRun: true, ct)).Preview!;
@@ -254,6 +258,7 @@ public sealed class CorrectHandoverFgHandler(GmsDbContext db, HandoverEngine eng
 
         HandoverEngine.ThrowIfAny(violations);
         db.FgHandovers.Add(replacement);
+        await notify.FgHandoverChangedAsync(old, "correct", ct);
         audit.Add(AuditEvents.HandoverFgCorrected, "FgHandover", id.ToString(), new { totalQty = old.Lines.Sum(l => l.Qty) },
             new { replacedBy = replacement.Id, totalQty = cells.Sum(c => c.Qty), reason });
         await engine.SaveAsync(ct);

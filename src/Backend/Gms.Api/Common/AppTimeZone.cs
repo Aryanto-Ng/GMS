@@ -10,6 +10,8 @@ public sealed class AppTimeZone
 {
     private readonly TimeZoneInfo _zone;
 
+    public TimeZoneInfo Zone => _zone;
+
     public AppTimeZone(IOptions<Security.AppOptions> options)
     {
         try

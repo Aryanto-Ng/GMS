@@ -80,6 +80,9 @@ public static class AuditEvents
     public const string PayrollExported = "PayrollExported";
     public const string PayrollSlipPrinted = "PayrollSlipPrinted";
 
+    // Notifikasi
+    public const string NotificationSettingsChanged = "NotificationSettingsChanged";
+
     // Master Data
     public const string MasterCreated = "MasterCreated";
     public const string MasterUpdated = "MasterUpdated";

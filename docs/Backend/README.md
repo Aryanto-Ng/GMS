@@ -125,6 +125,18 @@ Semua perubahan ledger output/vendor melewati `StepLedger` (jangan menulis `wo_s
 - **Ekspor/slip** memakai `PdfFonts` (lihat Pola Pengiriman) dan ClosedXML. Slip memformat angka gaya Indonesia dengan `NumberFormatInfo` sendiri agar tidak bergantung ICU/budaya sistem (Docker globalization-invariant).
 - **Tes payroll WAJIB memakai host terisolasi** (`fixture.CreateIsolatedAsync()`): periode bersifat global (aturan satu Open, tanggal sebelum periode pertama ditolak, tanggal di periode tertutup terkunci) dan akan memengaruhi tes modul lain bila memakai database bersama.
 
+## Pola Notifikasi (`Features/Notifications`)
+
+Kontrak: `Gms.Shared.Notifications` (katalog 16 jenis). Keputusan: ADR-016. Skema: Database.md bagian 14.
+
+- **Menerbitkan Kejadian (NE-01..NE-10):** handler sumber menerima `NotificationEmitter` dan memanggil metodenya **sebelum** `SaveChanges` terakhir, SETELAH validasi/penahan lolos (setelah `ThrowIfAny` dan setelah cabang `dryRun` selesai), sehingga notifikasi atomik dengan aksi dan pratinjau tidak pernah menerbitkan. Penerbit hanya membaca penerima dan melakukan `Add`; tidak mengunci baris bisnis dan tidak menyimpan sendiri.
+- **NE-11 (stok habis) dan NE-12 (alokasi dilepas)** tidak dipanggil per handler: `NotificationSideEffectsInterceptor` (terpasang di `AddDbContext`) membaca entitas yang akan disimpan (`StockBalance` Modified dengan Tersedia > 0 → 0; `PoAllocation` Added bertipe Release dari `HandoverVoid`) sehingga semua jalur penulisan tercakup. Penerima/label dibaca lewat DbContext TERPISAH (scope baru) agar tidak menjalankan query di tengah SaveChanges. **Penyimpangan dari FSD:** NE-12 tidak dikirim untuk pembatalan PO karena NE-08 sudah memuat `releasedQty` (menghindari dua notifikasi untuk satu peristiwa).
+- **Kondisi terjadwal (NC-01..NC-04):** `NotificationJob.RunAsync` (kunci penasihat `pg_try_advisory_lock` pada koneksi khusus; tiap jenis dalam transaksi + try/catch sendiri; episode unik parsial di DB). `NotificationScheduler` (BackgroundService) mengecek tiap 5 menit berdasarkan `notification_job_runs`, sehingga instance yang tertidur menyusul; startup hanya menjalankan bila pemeriksaan terakhir > 24 jam. Dimatikan di tes lewat `Notifications:SchedulerEnabled=false`; tes memanggil `NotificationJob` langsung.
+- **Menambah jenis baru:** tambah di `NotificationCatalog` (Shared), kunci resource `Notif.{TypeCode}.Title/Body` di Frontend, metode di `NotificationEmitter` (Kejadian) atau cabang di `NotificationJob.QueryHitsAsync` (Kondisi). Seeder membuat baris pengaturannya otomatis; tes katalog memastikan izin terdaftar dan parameter tanpa data uang.
+- **Penyajian:** `NotificationQueries` membatasi setiap query ke `recipient_user_id = saya` DAN jenis yang izinnya masih dimiliki (set izin dari sesi); milik orang lain/izin dicabut = 404. `params` berupa jsonb sehingga pencarian memakai `FromSql` + `params::text ILIKE`.
+- **Tes:** `Notifications/NotificationTests` (katalog, seeder, pengaturan, penyajian, pemeriksaan terjadwal, konkurensi, retensi) dan `NotificationWiringTests` (alur bisnis nyata). Uji mutasi: pelaku tidak dikecualikan, izin sumber tidak diperiksa saat penyajian, NE-01 tidak diterbitkan: semuanya tertangkap.
+- **Infrastruktur tes:** container PostgreSQL tes memakai `max_connections=600` (banyak host terisolasi hidup bersamaan; bawaan 100 menghabiskan koneksi).
+
 ## Jebakan yang Sudah Ditemukan (jangan diulang)
 
 1. **Urutkan sebelum proyeksi DTO.** `OrderBy(x => x.Seq)` pada hasil `new SomeDto(...)` tidak dapat diterjemahkan EF (500). Pola yang benar: `Join → proyeksi anonim → OrderBy → Select(new Dto(...))`.

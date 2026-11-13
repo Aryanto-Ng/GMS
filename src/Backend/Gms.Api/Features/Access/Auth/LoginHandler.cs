@@ -9,6 +9,7 @@ using Gms.Shared.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Gms.Api.Features.Notifications;
 
 namespace Gms.Api.Features.Access.Auth;
 
@@ -22,7 +23,8 @@ public sealed class LoginHandler(
     TimeProvider time,
     IAuditWriter audit,
     IOptions<AuthOptions> authOptions,
-    IHttpContextAccessor http)
+    IHttpContextAccessor http,
+    NotificationEmitter notify)
 {
     public async Task<LoginResponse> HandleAsync(LoginRequest request, CancellationToken ct)
     {
@@ -78,6 +80,7 @@ public sealed class LoginHandler(
             {
                 audit.Add(AuditEvents.AccountLocked, "User", user.Id.ToString(),
                     newValue: new { until = user.LockoutEnd }, actorUserId: user.Id, actorUsername: user.UserName);
+                await notify.AccountLockedAsync(user, ct);
             }
 
             await db.SaveChangesAsync(ct);

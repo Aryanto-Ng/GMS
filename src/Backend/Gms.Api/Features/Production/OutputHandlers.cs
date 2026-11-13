@@ -9,6 +9,7 @@ using Gms.Shared.Enums;
 using Gms.Shared.Problems;
 using Gms.Shared.Production;
 using Microsoft.EntityFrameworkCore;
+using Gms.Api.Features.Notifications;
 
 namespace Gms.Api.Features.Production;
 
@@ -242,7 +243,7 @@ public sealed class SaveOutputsHandler(GmsDbContext db, StepLedger ledger, ICurr
 // ===== Void =====
 
 /// <summary>Void entri Output/Penyesuaian dengan alasan wajib; aturan kumulatif dicek pada kondisi akhir (AC-PR-11..14).</summary>
-public sealed class VoidOutputHandler(GmsDbContext db, StepLedger ledger, ICurrentUser user, IAuditWriter audit, TimeProvider time)
+public sealed class VoidOutputHandler(GmsDbContext db, StepLedger ledger, ICurrentUser user, IAuditWriter audit, TimeProvider time, NotificationEmitter notify)
 {
     public async Task<ImpactPreview> PreviewAsync(Guid id, CancellationToken ct) => (await RunAsync(id, null, dryRun: true, ct))!;
 
@@ -293,6 +294,7 @@ public sealed class VoidOutputHandler(GmsDbContext db, StepLedger ledger, ICurre
         }
 
         StepLedger.ThrowIfAny(violations);
+        await notify.OutputChangedAsync(entry, "void", ct);
         audit.Add(AuditEvents.OutputVoided, "OutputEntry", id.ToString(), new { status = "Active" }, new { status = "Voided", reason, kind = entry.Kind.ToString() });
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
@@ -303,7 +305,7 @@ public sealed class VoidOutputHandler(GmsDbContext db, StepLedger ledger, ICurre
 // ===== Koreksi =====
 
 /// <summary>Koreksi = void entri asal + entri baru dalam satu transaksi; aturan kumulatif hanya pada kondisi akhir (AC-PR-15..17).</summary>
-public sealed class CorrectOutputHandler(GmsDbContext db, StepLedger ledger, ICurrentUser user, IAuditWriter audit, TimeProvider time)
+public sealed class CorrectOutputHandler(GmsDbContext db, StepLedger ledger, ICurrentUser user, IAuditWriter audit, TimeProvider time, NotificationEmitter notify)
 {
     public async Task<ImpactPreview> PreviewAsync(Guid id, CorrectOutputRequest request, CancellationToken ct) => (await RunAsync(id, request, dryRun: true, ct)).Preview!;
 
@@ -382,6 +384,7 @@ public sealed class CorrectOutputHandler(GmsDbContext db, StepLedger ledger, ICu
         }
 
         StepLedger.ThrowIfAny(violations);
+        await notify.OutputChangedAsync(entry, "correct", ct);
         audit.Add(AuditEvents.OutputCorrected, "OutputEntry", id.ToString(), before,
             new { replacedBy = replacement.Id, request.WorkerId, request.WorkDate, reason });
         await db.SaveChangesAsync(ct);

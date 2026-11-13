@@ -8,6 +8,7 @@ using Gms.Shared.Access;
 using Gms.Shared.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Gms.Api.Features.Notifications;
 
 namespace Gms.Api.Features.Access.Auth;
 
@@ -57,7 +58,8 @@ public sealed class ChangePasswordHandler(
     UserManager<AppUser> users,
     ICurrentUser current,
     IAuditWriter audit,
-    TimeProvider time)
+    TimeProvider time,
+    NotificationEmitter notify)
 {
     public async Task HandleAsync(ChangePasswordRequest request, CancellationToken ct)
     {
@@ -97,6 +99,7 @@ public sealed class ChangePasswordHandler(
             {
                 audit.Add(AuditEvents.AccountLocked, "User", user.Id.ToString(), newValue: new { until = user.LockoutEnd },
                     actorUserId: user.Id, actorUsername: user.UserName);
+                await notify.AccountLockedAsync(user, ct);
             }
 
             await db.SaveChangesAsync(ct);

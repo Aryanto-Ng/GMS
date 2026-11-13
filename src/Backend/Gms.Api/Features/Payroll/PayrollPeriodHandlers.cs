@@ -10,6 +10,7 @@ using Gms.Shared.Problems;
 using Gms.Shared.Security;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using Gms.Api.Features.Notifications;
 
 namespace Gms.Api.Features.Payroll;
 
@@ -256,7 +257,8 @@ public sealed class PreviewClosePayrollPeriodHandler(GmsDbContext db, PayrollCal
 /// baris + total pekerja, status Closed, semuanya atomik dan permanen (AC-PY-15..22).
 /// </summary>
 public sealed class ClosePayrollPeriodHandler(
-    GmsDbContext db, PayrollCalculator calculator, ICurrentUser user, IAuditWriter audit, TimeProvider time, PayrollPeriodQueries queries)
+    GmsDbContext db, PayrollCalculator calculator, ICurrentUser user, IAuditWriter audit, TimeProvider time, PayrollPeriodQueries queries,
+    NotificationEmitter notify)
 {
     public static void EnsureTariffsPresent(List<PayrollLine> lines)
     {
@@ -323,6 +325,7 @@ public sealed class ClosePayrollPeriodHandler(
         period.TotalPaid = totals.Sum(t => t.Paid);
         period.UpdatedAt = now;
         period.UpdatedBy = user.Id;
+        await notify.PayrollClosedAsync(period, ct);
         audit.Add(AuditEvents.PayrollPeriodClosed, "PayrollPeriod", id.ToString(), new { status = "Open" },
             new { status = "Closed", period.Code, workers = totals.Count, lines = lines.Count, total = period.TotalPaid });
         await db.SaveChangesAsync(ct);

@@ -10,6 +10,7 @@ using Gms.Shared.Deliveries;
 using Gms.Shared.Enums;
 using Gms.Shared.Problems;
 using Microsoft.EntityFrameworkCore;
+using Gms.Api.Features.Notifications;
 
 namespace Gms.Api.Features.Deliveries;
 
@@ -222,7 +223,8 @@ public sealed class UpdateDeliveryInfoHandler(
 
 /// <summary>Void: semua dampak dibalik atomik; PO Completed yang tidak lagi terpenuhi kembali In Progress (AC-PG-09..11, E5/E6).</summary>
 public sealed class VoidDeliveryHandler(
-    GmsDbContext db, DeliveryEngine engine, ICurrentUser user, IAuditWriter audit, TimeProvider time, DeliveryQueries queries)
+    GmsDbContext db, DeliveryEngine engine, ICurrentUser user, IAuditWriter audit, TimeProvider time, DeliveryQueries queries,
+    NotificationEmitter notify)
 {
     public async Task<ImpactPreview> PreviewAsync(Guid id, CancellationToken ct) => (await RunAsync(id, null, dryRun: true, ct)).Preview!;
 
@@ -266,6 +268,7 @@ public sealed class VoidDeliveryHandler(
         }
 
         DeliveryEngine.ThrowIfAny(violations);
+        await notify.DeliveryChangedAsync(doc, "void", ct);
         audit.Add(AuditEvents.DeliveryVoided, "Delivery", id.ToString(), new { status = "Active" }, new { status = "Voided", reason, doc.Code });
         await engine.SaveAsync(ct);
 
@@ -283,7 +286,8 @@ public sealed class VoidDeliveryHandler(
 
 /// <summary>Koreksi = void lama + surat jalan baru atomik; batas dihitung pada kondisi akhir (AC-PG-12).</summary>
 public sealed class CorrectDeliveryHandler(
-    GmsDbContext db, DeliveryEngine engine, ICurrentUser user, IAuditWriter audit, TimeProvider time, NumberSequences sequences, DeliveryQueries queries)
+    GmsDbContext db, DeliveryEngine engine, ICurrentUser user, IAuditWriter audit, TimeProvider time, NumberSequences sequences, DeliveryQueries queries,
+    NotificationEmitter notify)
 {
     public async Task<ImpactPreview> PreviewAsync(Guid id, CorrectDeliveryRequest request, CancellationToken ct) =>
         (await RunAsync(id, request, dryRun: true, ct)).Preview!;
@@ -351,6 +355,7 @@ public sealed class CorrectDeliveryHandler(
 
         DeliveryEngine.ThrowIfAny(violations);
         db.Deliveries.Add(replacement);
+        await notify.DeliveryChangedAsync(old, "correct", ct);
         audit.Add(AuditEvents.DeliveryCorrected, "Delivery", id.ToString(), new { totalQty = old.Lines.Sum(l => l.Qty), old.Code },
             new { replacedBy = replacement.Id, replacement.Code, totalQty = cells.Sum(c => c.Qty), reason });
         await engine.SaveAsync(ct);

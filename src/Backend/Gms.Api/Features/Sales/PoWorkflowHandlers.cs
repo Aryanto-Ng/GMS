@@ -8,6 +8,7 @@ using Gms.Shared.CustomerPo;
 using Gms.Shared.Enums;
 using Gms.Shared.Problems;
 using Microsoft.EntityFrameworkCore;
+using Gms.Api.Features.Notifications;
 
 namespace Gms.Api.Features.Sales;
 
@@ -78,7 +79,7 @@ public sealed class SetCustomerPoNumberHandler(GmsDbContext db, ICurrentUser use
 /// Membatalkan PO dengan alasan wajib. Ditolak bila sudah ada pengiriman atau WO aktif (AC-PO-26). Seluruh alokasi aktif dilepas
 /// otomatis dan stok kembali tersedia (AC-PO-27), dalam satu transaksi dengan urutan kunci baku (po_lines → stock_balances).
 /// </summary>
-public sealed class CancelPurchaseOrderHandler(GmsDbContext db, ICurrentUser user, IAuditWriter audit, TimeProvider time, PoQueries queries)
+public sealed class CancelPurchaseOrderHandler(GmsDbContext db, ICurrentUser user, IAuditWriter audit, TimeProvider time, PoQueries queries, NotificationEmitter notify)
 {
     public async Task<PoDto> HandleAsync(Guid id, ReasonRequest request, CancellationToken ct)
     {
@@ -130,6 +131,7 @@ public sealed class CancelPurchaseOrderHandler(GmsDbContext db, ICurrentUser use
         po.CancelReason = reason;
         po.UpdatedAt = now;
         po.UpdatedBy = user.Id;
+        await notify.PoCancelledAsync(po, released, ct);
         audit.Add(AuditEvents.PoCancelled, "PurchaseOrder", id.ToString(),
             new { status = previous.ToString() }, new { status = "Cancelled", reason, releasedAllocation = released });
 

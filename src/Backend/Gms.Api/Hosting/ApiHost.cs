@@ -8,6 +8,7 @@ using Gms.Api.Features.Access.Roles;
 using Gms.Api.Features.Access.Seeding;
 using Gms.Api.Features.Access.Users;
 using Gms.Api.Features.Master;
+using Gms.Api.Features.Notifications;
 using Gms.Api.Features.Dashboard;
 using Gms.Api.Features.Deliveries;
 using Gms.Api.Features.Inventory;
@@ -16,6 +17,7 @@ using Gms.Api.Features.Production;
 using Gms.Api.Features.Sales;
 using Gms.Api.Features.WorkOrders;
 using Gms.Api.Security;
+using Gms.Domain.Notifications;
 using Gms.Infrastructure.Identity;
 using Gms.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication;
@@ -41,10 +43,12 @@ public static class ApiHost
         services.Configure<AuthOptions>(builder.Configuration.GetSection(AuthOptions.SectionName));
         services.Configure<SeedOptions>(builder.Configuration.GetSection(SeedOptions.SectionName));
         services.Configure<AppOptions>(builder.Configuration.GetSection(AppOptions.SectionName));
+        services.Configure<NotificationConfig>(builder.Configuration.GetSection(NotificationConfig.SectionName));
 
         // Data: connection string dibaca saat DbContext dibuat (memungkinkan penggantian konfigurasi oleh tes).
         services.AddDbContext<GmsDbContext>((sp, options) =>
-            options.UseNpgsql(sp.GetRequiredService<IConfiguration>().GetConnectionString("Default")));
+            options.UseNpgsql(sp.GetRequiredService<IConfiguration>().GetConnectionString("Default"))
+                .AddInterceptors(new NotificationSideEffectsInterceptor(sp)));
 
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<AppTimeZone>();
@@ -105,12 +109,23 @@ public static class ApiHost
         services.AddScoped<PayrollQueries>();
         services.AddScoped<PayrollPeriodQueries>();
         services.AddScoped<DashboardQueries>();
+        services.AddScoped<INotificationPublisher, NotificationPublisher>();
+        services.AddScoped<NotificationQueries>();
+        services.AddScoped<NotificationEmitter>();
+        services.AddScoped<NotificationJob>();
         services.AddScoped<MasterContext>();
         services.AddScoped<NumberSequences>();
 
         services.AddScoped<IDataSeeder, AccessSeeder>();
         services.AddScoped<IDataSeeder, MasterSeeder>();
         services.AddScoped<IDataSeeder, PoSeeder>();
+        services.AddScoped<IDataSeeder, NotificationSeeder>();
+
+        // Pekerja latar notifikasi (dapat dimatikan lewat Notifications:SchedulerEnabled=false, mis. pada tes).
+        if (builder.Configuration.GetValue("Notifications:SchedulerEnabled", true))
+        {
+            services.AddHostedService<NotificationScheduler>();
+        }
 
         configure?.Invoke(builder);
 
@@ -158,5 +173,6 @@ public static class ApiHost
         DeliveryEndpoints.Map(app);
         PayrollEndpoints.Map(app);
         DashboardEndpoints.Map(app);
+        NotificationEndpoints.Map(app);
     }
 }

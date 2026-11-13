@@ -8,6 +8,7 @@ using Gms.Shared.Enums;
 using Gms.Shared.Problems;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Gms.Api.Features.Notifications;
 
 namespace Gms.Api.Features.Access.Users;
 
@@ -29,7 +30,7 @@ public sealed class UnlockUserHandler(GmsDbContext db, UserManager<AppUser> user
 }
 
 /// <summary>Mengakhiri paksa sesi aktif pengguna (AC-AM-06b). Idempoten bila tidak ada sesi aktif.</summary>
-public sealed class EndUserSessionHandler(GmsDbContext db, ICurrentUser current, IAuditWriter audit, TimeProvider time)
+public sealed class EndUserSessionHandler(GmsDbContext db, ICurrentUser current, IAuditWriter audit, TimeProvider time, NotificationEmitter notify)
 {
     public async Task HandleAsync(Guid id, CancellationToken ct)
     {
@@ -49,6 +50,7 @@ public sealed class EndUserSessionHandler(GmsDbContext db, ICurrentUser current,
         if (ended > 0)
         {
             audit.Add(AuditEvents.SessionEnded, "User", id.ToString());
+            await notify.SessionEndedAsync(id, ct);
             await db.SaveChangesAsync(ct);
         }
     }

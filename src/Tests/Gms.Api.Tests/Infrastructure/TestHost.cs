@@ -55,6 +55,7 @@ public sealed class TestHost : IAsyncDisposable
                 ["Seed:AdminUserName"] = "admin",
                 ["Seed:AdminPassword"] = BootstrapPassword,
                 ["Logging:LogLevel:Default"] = "Warning",
+                ["Notifications:SchedulerEnabled"] = "false",
             });
 
             if (extraConfig is not null)

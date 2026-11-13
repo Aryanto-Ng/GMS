@@ -8,6 +8,7 @@ using Gms.Shared.Common;
 using Gms.Shared.Enums;
 using Gms.Shared.Production;
 using Microsoft.EntityFrameworkCore;
+using Gms.Api.Features.Notifications;
 
 namespace Gms.Api.Features.Production;
 
@@ -179,7 +180,7 @@ public sealed class SaveVendorMovementHandler(GmsDbContext db, StepLedger ledger
 }
 
 /// <summary>Void Kirim/Terima dengan alasan wajib; kumulatif dan per vendor dicek pada kondisi akhir (AC-PR-27, E6, E7).</summary>
-public sealed class VoidVendorMovementHandler(GmsDbContext db, StepLedger ledger, ICurrentUser user, IAuditWriter audit, TimeProvider time)
+public sealed class VoidVendorMovementHandler(GmsDbContext db, StepLedger ledger, ICurrentUser user, IAuditWriter audit, TimeProvider time, NotificationEmitter notify)
 {
     public async Task<ImpactPreview> PreviewAsync(Guid id, CancellationToken ct) => (await RunAsync(id, null, dryRun: true, ct))!;
 
@@ -225,6 +226,7 @@ public sealed class VoidVendorMovementHandler(GmsDbContext db, StepLedger ledger
         }
 
         StepLedger.ThrowIfAny(violations);
+        await notify.VendorChangedAsync(movement, "void", ct);
         audit.Add(AuditEvents.VendorMovementVoided, "VendorMovement", id.ToString(), new { status = "Active" },
             new { status = "Voided", reason, kind = movement.Kind.ToString() });
         await db.SaveChangesAsync(ct);
@@ -234,7 +236,7 @@ public sealed class VoidVendorMovementHandler(GmsDbContext db, StepLedger ledger
 }
 
 /// <summary>Koreksi vendor = void + catatan baru atomik (AC-PR-27). Jenis (Kirim/Terima) dan langkah tetap.</summary>
-public sealed class CorrectVendorMovementHandler(GmsDbContext db, StepLedger ledger, ICurrentUser user, IAuditWriter audit, TimeProvider time)
+public sealed class CorrectVendorMovementHandler(GmsDbContext db, StepLedger ledger, ICurrentUser user, IAuditWriter audit, TimeProvider time, NotificationEmitter notify)
 {
     public async Task<ImpactPreview> PreviewAsync(Guid id, CorrectVendorMovementRequest request, CancellationToken ct) =>
         (await RunAsync(id, request, dryRun: true, ct)).Preview!;
@@ -305,6 +307,7 @@ public sealed class CorrectVendorMovementHandler(GmsDbContext db, StepLedger led
             await ledger.MarkInProgressAsync(ctx, user.Id, ct);
         }
 
+        await notify.VendorChangedAsync(movement, "correct", ct);
         audit.Add(AuditEvents.VendorMovementCorrected, "VendorMovement", id.ToString(), new { movement.VendorId },
             new { replacedBy = replacement.Id, request.VendorId, request.Date, reason });
         await db.SaveChangesAsync(ct);

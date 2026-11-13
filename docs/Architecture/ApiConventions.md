@@ -341,6 +341,7 @@ Klien bertipe: `INotificationsApi`, `INotificationSettingsApi` (`Gms.Shared.Noti
 - `NotificationItem.target` = `{ kind, id }` (`NotificationTargetKind`); klien memetakannya ke tab (ID tab Fondasi 4.1). Dokumen yang sudah tidak ada: klien menangani 404 saat dibuka ("Dokumen tidak tersedia"), notifikasi tetap terbaca.
 - Server tidak mengirim teks jadi; klien memakai kunci resource `Notif.{typeCode}.Title/Body`.
 - Tidak ada endpoint "tandai belum dibaca" pada fase 1 (UI hanya "Tandai terbaca").
+- **Catatan implementasi (backend, 2026-11-14):** NE-12 hanya dikirim untuk void/koreksi serah terima (bukan pembatalan PO; NE-08 sudah memuat `releasedQty`). Daftar memakai query string manual (`page`, `pageSize`, `q`, `sort`, `category`, `unread`). Pencarian `q` mencocokkan teks parameter (kode dokumen, nama).
 
 ---
 
