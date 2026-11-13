@@ -24,6 +24,9 @@ public sealed class StackFixture : IAsyncLifetime
 
     public string WebUrl { get; private set; } = string.Empty;
 
+    /// <summary>Log proses Web (permintaan HttpClient ke API tercatat di sini).</summary>
+    public string WebLogPath => Path.Combine(AppContext.BaseDirectory, "logs", "web.log");
+
     /// <summary>Klien API untuk menyiapkan data (bukan lewat UI) dan memverifikasi hasil.</summary>
     public ApiSeeder Seed { get; private set; } = null!;
 
@@ -62,6 +65,7 @@ public sealed class StackFixture : IAsyncLifetime
             ["Api__UseMock"] = "false",
             ["RateLimit__LoginPerMinute"] = "10000", // E2E melakukan banyak login dari satu IP
             ["Logging__LogLevel__Default"] = "Warning",
+            ["Logging__LogLevel__System.Net.Http.HttpClient"] = "Information", // BUG-003: tes menghitung permintaan Web ke API dari log ini
         });
         await WaitAsync($"{WebUrl}/login", expected: HttpStatusCode.OK, "Web");
 
