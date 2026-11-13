@@ -209,5 +209,5 @@ tr.cancelled td { color: var(--fg3); } tr.cancelled .mono { text-decoration: lin
 .ni { display: flex; gap: 8px; width: 100%; text-align: left; padding: 10px 14px; border: 0; border-bottom: 1px solid var(--s3); background: var(--bg1); }
 .ni:hover { background: var(--bg3); } .ni.un { background: var(--brand-t); } .ni.un b { font-weight: 700; } .ni b { font-weight: 400; display: block; }
 .ni .d, .ni .w { display: block; font-size: 12px; line-height: 16px; color: var(--fg3); }
-.udot { width: 8px; height: 8px; border-radius: 50%; background: var(--brand); margin-top: 6px; flex: none; }
+.udot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--brand); margin-top: 6px; flex: none; }
 .nf { padding: 10px 14px; text-align: center; }

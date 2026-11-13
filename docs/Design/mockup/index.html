@@ -59,7 +59,7 @@
       <div class="npanel" id="np" role="dialog" aria-label="Notifikasi">
         <div class="nh"><b>Notifikasi</b><span class="sub" id="nsum">3 belum dibaca</span><button class="btn" style="margin-left:auto;height:24px" onclick="readAll()">Tandai semua dibaca</button></div>
         <div id="nl"></div>
-        <div class="nf"><a href="#" onclick="return false">Lihat semua notifikasi</a></div>
+        <div class="nf"><a href="#" onclick="document.getElementById('np').classList.remove('open');openTab('notif-all');return false">Lihat semua notifikasi</a></div>
       </div>
     </div>
     <button class="hbtn" aria-label="Menu pengguna Budi Santoso, Admin Produksi"><span class="avatar">BS</span>Budi Santoso<svg class="ic s12"><use href="#i-chev"/></svg></button>
@@ -117,7 +117,7 @@ const NAV = [
   { id: 'master', label: 'Master Data', icon: 'db', groups: [
     { t: 'Produk', i: 'doc', items: [['Finished Goods', 'FG, routing, tarif', 'list', 'm-fg'], ['Material', 'Bahan baku', 'list', 'm-mat']] },
     { t: 'Mitra dan SDM', i: 'people', items: [['Customer', 'Daftar customer', 'list', 'm-cus'], ['Pekerja', 'Pekerja borongan', 'list', 'm-pkj']] } ] },
-  { id: 'adm', label: 'Administrasi', icon: 'shield', groups: [{ t: 'Hak Akses', i: 'lock', items: [['Pengguna', 'Akun dan peran', 'list', 'u-list'], ['Role dan Hak Akses', 'Matriks izin', 'list', 'r-list'], ['Audit Log', 'Jejak aktivitas', 'list', 'audit']] }] },
+  { id: 'adm', label: 'Administrasi', icon: 'shield', groups: [{ t: 'Hak Akses', i: 'lock', items: [['Pengguna', 'Akun dan peran', 'list', 'u-list'], ['Role dan Hak Akses', 'Matriks izin', 'list', 'r-list'], ['Audit Log', 'Jejak aktivitas', 'list', 'audit']] }, { t: 'Notifikasi', i: 'bell', items: [['Pengaturan Notifikasi', 'Jenis, ambang, jam, masa simpan', 'list', 'notif-set']] }] },
 ];
 
 /* ---------- Tab Manager ---------- */
@@ -125,6 +125,8 @@ const TABS = {
   'home':   { title: 'Beranda', pinned: true, render: home },
   'po-list': { title: 'Daftar PO', render: poList },
   'po-0001': { title: 'PO-202611-0001', alert: 'err', alertText: 'Ada baris PO terlambat', render: poDetail },
+  'notif-all': { title: 'Notifikasi', render: notifAll },
+  'notif-set': { title: 'Pengaturan Notifikasi', render: notifSet },
   'out-input': { title: 'Input Output WO-…0004', dirty: true, alert: 'err', alertText: 'Ada sel melebihi batas', render: outInput },
 };
 let open = ['home', 'po-list', 'po-0001', 'out-input'], active = 'home';
@@ -301,6 +303,55 @@ function poDetail() {
   </tbody></table><div class="dl-foot"><span>Menampilkan 3 dari 12 baris</span><span></span></div></div>`;
 }
 
+
+/* ---------- Layar: Semua notifikasi ---------- */
+function notifAll() {
+  const all = [
+    ['PO-202611-0001 terlambat', 'Baris KMJ-001 / Navy / M melewati tanggal kirim 20 Nov 2026.', 'Penjualan', ['Terlambat', 'err'], '5 menit lalu', 1],
+    ['WO-202611-0004 dirilis', 'KMJ-001 · PT Maju siap dikerjakan.', 'Produksi', ['Released', 'proc'], '14 Nov 2026 09:42', 1],
+    ['Periode GJ-20261102-20261108 perlu ditutup', 'Tanggal selesai sudah lewat.', 'Penggajian', ['Open', 'prog'], 'Kemarin', 1],
+    ['Stok habis: KMJ-001 · Navy · M', 'Tersedia kini 0.', 'Gudang', ['Habis', 'warn'], '12 Nov 2026 16:10', 0],
+    ['Akun siti terkunci', '5 percobaan login gagal.', 'Keamanan', ['Terkunci', 'err'], '12 Nov 2026 08:03', 0],
+    ['SJ-202611-0003 di-void', 'PO-202610-0007 kembali In Progress.', 'Penjualan', ['Void', 'obs'], '11 Nov 2026 13:20', 0],
+  ];
+  const chip = (t, n, on) => `<button class="chip" aria-pressed="${!!on}" onclick="pressChip(this)">${t} <i>${n}</i></button>`;
+  return `
+  <div class="crumb">Beranda / Notifikasi</div>
+  <div class="ph"><h1>Semua notifikasi</h1><div class="acts"><button class="btn" onclick="readAll();toast('Semua notifikasi ditandai terbaca')">${ic('check')}Tandai semua dibaca</button></div></div>
+  <div class="card pad0">
+    <div class="dl-top"><div class="sw"><svg class="ic"><use href="#i-search"/></svg><input class="in srch" placeholder="Cari judul atau dokumen" aria-label="Cari notifikasi"></div></div>
+    <div class="chips" role="group" aria-label="Filter">${chip('Semua', 128, 1)}${chip('Belum dibaca', 3)}${chip('Produksi', 40)}${chip('Penjualan', 52)}${chip('Gudang', 22)}${chip('Penggajian', 6)}${chip('Keamanan', 8)}</div>
+    <table><thead><tr><th style="width:24px"></th><th>Notifikasi</th><th>Kategori</th><th>Jenis</th><th>Waktu</th></tr></thead><tbody>
+    ${all.map(r => `<tr style="cursor:pointer;${r[5] ? 'background:var(--brand-t)' : ''}"><td>${r[5] ? '<span class="udot" style="margin:0" aria-hidden="true"></span><span class="sr">Belum dibaca</span>' : ''}</td>
+      <td><div style="font-weight:${r[5] ? 700 : 400}">${r[0]}</div><div class="sub">${r[1]}</div></td><td>${r[2]}</td><td>${bd(r[3][0], r[3][1])}</td><td class="sub">${r[4]}</td></tr>`).join('')}
+    </tbody></table>
+    <div class="dl-foot"><span>Menampilkan 6 dari 128 · Notifikasi disimpan selama 90 hari.</span><div class="pager"><button class="on">1</button><button>2</button><button>3</button><button aria-label="Berikutnya">›</button></div></div>
+  </div>`;
+}
+
+/* ---------- Layar: Pengaturan Notifikasi ---------- */
+function notifSet() {
+  const row = (c, n, p, on = 1) => `<tr><td style="width:60px"><input type="checkbox" ${on ? 'checked' : ''} aria-label="Aktif ${n}"></td><td><span class="mono">${c}</span> &nbsp;${n}</td><td class="sub">${p}</td></tr>`;
+  const sec = t => `<tr><td colspan="3" style="background:var(--bg2);font-size:12px;font-weight:600;color:var(--fg3);letter-spacing:.04em">${t}</td></tr>`;
+  return `
+  <div class="crumb">Administrasi / Notifikasi / Pengaturan Notifikasi</div>
+  <div class="ph"><h1>Pengaturan Notifikasi</h1></div>
+  ${mbar('info', 'info', 'Perubahan berlaku untuk pemeriksaan berikutnya dan tidak menghapus notifikasi yang sudah ada.')}
+  <div class="card"><div class="ch">Pengaturan umum</div><div class="cb"><div class="fgrid">
+    <div class="fld"><label for="n1">Ambang jatuh tempo (hari)<span class="req" aria-hidden="true">*</span></label><input id="n1" class="in" value="3" aria-describedby="n1h"><span class="sub" id="n1h">Rentang 1–14. Dipakai NC-02.</span></div>
+    <div class="fld"><label for="n2">Jam pemeriksaan harian<span class="req" aria-hidden="true">*</span></label><input id="n2" class="in" value="06:00" aria-describedby="n2h"><span class="sub" id="n2h">Zona waktu aplikasi (WIB).</span></div>
+    <div class="fld"><label for="n3">Masa simpan (hari)<span class="req" aria-hidden="true">*</span></label><input id="n3" class="in bad" value="9" aria-invalid="true" aria-describedby="n3h"><span class="err-t" id="n3h">${ic('err', 's12')}Masa simpan harus 30 sampai 365 hari.</span></div>
+  </div></div></div>
+  <div class="card pad0"><div class="ch">Jenis notifikasi</div><table><thead><tr><th>Aktif</th><th>Jenis</th><th>Penerima (izin)</th></tr></thead><tbody>
+    ${sec('KEJADIAN (DIPICU AKSI PENGGUNA)')}
+    ${row('NE-01', 'WO dirilis', 'ProductionOutput.Create')}${row('NE-02', 'WO selesai, menunggu Close', 'WorkOrder.Close')}${row('NE-03', 'Serah Terima FG dibuat', 'StokFG.View')}${row('NE-04', 'Periode gaji ditutup', 'Payroll.View')}
+    ${row('NE-05', 'Void/Koreksi Output', 'ProductionOutput.View')}${row('NE-11', 'Stok tersedia habis', 'StokFG.View', 0)}
+    ${sec('KONDISI TERJADWAL (DICEK HARIAN)')}
+    ${row('NC-01', 'PO terlambat', 'CustomerPO.View')}${row('NC-02', 'PO jatuh tempo', 'CustomerPO.View')}${row('NC-03', 'WO terlambat', 'WorkOrder.View')}${row('NC-04', 'Periode gaji perlu ditutup', 'Payroll.View')}
+  </tbody></table>
+  <div class="cf"><span class="note"><span class="dirty"></span>Belum disimpan · Terakhir diubah 14 Nov 2026 oleh Budi</span><button class="btn">Batal</button><button class="btn pri">Simpan</button></div></div>`;
+}
+
 /* ---------- Layar: Input Output (grid input, Compact) ---------- */
 function outInput() {
   const cell = (v, max, st) => `<td><div class="cell"><input class="in ${st || ''}" value="${v}" aria-label="qty maksimum ${max}" ${st === 'bad' ? 'aria-invalid="true"' : ''}>${max === null ? '' : `<span class="${st === 'bad' ? 'err-t' : 'sub'}">${st === 'bad' ? ic('err', 's12') + 'Maks ' + max : 'maks ' + max}</span>`}</div></td>`;
@@ -323,7 +374,7 @@ function outInput() {
     <div class="cf"><span class="note"><span class="dirty"></span>Belum disimpan · 2 pekerja · 225 pcs</span><button class="btn">Batal</button><button class="btn pri" disabled title="Perbaiki 1 sel yang melebihi batas">Simpan</button></div></div>`;
 }
 
-{ const h = location.hash.slice(1); if (TABS[h] && open.includes(h)) active = h; }  // tautan langsung ke tab: index.html#po-0001
+{ const h = location.hash.slice(1); if (TABS[h]) { if (!open.includes(h)) open.push(h); active = h; } }  // tautan langsung ke tab: index.html#po-0001
 drawNotif(); draw();
 </script>
 </body>

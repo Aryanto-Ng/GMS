@@ -118,6 +118,7 @@ Satu tombol per kategori, ikon 16px + label; aktif: teks tebal + garis bawah `--
 | | Mitra dan SDM (People) | Customer · Vendor · Pekerja | | |
 | | Impor (ArrowUpload) | | Impor FG · Material · Pekerja | `MasterData.<Resource>.Import` |
 | **Administrasi** (ShieldKeyhole) | Hak Akses (LockClosed) | Pengguna · Role dan Hak Akses · Audit Log | Tambah Pengguna · Tambah Role | `AccessManagement.*` |
+| | Notifikasi (Alert) | Pengaturan Notifikasi (Settings) | | `Notifikasi.Pengaturan.View` |
 
 Nama ikon mengikuti set Fluent regular (nama generik; Frontend memetakannya). Dari URL langsung tanpa hak: halaman 403 (Static SSR).
 
@@ -156,6 +157,7 @@ Aturan dasar mengikuti Design.md bagian 6. Keputusan khusus GMS:
 | Surat Jalan | `sj:list` · `sj:{SJ-…}` · `sj:baru` | – |
 | Periode Gaji | `pay:list` · `pay:{GJ-…}` | Oranye: periode Open yang tanggal selesainya sudah lewat |
 | Master Data | `master:{entitas}` · `master:fg:{kode}` · `master:{entitas}:import` | Oranye: FG **Belum Siap** |
+| Notifikasi | `notif:all` · `admin:notif-settings` | – |
 | Pengguna / Role / Audit | `admin:users` · `admin:user:{username}` · `admin:roles` · `admin:role:{nama}` · `admin:audit` | – |
 
 ---
