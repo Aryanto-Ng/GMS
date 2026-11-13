@@ -1,6 +1,6 @@
 # SEC-001: Eskalasi hak ke Administrator (Tinggi)
 
-- Ditemukan: 2026-11-12 (audit Security). Pemilik: Backend. Status: **Diperbaiki 2026-11-12** (menunggu verifikasi ulang). Pertahanan berlapis (tingkat dikoreksi dari Tinggi ke Rendah: izin AccessManagement.* tidak dapat diberikan ke non-Administrator lewat API). Guard + 6 tes; mutasi tertangkap.
+- Ditemukan: 2026-11-12 (audit Security). Pemilik: Backend. Status: **Selesai, terverifikasi di UAT 2026-11-13**. Pertahanan berlapis (tingkat dikoreksi dari Tinggi ke Rendah: izin AccessManagement.* tidak dapat diberikan ke non-Administrator lewat API). Guard + 6 tes; mutasi tertangkap.
 - Lokasi: `Gms.Api/Features/Access/Users/{CreateUserHandler,UpdateUserHandler,ResetPasswordHandler}.cs`.
 - Masalah: pengguna dengan izin `User.Create`/`User.Edit`/`User.ResetPassword` (dapat diberikan ke role non-Administrator) dapat membuat/menjadikan pengguna ber-role Administrator, menaikkan role dirinya, atau mereset password Administrator.
 - Perbaikan yang diharapkan: hanya Administrator (role sistem) yang boleh menetapkan role sistem, serta mengubah/mereset/menonaktifkan pengguna ber-role sistem; mengubah role diri sendiri ditolak. Pesan Bahasa Indonesia, audit tetap.
