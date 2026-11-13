@@ -2,7 +2,7 @@
 
 - **Ditemukan:** 2026-11-14, uji manual Ary di lingkungan lokal (Gms.Api profil `http` :5222, Gms.Web :5263, Postgres native `localhost:5432`, DB `gms`).
 - **Pelapor:** Ary. **Penguji:** QA. **Keparahan:** Tinggi (API menolak semua permintaan sampai koneksi bebas).
-- **Status:** Terbuka. **Akar masalah BELUM terkonfirmasi.** Dugaan `max_connections=7` DICABUT (2026-11-14): Ary memastikan `postgresql.conf` = 100, dan angka "7" di hasil query tidak terverifikasi sebagai `max_connections`.
+- **Status:** Diperbaiki (batas pool), MENUNGGU UJI ULANG Ary di mesin lokal. **Akar masalah BELUM terkonfirmasi.** Dugaan `max_connections=7` DICABUT (2026-11-14): Ary memastikan `postgresql.conf` = 100, dan angka "7" di hasil query tidak terverifikasi sebagai `max_connections`.
 
 ## Gejala
 ```
@@ -63,3 +63,9 @@ Membuka 10 tab dan menjalankan alur PO→WO→Output tanpa error 53300; `pg_stat
 - `max_connections` = 100 (dikonfirmasi Ary lewat `pg_settings`); slot untuk non-superuser = 100 − `superuser_reserved_connections` (bawaan 3) = 97. Pada saat error sekitar 97 sesi terpakai; sampel `pg_stat_activity` Ary diambil setelah lonjakan lewat (hanya 4 sesi pgAdmin).
 - Uji: seluruh E2E (48 tes, 1 pengguna berurutan, Postgres 17 Testcontainers, API tanpa batas pool) dengan sampling `pg_stat_activity` tiap ~0,5–1,5 dtk: **puncak 28 sesi klien bersamaan** (terukur minimal; lonjakan singkat bisa lebih tinggi). Satu pengguna saja sudah memakai sepertiga jatah; pool Npgsql menyimpan koneksi menganggur hingga ±5 menit sehingga angka ini menumpuk.
 - Kesimpulan sementara: error terjadi ketika beberapa tab/sesi terbuka bersamaan memicu banyak permintaan paralel dan pool tak terbatas (bawaan 100 > 97 slot) menghabiskan slot. Belum dibuktikan secara langsung pada mesin Ary; akan terbukti bila uji ulang dengan batas pool tidak lagi memunculkan 53300.
+
+## Perbaikan (Backend, 2026-11-14)
+- `ApiHost.WithPoolLimit`: `Maximum Pool Size` diterapkan ke connection string dari konfigurasi `Database:MaxPoolSize` (bawaan 20). Nilai yang sudah tertulis di connection string tidak ditimpa. Tanpa paket baru.
+- Frontend: usulan "tunda muat tab tidak aktif" DIBATALKAN. Tab baru dirender saat dibuka dan langsung aktif, jadi tidak ada lonjakan dari tab tidak aktif.
+- Tes: `ConnectionPoolTests` (4). API 535/535 lulus; E2E 48/48 lulus. Puncak sesi bersamaan pada E2E turun dari 28 menjadi 21 (batas 20 + sesi sampling).
+- **Uji ulang Ary:** restart Gms.Api, buka banyak tab, jalankan alur PO→WO→Output; error 53300 tidak boleh muncul. Bila permintaan berlebih, tampilannya menunggu giliran (bukan galat server).

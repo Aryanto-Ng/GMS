@@ -34,6 +34,30 @@ namespace Gms.Api.Hosting;
 /// </summary>
 public static class ApiHost
 {
+    public const int DefaultMaxPoolSize = 20;
+
+    public static string? WithPoolLimit(IConfiguration configuration)
+    {
+        var connection = configuration.GetConnectionString("Default");
+        if (string.IsNullOrWhiteSpace(connection))
+        {
+            return connection;
+        }
+
+        var explicitLimit = connection.Contains("Maximum Pool Size", StringComparison.OrdinalIgnoreCase)
+            || connection.Contains("MaxPoolSize", StringComparison.OrdinalIgnoreCase);
+        if (explicitLimit)
+        {
+            return connection;
+        }
+
+        var builder = new Npgsql.NpgsqlConnectionStringBuilder(connection)
+        {
+            MaxPoolSize = Math.Max(1, configuration.GetValue("Database:MaxPoolSize", DefaultMaxPoolSize)),
+        };
+        return builder.ConnectionString;
+    }
+
     public static WebApplication Build(string[] args, Action<WebApplicationBuilder>? configure = null)
     {
         var builder = WebApplication.CreateBuilder(args);
@@ -46,8 +70,10 @@ public static class ApiHost
         services.Configure<NotificationConfig>(builder.Configuration.GetSection(NotificationConfig.SectionName));
 
         // Data: connection string dibaca saat DbContext dibuat (memungkinkan penggantian konfigurasi oleh tes).
+        // BUG-002: pool Npgsql bawaan (100) melebihi slot server (max_connections 100 - 3 cadangan), sehingga lonjakan permintaan memicu SqlState 53300.
+        // Batas pool diterapkan dari konfigurasi (Database:MaxPoolSize, bawaan 20) kecuali connection string sudah menetapkan "Maximum Pool Size".
         services.AddDbContext<GmsDbContext>((sp, options) =>
-            options.UseNpgsql(sp.GetRequiredService<IConfiguration>().GetConnectionString("Default"))
+            options.UseNpgsql(WithPoolLimit(sp.GetRequiredService<IConfiguration>()))
                 .AddInterceptors(new NotificationSideEffectsInterceptor(sp)));
 
         services.AddSingleton(TimeProvider.System);
