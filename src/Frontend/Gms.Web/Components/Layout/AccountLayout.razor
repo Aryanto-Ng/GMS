@@ -1,10 +1,11 @@
 @inherits LayoutComponentBase
 @inject IOptions<AppIdentityOptions> IdentityOptions
 @inject NavigationManager Nav
+@inject IStringLocalizer<ChromeResource> L
 
 @* Halaman penuh di luar layout 4 zona (Design.md 10, Form masuk): Login, Ganti Password, 403. Static SSR tanpa JavaScript interaktif.
    Latar SVG bergerak bertema bisnis (mati pada prefers-reduced-motion), kartu putih 420px di tengah layar, pilihan ID/EN di pojok kanan atas, footer di dasar layar. *@
-<a class="gms-skip" href="#gms-account">Lewati ke konten utama</a>
+<a class="gms-skip" href="#gms-account">@L["Skip.Main"]</a>
 <div class="gms-account">
     <svg class="gms-account-bg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
         <defs>
@@ -27,7 +28,7 @@
         <g fill="var(--on-brand)" fill-opacity=".08"><circle class="gms-float" cx="1250" cy="160" r="70" /><rect class="gms-float f2" x="180" y="120" width="90" height="90" rx="14" transform="rotate(18 225 165)" /><circle class="gms-float f2" cx="720" cy="130" r="26" /></g>
     </svg>
 
-    <div class="gms-account-lang" role="group" aria-label="Bahasa">
+    <div class="gms-account-lang" role="group" aria-label="@L["Header.Lang"]">
         <a class="@(IsEnglish ? "" : "on")" href="@LanguageHref("id-ID")" aria-current="@(IsEnglish ? null : "true")">ID</a>
         <a class="@(IsEnglish ? "on" : "")" href="@LanguageHref("en-US")" aria-current="@(IsEnglish ? "true" : null)">EN</a>
     </div>
@@ -40,7 +41,7 @@
         @Body
     </main>
 
-    <div class="gms-account-foot">@Identity.Footer</div>
+    <div class="gms-account-foot">@string.Format(L["Footer.Text"].Value, Identity.Year, Identity.Name)</div>
 </div>
 <script src="js/account.js"></script>
 

@@ -1,9 +1,10 @@
 @implements IDisposable
 @inject TabManager Tabs
+@inject IStringLocalizer<ChromeResource> L
 
 @* Internal Tab Manager (Design.md 6): satu tab per dokumen; Beranda terpaku; maks. 10; titik oranye = belum disimpan; ikon alert (merah = error/terlambat, oranye = peringatan);
    klik kanan = muat ulang / tutup / tutup lainnya / tutup semua; "Semua tab" menampilkan daftar. Menutup tab yang belum disimpan meminta konfirmasi. *@
-<div class="gms-tabbar" role="tablist" aria-label="Tab dokumen">
+<div class="gms-tabbar" role="tablist" aria-label="@L["Tabs.Aria"]">
     @foreach (var tab in Tabs.Tabs)
     {
         var on = tab.Id == Tabs.ActiveId;
@@ -13,22 +14,22 @@
                 else if (tab.Alert == TabAlertKind.Error) { <span class="gms-alert-err" title="@tab.AlertText"><GmsIcon Name="error" /><span class="gms-sr-only">@tab.AlertText</span></span> }
                 else if (tab.Alert == TabAlertKind.Warning) { <span class="gms-alert-warn" title="@tab.AlertText"><GmsIcon Name="alert" /><span class="gms-sr-only">@tab.AlertText</span></span> }
                 <span class="t">@tab.Title</span>
-                @if (tab.Dirty) { <span class="gms-dirty" aria-hidden="true"></span><span class="gms-sr-only">belum disimpan</span> }
+                @if (tab.Dirty) { <span class="gms-dirty" aria-hidden="true"></span><span class="gms-sr-only">@L["Tabs.Unsaved"]</span> }
             </button>
             @if (!tab.Pinned)
             {
-                <button type="button" class="gms-tab-x" aria-label="@($"Tutup {tab.Title}")" @onclick="() => RequestClose(tab)"><GmsIcon Name="dismiss" Class="s12" /></button>
+                <button type="button" class="gms-tab-x" aria-label="@string.Format(L["Tabs.Close"].Value, tab.Title)" @onclick="() => RequestClose(tab)"><GmsIcon Name="dismiss" Class="s12" /></button>
             }
         </div>
     }
 
     <div style="margin-left:auto;position:relative;align-self:center">
         <button type="button" class="gms-tab-all" aria-haspopup="menu" aria-expanded="@(_all ? "true" : "false")" @onclick="() => { _all = !_all; _menu = null; }">
-            Semua tab (@Tabs.Tabs.Count/@TabManager.MaxTabs)<GmsIcon Name="chevron-down" Class="s12" />
+            @L["Tabs.All"] (@Tabs.Tabs.Count/@TabManager.MaxTabs)<GmsIcon Name="chevron-down" Class="s12" />
         </button>
         @if (_all)
         {
-            <div class="gms-hmenu" role="menu" aria-label="Semua tab" style="top:32px">
+            <div class="gms-hmenu" role="menu" aria-label="@L["Tabs.All"]" style="top:32px">
                 @foreach (var tab in Tabs.Tabs)
                 {
                     <button type="button" role="menuitem" aria-checked="@(tab.Id == Tabs.ActiveId ? "true" : "false")" @onclick="() => { _all = false; Tabs.Activate(tab.Id); }">@tab.Title</button>
@@ -41,17 +42,17 @@
 @if (_menu is not null)
 {
     <div class="gms-scrim" style="position:fixed;inset:0;z-index:25" @onclick="() => _menu = null" @oncontextmenu="() => _menu = null" @oncontextmenu:preventDefault="true"></div>
-    <div class="gms-hmenu" role="menu" aria-label="@($"Menu tab {_menu.Title}")" style="position:fixed;left:@(_x)px;top:@(_y)px;z-index:30">
-        <button type="button" role="menuitem" @onclick="() => Do(() => Tabs.Reload(_menu.Id))">Muat ulang</button>
-        @if (!_menu.Pinned) { <button type="button" role="menuitem" @onclick="() => { var t = _menu; _menu = null; RequestClose(t); }">Tutup</button> }
-        <button type="button" role="menuitem" @onclick="() => Do(() => Tabs.CloseOthers(_menu.Id))">Tutup lainnya</button>
-        <button type="button" role="menuitem" @onclick="() => Do(Tabs.CloseAll)">Tutup semua</button>
+    <div class="gms-hmenu" role="menu" aria-label="@_menu.Title" style="position:fixed;left:@(_x)px;top:@(_y)px;z-index:30">
+        <button type="button" role="menuitem" @onclick="() => Do(() => Tabs.Reload(_menu.Id))">@L["Tabs.Reload"]</button>
+        @if (!_menu.Pinned) { <button type="button" role="menuitem" @onclick="() => { var t = _menu; _menu = null; RequestClose(t); }">@L["Tabs.CloseThis"]</button> }
+        <button type="button" role="menuitem" @onclick="() => Do(() => Tabs.CloseOthers(_menu.Id))">@L["Tabs.CloseOthers"]</button>
+        <button type="button" role="menuitem" @onclick="() => Do(Tabs.CloseAll)">@L["Tabs.CloseAll"]</button>
     </div>
 }
 
-<ConfirmDialog Open="_confirm is not null" OpenChanged="v => { if (!v) _confirm = null; }" Title="Tutup tab tanpa menyimpan?"
-               Description="@($"Perubahan pada \"{_confirm?.Title}\" belum disimpan dan akan hilang.")" ShowReason="false" Danger="true"
-               ConfirmText="Tutup tanpa menyimpan" CancelText="Tetap di sini"
+<ConfirmDialog Open="_confirm is not null" OpenChanged="v => { if (!v) _confirm = null; }" Title="@L["Tabs.ConfirmTitle"]"
+               Description="@string.Format(L["Tabs.ConfirmBody"].Value, _confirm?.Title)" ShowReason="false" Danger="true"
+               ConfirmText="@L["Tabs.ConfirmYes"]" CancelText="@L["Tabs.ConfirmNo"]"
                OnConfirm="_ => { if (_confirm is not null) Tabs.Close(_confirm.Id); return Task.CompletedTask; }" />
 
 @code {

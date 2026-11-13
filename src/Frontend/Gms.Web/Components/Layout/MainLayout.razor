@@ -3,11 +3,12 @@
 @inject AuthenticationStateProvider Auth
 @inject NavigationManager Nav
 @inject TabManager Tabs
+@inject IStringLocalizer<ChromeResource> L
 
 @* Layout 4 zona (Design.md 3): Global Header, Top Navigation, Internal Tab Manager, Main Workspace. Tanpa sidebar. Router menentukan halaman untuk URL aktif;
    isi halaman dirender oleh TabHost (semua tab terbuka tetap hidup). @Body sengaja tidak dirender. *@
 
-<a class="gms-skip" href="#gms-main">Lewati ke konten utama</a>
+<a class="gms-skip" href="#gms-main">@L["Skip.Main"]</a>
 
 <div class="gms-app">
     <AppHeader Catalog="_catalog" OnToggleNav="() => _navOpen = !_navOpen" />
@@ -18,13 +19,13 @@
         {
             <div class="gms-banner warning" role="status">
                 <GmsIcon Name="alert" />
-                <div class="gms-banner-body">Batas @TabManager.MaxTabs tab tercapai. Tutup satu tab untuk membuka dokumen baru.</div>
-                <button type="button" class="gms-banner-close" aria-label="Tutup pesan" @onclick="Tabs.DismissLimit"><GmsIcon Name="dismiss" /></button>
+                <div class="gms-banner-body">@string.Format(L["Tabs.Limit"].Value, TabManager.MaxTabs)</div>
+                <button type="button" class="gms-banner-close" aria-label="@L["Tabs.CloseMessage"]" @onclick="Tabs.DismissLimit"><GmsIcon Name="dismiss" /></button>
             </div>
         }
 
         <TabHost />
-        <div class="gms-footer">@Identity.Footer</div>
+        <div class="gms-footer">@string.Format(L["Footer.Text"].Value, Identity.Year, Identity.Name)</div>
     </main>
 </div>
 

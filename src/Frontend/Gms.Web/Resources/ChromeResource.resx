@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Nav.po.list.Label" xml:space="preserve"><value>Daftar PO</value></data>
+  <data name="Nav.po.list.Desc" xml:space="preserve"><value>Pesanan customer dan statusnya</value></data>
+  <data name="Nav.po.new.Label" xml:space="preserve"><value>Buat PO</value></data>
+  <data name="Nav.po.new.Desc" xml:space="preserve"><value>Catat pesanan customer baru</value></data>
+  <data name="Nav.sj.list.Label" xml:space="preserve"><value>Daftar Surat Jalan</value></data>
+  <data name="Nav.sj.list.Desc" xml:space="preserve"><value>Surat jalan dan statusnya</value></data>
+  <data name="Nav.sj.new.Label" xml:space="preserve"><value>Buat Surat Jalan</value></data>
+  <data name="Nav.sj.new.Desc" xml:space="preserve"><value>Kirim barang jadi ke customer</value></data>
+  <data name="Nav.wo.list.Label" xml:space="preserve"><value>Daftar WO</value></data>
+  <data name="Nav.wo.list.Desc" xml:space="preserve"><value>Work order dan progres langkah</value></data>
+  <data name="Nav.wo.new.Label" xml:space="preserve"><value>Buat WO</value></data>
+  <data name="Nav.wo.new.Desc" xml:space="preserve"><value>Terbitkan work order dari PO</value></data>
+  <data name="Nav.out.history.Label" xml:space="preserve"><value>Riwayat Output</value></data>
+  <data name="Nav.out.history.Desc" xml:space="preserve"><value>Riwayat output, penyesuaian, dan void</value></data>
+  <data name="Nav.out.new.Label" xml:space="preserve"><value>Input Output</value></data>
+  <data name="Nav.out.new.Desc" xml:space="preserve"><value>Catat hasil kerja per pekerja</value></data>
+  <data name="Nav.out.adjust.Label" xml:space="preserve"><value>Input Penyesuaian</value></data>
+  <data name="Nav.out.adjust.Desc" xml:space="preserve"><value>Koreksi output yang sudah tercatat</value></data>
+  <data name="Nav.vendor.move.Label" xml:space="preserve"><value>Kirim/Terima Vendor</value></data>
+  <data name="Nav.vendor.move.Desc" xml:space="preserve"><value>Catat barang keluar dan masuk vendor</value></data>
+  <data name="Nav.fg.handovers.Label" xml:space="preserve"><value>Daftar Serah Terima</value></data>
+  <data name="Nav.fg.handovers.Desc" xml:space="preserve"><value>Serah terima barang jadi ke gudang</value></data>
+  <data name="Nav.fg.stock.Label" xml:space="preserve"><value>Stok FG</value></data>
+  <data name="Nav.fg.stock.Desc" xml:space="preserve"><value>Stok barang jadi saat ini</value></data>
+  <data name="Nav.fg.ledger.Label" xml:space="preserve"><value>Kartu Stok</value></data>
+  <data name="Nav.fg.ledger.Desc" xml:space="preserve"><value>Mutasi stok per barang</value></data>
+  <data name="Nav.fg.handover.new.Label" xml:space="preserve"><value>Serah Terima FG</value></data>
+  <data name="Nav.fg.handover.new.Desc" xml:space="preserve"><value>Terima barang jadi dari produksi</value></data>
+  <data name="Nav.mat.handovers.Label" xml:space="preserve"><value>Serah Terima Material</value></data>
+  <data name="Nav.mat.handovers.Desc" xml:space="preserve"><value>Material keluar ke produksi</value></data>
+  <data name="Nav.mat.handover.new.Label" xml:space="preserve"><value>Serah Terima Material Baru</value></data>
+  <data name="Nav.mat.handover.new.Desc" xml:space="preserve"><value>Catat material keluar ke produksi</value></data>
+  <data name="Nav.stock.import.Label" xml:space="preserve"><value>Impor Saldo Awal</value></data>
+  <data name="Nav.stock.import.Desc" xml:space="preserve"><value>Muat saldo stok awal dari CSV</value></data>
+  <data name="Nav.payroll.periods.Label" xml:space="preserve"><value>Periode Gaji</value></data>
+  <data name="Nav.payroll.periods.Desc" xml:space="preserve"><value>Periode, rincian, slip, dan penutupan</value></data>
+  <data name="Nav.fgs.Label" xml:space="preserve"><value>Finished Goods</value></data>
+  <data name="Nav.fgs.Desc" xml:space="preserve"><value>Barang jadi, size, routing, dan tarif</value></data>
+  <data name="Nav.materials.Label" xml:space="preserve"><value>Material</value></data>
+  <data name="Nav.materials.Desc" xml:space="preserve"><value>Bahan dan satuannya</value></data>
+  <data name="Nav.matcats.Label" xml:space="preserve"><value>Kategori Material</value></data>
+  <data name="Nav.matcats.Desc" xml:space="preserve"><value>Pengelompokan material</value></data>
+  <data name="Nav.sizes.Label" xml:space="preserve"><value>Size</value></data>
+  <data name="Nav.sizes.Desc" xml:space="preserve"><value>Daftar ukuran</value></data>
+  <data name="Nav.colors.Label" xml:space="preserve"><value>Color</value></data>
+  <data name="Nav.colors.Desc" xml:space="preserve"><value>Daftar warna</value></data>
+  <data name="Nav.uoms.Label" xml:space="preserve"><value>Satuan (UoM)</value></data>
+  <data name="Nav.uoms.Desc" xml:space="preserve"><value>Satuan ukur</value></data>
+  <data name="Nav.processes.Label" xml:space="preserve"><value>Process</value></data>
+  <data name="Nav.processes.Desc" xml:space="preserve"><value>Proses produksi</value></data>
+  <data name="Nav.customers.Label" xml:space="preserve"><value>Customer</value></data>
+  <data name="Nav.customers.Desc" xml:space="preserve"><value>Pelanggan</value></data>
+  <data name="Nav.vendors.Label" xml:space="preserve"><value>Vendor</value></data>
+  <data name="Nav.vendors.Desc" xml:space="preserve"><value>Mitra pengerjaan luar</value></data>
+  <data name="Nav.workers.Label" xml:space="preserve"><value>Pekerja</value></data>
+  <data name="Nav.workers.Desc" xml:space="preserve"><value>Pekerja borongan</value></data>
+  <data name="Nav.import.fgs.Label" xml:space="preserve"><value>Impor FG</value></data>
+  <data name="Nav.import.fgs.Desc" xml:space="preserve"><value>Muat barang jadi dari CSV</value></data>
+  <data name="Nav.import.materials.Label" xml:space="preserve"><value>Impor Material</value></data>
+  <data name="Nav.import.materials.Desc" xml:space="preserve"><value>Muat material dari CSV</value></data>
+  <data name="Nav.import.workers.Label" xml:space="preserve"><value>Impor Pekerja</value></data>
+  <data name="Nav.import.workers.Desc" xml:space="preserve"><value>Muat pekerja dari CSV</value></data>
+  <data name="Nav.users.Label" xml:space="preserve"><value>Pengguna</value></data>
+  <data name="Nav.users.Desc" xml:space="preserve"><value>Akun pengguna</value></data>
+  <data name="Nav.roles.Label" xml:space="preserve"><value>Role &amp; Hak Akses</value></data>
+  <data name="Nav.roles.Desc" xml:space="preserve"><value>Role dan matriks izin</value></data>
+  <data name="Nav.audit.Label" xml:space="preserve"><value>Audit Log</value></data>
+  <data name="Nav.audit.Desc" xml:space="preserve"><value>Jejak perubahan data</value></data>
+  <data name="Nav.notif.settings.Label" xml:space="preserve"><value>Pengaturan Notifikasi</value></data>
+  <data name="Nav.notif.settings.Desc" xml:space="preserve"><value>Jenis, ambang, jam, masa simpan</value></data>
+  <data name="Nav.Cat.sales" xml:space="preserve"><value>Penjualan</value></data>
+  <data name="Nav.Cat.production" xml:space="preserve"><value>Produksi</value></data>
+  <data name="Nav.Cat.warehouse" xml:space="preserve"><value>Gudang</value></data>
+  <data name="Nav.Cat.payroll" xml:space="preserve"><value>Penggajian</value></data>
+  <data name="Nav.Cat.master" xml:space="preserve"><value>Master Data</value></data>
+  <data name="Nav.Cat.admin" xml:space="preserve"><value>Administrasi</value></data>
+  <data name="Nav.Group.Atribut" xml:space="preserve"><value>Atribut</value></data>
+  <data name="Nav.Group.Customer PO" xml:space="preserve"><value>Customer PO</value></data>
+  <data name="Nav.Group.Finished Goods" xml:space="preserve"><value>Finished Goods</value></data>
+  <data name="Nav.Group.Hak Akses" xml:space="preserve"><value>Hak Akses</value></data>
+  <data name="Nav.Group.Impor" xml:space="preserve"><value>Impor</value></data>
+  <data name="Nav.Group.Material" xml:space="preserve"><value>Material</value></data>
+  <data name="Nav.Group.Mitra &amp; SDM" xml:space="preserve"><value>Mitra &amp; SDM</value></data>
+  <data name="Nav.Group.Notifikasi" xml:space="preserve"><value>Notifikasi</value></data>
+  <data name="Nav.Group.Payroll Borongan" xml:space="preserve"><value>Payroll Borongan</value></data>
+  <data name="Nav.Group.Pengiriman" xml:space="preserve"><value>Pengiriman</value></data>
+  <data name="Nav.Group.Production Output" xml:space="preserve"><value>Production Output</value></data>
+  <data name="Nav.Group.Produk" xml:space="preserve"><value>Produk</value></data>
+  <data name="Nav.Group.Vendor" xml:space="preserve"><value>Vendor</value></data>
+  <data name="Nav.Group.Work Order" xml:space="preserve"><value>Work Order</value></data>
+  <data name="Nav.home.Label" xml:space="preserve"><value>Beranda</value></data>
+  <data name="Nav.home.Desc" xml:space="preserve"><value>Ringkasan dan aksi cepat</value></data>
+  <data name="Nav.Home" xml:space="preserve"><value>Beranda</value></data>
+  <data name="Header.Search.Placeholder" xml:space="preserve"><value>Cari halaman atau aksi…</value></data>
+  <data name="Header.Search.Label" xml:space="preserve"><value>Cari halaman atau aksi</value></data>
+  <data name="Header.Search.Results" xml:space="preserve"><value>Hasil pencarian</value></data>
+  <data name="Header.Search.None" xml:space="preserve"><value>Tidak ada hasil untuk pencarian ini.</value></data>
+  <data name="Header.Search.Action" xml:space="preserve"><value>Aksi</value></data>
+  <data name="Header.Lang" xml:space="preserve"><value>Bahasa</value></data>
+  <data name="Header.LangLabel" xml:space="preserve"><value>Bahasa: {0}</value></data>
+  <data name="Header.UserMenu" xml:space="preserve"><value>Menu pengguna {0}</value></data>
+  <data name="Header.ChangePassword" xml:space="preserve"><value>Ganti Password</value></data>
+  <data name="Header.Logout" xml:space="preserve"><value>Keluar</value></data>
+  <data name="Header.HomeLink" xml:space="preserve"><value>{0}, ke Beranda</value></data>
+  <data name="Header.Menu" xml:space="preserve"><value>Menu</value></data>
+  <data name="Nav.Aria" xml:space="preserve"><value>Navigasi utama</value></data>
+  <data name="Tabs.Aria" xml:space="preserve"><value>Tab dokumen</value></data>
+  <data name="Tabs.All" xml:space="preserve"><value>Semua tab</value></data>
+  <data name="Tabs.Close" xml:space="preserve"><value>Tutup {0}</value></data>
+  <data name="Tabs.Unsaved" xml:space="preserve"><value>belum disimpan</value></data>
+  <data name="Tabs.Reload" xml:space="preserve"><value>Muat ulang</value></data>
+  <data name="Tabs.CloseThis" xml:space="preserve"><value>Tutup</value></data>
+  <data name="Tabs.CloseOthers" xml:space="preserve"><value>Tutup lainnya</value></data>
+  <data name="Tabs.CloseAll" xml:space="preserve"><value>Tutup semua</value></data>
+  <data name="Tabs.ConfirmTitle" xml:space="preserve"><value>Tutup tab tanpa menyimpan?</value></data>
+  <data name="Tabs.ConfirmBody" xml:space="preserve"><value>Perubahan pada "{0}" belum disimpan dan akan hilang.</value></data>
+  <data name="Tabs.ConfirmYes" xml:space="preserve"><value>Tutup tanpa menyimpan</value></data>
+  <data name="Tabs.ConfirmNo" xml:space="preserve"><value>Tetap di sini</value></data>
+  <data name="Tabs.Limit" xml:space="preserve"><value>Batas {0} tab tercapai. Tutup satu tab untuk membuka dokumen baru.</value></data>
+  <data name="Tabs.CloseMessage" xml:space="preserve"><value>Tutup pesan</value></data>
+  <data name="Footer.Text" xml:space="preserve"><value>© {0} {1}. Hak cipta dilindungi.</value></data>
+  <data name="Skip.Main" xml:space="preserve"><value>Lewati ke konten utama</value></data>
+  <data name="Login.Title" xml:space="preserve"><value>Masuk</value></data>
+  <data name="Login.User" xml:space="preserve"><value>Nama pengguna</value></data>
+  <data name="Login.Pass" xml:space="preserve"><value>Kata sandi</value></data>
+  <data name="Login.Required" xml:space="preserve"><value>wajib</value></data>
+  <data name="Login.Show" xml:space="preserve"><value>Tampil</value></data>
+  <data name="Login.Hide" xml:space="preserve"><value>Sembunyi</value></data>
+  <data name="Login.Help" xml:space="preserve"><value>Lupa kata sandi? Hubungi Administrator.</value></data>
+  <data name="Status.Aktif" xml:space="preserve"><value>Aktif</value></data>
+  <data name="Status.Nonaktif" xml:space="preserve"><value>Nonaktif</value></data>
+  <data name="Status.Terkunci" xml:space="preserve"><value>Terkunci</value></data>
+  <data name="Status.Terlambat" xml:space="preserve"><value>Terlambat</value></data>
+  <data name="Status.Jatuh tempo" xml:space="preserve"><value>Jatuh tempo</value></data>
+  <data name="Status.Belum ada" xml:space="preserve"><value>Belum ada</value></data>
+  <data name="Status.Negatif" xml:space="preserve"><value>Negatif</value></data>
+  <data name="Status.Belum Final" xml:space="preserve"><value>Belum Final</value></data>
+  <data name="Status.Siap Produksi" xml:space="preserve"><value>Siap Produksi</value></data>
+  <data name="Status.Belum Siap" xml:space="preserve"><value>Belum Siap</value></data>
+  <data name="Status.Belum Mulai" xml:space="preserve"><value>Belum Mulai</value></data>
+  <data name="Status.Berjalan" xml:space="preserve"><value>Berjalan</value></data>
+  <data name="Status.Selesai" xml:space="preserve"><value>Selesai</value></data>
+</root>

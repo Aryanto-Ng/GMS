@@ -113,6 +113,8 @@ else
         await LoadAsync();
     }
 
+    [CascadingParameter] private TabContext? TabCtx { get; set; }
+
     private async Task LoadAsync()
     {
         _loadProblem = null;
@@ -125,6 +127,7 @@ else
 
         _loading = true;
         _loadProblem = await Errors.RunAsync(async () => _fg = await Fgs.GetAsync(id));
+        TabCtx?.SetAlert(_fg is { IsReady: false } ? TabAlertKind.Warning : TabAlertKind.None, "FG belum siap produksi");
         _loading = false;
     }
 
@@ -133,6 +136,7 @@ else
     {
         if (Id is not { } id) { return; }
         _loadProblem = await Errors.RunAsync(async () => _fg = await Fgs.GetAsync(id));
+        TabCtx?.SetAlert(_fg is { IsReady: false } ? TabAlertKind.Warning : TabAlertKind.None, "FG belum siap produksi");
     }
 
     private async Task SwitchAsync(FgTab tab)

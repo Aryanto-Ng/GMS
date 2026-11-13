@@ -44,7 +44,7 @@ else
 
     @if (_wo.Status == WoStatus.Cancelled && !string.IsNullOrEmpty(_wo.CancelReason))
     {
-        <div class="gms-banner warning" role="status"><div class="gms-banner-body"><p>Dibatalkan: @_wo.CancelReason</p></div></div>
+        <MessageBar Kind="warning">Dibatalkan: @_wo.CancelReason</MessageBar>
     }
 
     <div class="gms-welcome" aria-label="Ringkasan">
@@ -162,7 +162,7 @@ else
     <ConfirmDialog Open="_act == Act.Cancel" OpenChanged="Closed" Danger="true" ConfirmText="Batalkan WO" Title="Batalkan WO?"
                   Description="Hanya dapat dibatalkan bila belum ada aktivitas." OnConfirm="DoCancel" />
 
-    <ConfirmDialog Open="_act == Act.Qty" OpenChanged="Closed" ShowReason="false" Danger="false" ConfirmText="Simpan Qty" Title="Ubah Qty WO"
+    <ConfirmDialog Wide="true" Open="_act == Act.Qty" OpenChanged="Closed" ShowReason="false" Danger="false" ConfirmText="Simpan Qty" Title="Ubah Qty WO"
                   Description="Batas minimum = output proses pertama; maksimum = Qty sekarang + Sisa Rencana PO (diperiksa server)."
                   CanConfirm="@(_qty.Values.All(v => int.TryParse(v, out var n) && n >= 0))"
                   OnConfirm="DoQty">

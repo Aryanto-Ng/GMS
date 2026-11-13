@@ -26,7 +26,7 @@ Acuan visual TUNGGAL: `docs/Design.md` v2.0 (Microsoft Fluent 2) dan `docs/Desig
 `GmsButton` (Default/Primary/Link, `Danger`, `Loading`, `Icon`, `AriaLabel`), `GmsIcon` (set SVG sendiri `GmsIcons`; nama alias Ant dipertahankan), `StatusBadge` + `StatusPresentation` (peta 6 warna `t-proc/t-prog/t-ok/t-obs/t-err/t-warn`; Cancelled/Void abu), `StatTile`, `PageHeader`, `ProblemBanner`/`FormSummary` (MessageBar), `ConfirmDialog` (Dialog 480px; **lebar 720px** otomatis bila ada pratinjau dampak; fokus terkurung + Esc lewat `ConfirmDialog.razor.js`; `CancelText`), `ToastHost` + `IGmsToast`/`GmsToast`, `EmptyState`/`ErrorState`/`SkeletonRows`, `PagerBar`, `QtyGrid`, `ProgressMatrix`, `StackedProgress`, `ImportWizard`, `MasterList<T>`, `TextField`/`LookupSelect`, `AsyncContent`. Tabel memakai kelas `gms-table`.
 
 ## Tes
-- bUnit: 448 lulus; E2E: 47 lulus (`dotnet test --project src/Tests/Gms.Web.Tests`). Pemilih: tombol `button.gms-btn`; dialog `.gms-dialog-wrap`, `.gms-dialog-body`, `.gms-dialog-footer`; badge `.gms-tag.t-*`.
+- bUnit: 452 lulus; E2E: 48 lulus (`dotnet test --project src/Tests/Gms.Web.Tests`). Pemilih: tombol `button.gms-btn`; dialog `.gms-dialog-wrap`, `.gms-dialog-body`, `.gms-dialog-footer`; badge `.gms-tag.t-*`.
 - E2E: Playwright terhadap Postgres + API + Web nyata (`ShellE2ETests`: panel navigasi, pencarian header, tab menjaga isi form dan konfirmasi tutup, tema terang saja). `ScreenshotE2ETests` menangkap layar bila `GMS_SHOTS_DIR` diisi (peninjauan visual).
 - Bila `Gms.Api`/`Gms.Web` sedang berjalan dan mengunci `bin/`, bangun dan uji ke jalur lain: `-p:UseArtifactsOutput=true -p:ArtifactsPath=<folder>` (E2E mencari keluaran dengan tata letak itu).
 
@@ -36,6 +36,13 @@ Acuan visual TUNGGAL: `docs/Design.md` v2.0 (Microsoft Fluent 2) dan `docs/Desig
 
 ## Penyempurnaan halaman (2026-11-14)
 `Stepper` dipakai di detail PO/WO/Periode Gaji; `ChartStack`/`ChartBars` di Beranda (tanpa donut); header halaman berikon dengan satu primary per status; `TabContext.SetAlert` dipakai detail PO/WO/Periode (variabel konteks di halaman bernama `TabCtx` karena `Tab` adalah enum bagian halaman).
+
+## Penyempurnaan tahap 2 (2026-11-14)
+- `MessageBar` (info/peringatan/sukses dapat ditutup; error tidak; pesan penahan aksi `Closable=false`); 14 banner satu-baris dimigrasi.
+- `StatusChips` (chip berjumlah dari server) pada Surat Jalan, Serah Terima FG, dan `MasterList` (semua master); jumlah = query 1 baris per status.
+- Alert tab: PO/WO terlambat, Periode Open lewat tanggal, FG Belum Siap, Input Output (merah = sel melebihi batas, oranye = peringatan).
+- **i18n chrome (K-2):** `Resources/ChromeResource(.en).resx` (142 kunci: navigasi, header, tab, footer, form masuk, status turunan). Bahasa dipilih HANYA lewat cookie (`/account/language`); header `Accept-Language` diabaikan (bawaan Indonesia). `LocalizerExtensions.Or` memberi fallback bila kunci belum ada. Nama status dokumen (Draft, In Progress, ...) tetap Inggris. Pesan galat per halaman modul masih Indonesia (kunci belum diekstrak). bUnit memaksa `id-ID` di `WebTestBase`.
+- **DEVIASI-4:** Koreksi Output/Pengiriman dan Ubah Qty WO tetap dialog (lebar 720px), bukan halaman; menunggu persetujuan (lihat `_Foundation-UI.md` bagian 12).
 
 ## Status migrasi Fluent 2
 - **Selesai (2026-11-14):** token + CSS, ikon, tombol, toast, dialog, status/badge, shell 4 zona, Tab Manager, form masuk, penghapusan AntDesign, tes bUnit dan E2E.

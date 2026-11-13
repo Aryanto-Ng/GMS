@@ -35,7 +35,7 @@ else if (_ctx is null)
 }
 else
 {
-    @if (_ctx.BlockedReason is not null) { <div class="gms-banner warning" role="alert"><div class="gms-banner-body"><p>@_ctx.BlockedReason</p></div></div> }
+    @if (_ctx.BlockedReason is not null) { <MessageBar Kind="warning" Role="alert" Closable="false">@_ctx.BlockedReason</MessageBar> }
     <FormSummary Errors="_problem?.Errors" />
     @if (_problem is not null && _problem.Errors is null) { <ProblemBanner Problem="_problem" OnReload="LoadContextAsync" /> }
 

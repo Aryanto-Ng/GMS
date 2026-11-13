@@ -91,7 +91,7 @@
               Title="@(_voiding is null ? string.Empty : $"Batalkan entri ini? {_voiding.ProcessName} · {_voiding.WorkerName ?? _voiding.VendorName} · {IdFormat.Date(_voiding.WorkDate)} · {IdFormat.Qty(_voiding.TotalQty)} pcs")"
               LoadPreview="PreviewVoidAsync" OnConfirm="VoidAsync" />
 
-<ConfirmDialog Open="_correcting is not null" OpenChanged="o => { if (!o) _correcting = null; }" Danger="false" ConfirmText="Simpan koreksi" Title="Koreksi output"
+<ConfirmDialog Wide="true" Open="_correcting is not null" OpenChanged="o => { if (!o) _correcting = null; }" Danger="false" ConfirmText="Simpan koreksi" Title="Koreksi output"
               CanConfirm="@(_correctPreview?.CanProceed == true)" OnConfirm="CorrectAsync">
     @if (_correcting is not null && _correctDetail is not null)
     {

@@ -100,4 +100,25 @@ public sealed class ShellE2ETests(StackFixture stack)
         var canvas = await page.EvaluateAsync<string>("getComputedStyle(document.querySelector('.gms-main')).backgroundColor");
         Assert.Equal("rgb(245, 245, 245)", canvas); // token --bg3
     }
+
+    [Fact]
+    public async Task Bahasa_dapat_diganti_ke_English_bertahan_setelah_muat_ulang_dan_kembali_ke_Indonesia()
+    {
+        var page = await stack.LoginAsAdminAsync();
+        await StackFixture.GotoInteractiveAsync(page, "/");
+        await Expect(page.GetByRole(AriaRole.Button, new() { Name = "Penjualan" })).ToBeVisibleAsync();
+
+        await page.GetByRole(AriaRole.Button, new() { Name = "Bahasa" }).ClickAsync();
+        await page.GetByRole(AriaRole.Menuitemradio, new() { Name = "English" }).ClickAsync();
+        await Expect(page.GetByRole(AriaRole.Button, new() { Name = "Sales" })).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Navigation, new() { Name = "Main navigation" })).ToBeVisibleAsync();
+        await Expect(page.GetByText("All rights reserved.")).ToBeVisibleAsync();
+
+        await page.ReloadAsync();
+        await Expect(page.GetByRole(AriaRole.Button, new() { Name = "Sales" })).ToBeVisibleAsync(); // cookie bertahan
+
+        await page.GetByRole(AriaRole.Button, new() { Name = "Language" }).ClickAsync();
+        await page.GetByRole(AriaRole.Menuitemradio, new() { Name = "Indonesia" }).ClickAsync();
+        await Expect(page.GetByRole(AriaRole.Button, new() { Name = "Penjualan" })).ToBeVisibleAsync();
+    }
 }

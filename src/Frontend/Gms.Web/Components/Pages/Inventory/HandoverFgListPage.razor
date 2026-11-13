@@ -15,20 +15,14 @@
 <div class="gms-toolbar" role="search">
     <div class="gms-field">
         <label for="hf-wo">WO</label>
-        <select id="hf-wo" @onchange="e => { _wo = Guid.TryParse(e.Value?.ToString(), out var g) ? g : null; _page = 1; }">
+        <select id="hf-wo" @onchange="async e => { _wo = Guid.TryParse(e.Value?.ToString(), out var g) ? g : null; _page = 1; await RefreshCountsAsync(); }">
             <option value="">Semua WO</option>
             @foreach (var w in _woItems) { <option value="@w.Id" selected="@(_wo == w.Id)">@w.Code</option> }
         </select>
     </div>
-    <div class="gms-field">
-        <label for="hf-status">Status</label>
-        <select id="hf-status" @onchange="e => { _status = Enum.TryParse<DocStatus>(e.Value?.ToString(), out var s) ? s : null; _page = 1; }">
-            <option value="">Semua status</option>
-            <option value="Active" selected="@(_status == DocStatus.Active)">Aktif</option>
-            <option value="Voided" selected="@(_status == DocStatus.Voided)">Void</option>
-        </select>
-    </div>
 </div>
+<StatusChips Label="Filter status dokumen" Selected="@_status?.ToString()" Counts="_counts" SelectedChanged="SelectStatusAsync"
+             Options="@(new StatusChips.Option[] { new("Active", "Aktif"), new("Voided", "Void"), new(null, "Semua") })" />
 
 <AsyncContent T="PagedResult<HandoverFgListItem>" Key="@($"{_page}|{_wo}|{_status}")" Loader="LoadAsync" IsEmpty="r => r.TotalCount == 0">
     <EmptyContent>
@@ -60,11 +54,33 @@
     private DocStatus? _status;
     private int _page = 1;
     private int? _total;
+    private IReadOnlyDictionary<string, int?> _counts = new Dictionary<string, int?>();
+
+    private async Task SelectStatusAsync(string? key)
+    {
+        _status = Enum.TryParse<DocStatus>(key, out var st) ? st : null;
+        _page = 1;
+        await RefreshCountsAsync();
+    }
+
+    private async Task RefreshCountsAsync()
+    {
+        try
+        {
+            async Task<int?> Count(DocStatus? st) => (await Inventory.ListHandoverFgAsync(new HandoverFgListQuery { Page = 1, PageSize = 1, WoId = _wo, Status = st })).TotalCount;
+            _counts = new Dictionary<string, int?> { ["Active"] = await Count(DocStatus.Active), ["Voided"] = await Count(DocStatus.Voided), [""] = await Count(null) };
+        }
+        catch (ApiException)
+        {
+            _counts = new Dictionary<string, int?>();
+        }
+    }
     private System.Security.Claims.ClaimsPrincipal _user = new();
 
     protected override async Task OnInitializedAsync()
     {
         _user = (await Auth.GetAuthenticationStateAsync()).User;
+        await RefreshCountsAsync();
         try { _woItems = (await Wos.ListAsync(new WoListQuery { PageSize = 200 })).Items.Select(w => new LookupItem(w.Id, w.Code, w.FgCode)).ToList(); }
         catch (ApiException) { _woItems = []; } // filter WO opsional
     }

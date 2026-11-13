@@ -11,7 +11,7 @@
 
 <PageHeader Title="Penyesuaian Output" Subtitle="Untuk periode gaji yang sudah ditutup." />
 
-<div class="gms-banner info" role="status"><div class="gms-banner-body"><p>Upah penyesuaian dihitung dengan tarif snapshot WO dan masuk ke periode yang memuat Tanggal Kerja penyesuaian.</p></div></div>
+<MessageBar Kind="info">Upah penyesuaian dihitung dengan tarif snapshot WO dan masuk ke periode yang memuat Tanggal Kerja penyesuaian.</MessageBar>
 
 <FormSummary Errors="_problem?.Errors" Labels="_labels" />
 @if (_problem is not null && _problem.Errors is null) { <ProblemBanner Problem="_problem" /> }

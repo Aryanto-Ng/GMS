@@ -2,10 +2,11 @@
 @layout AccountLayout
 @attribute [ExcludeFromInteractiveRouting]
 @attribute [AllowAnonymous]
+@inject IStringLocalizer<ChromeResource> L
 
 <PageTitle>Masuk · GMS</PageTitle>
 
-<h1 class="gms-account-title">Masuk</h1>
+<h1 class="gms-account-title">@L["Login.Title"]</h1>
 
 @if (Message is { } message)
 {
@@ -16,18 +17,18 @@
     <AntiforgeryToken />
     <input type="hidden" name="ReturnUrl" value="@SafeReturn" />
 
-    <label for="username">Nama pengguna <span class="gms-required">wajib</span></label>
+    <label for="username">@L["Login.User"] <span class="gms-required">@L["Login.Required"]</span></label>
     <input id="username" name="Username" type="text" autocomplete="username" autofocus required maxlength="100" />
 
-    <label for="password">Kata sandi <span class="gms-required">wajib</span></label>
+    <label for="password">@L["Login.Pass"] <span class="gms-required">@L["Login.Required"]</span></label>
     <div class="gms-pwrow">
         <input id="password" name="Password" type="password" autocomplete="current-password" required maxlength="200" style="padding-right:72px" />
-        <button type="button" class="gms-pwtoggle" data-pw-toggle="password" data-show="Tampil" data-hide="Sembunyi" aria-pressed="false" aria-controls="password">Tampil</button>
+        <button type="button" class="gms-pwtoggle" data-pw-toggle="password" data-show="@L["Login.Show"]" data-hide="@L["Login.Hide"]" aria-pressed="false" aria-controls="password">@L["Login.Show"]</button>
     </div>
 
-    <button type="submit" class="gms-primary">Masuk</button>
+    <button type="submit" class="gms-primary">@L["Login.Title"]</button>
 </form>
-<p class="gms-account-help">Lupa kata sandi? Hubungi Administrator.</p>
+<p class="gms-account-help">@L["Login.Help"]</p>
 
 @code {
     [SupplyParameterFromQuery] private string? Error { get; set; }

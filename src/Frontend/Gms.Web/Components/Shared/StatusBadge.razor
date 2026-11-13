@@ -1,13 +1,15 @@
 @* StatusBadge (Design.md 8): SELALU teks (ikon opsional) + warna dari peta 6 kategori di StatusPresentation; status tidak pernah hanya warna. *@
+@inject IStringLocalizer<ChromeResource> L
 @{
     var p = StatusPresentation.For(Value);
+    var label = L.Or($"Status.{p.Label}", p.Label);
 }
 <span class="gms-tag @p.Tone @(p.Strike ? "strike" : string.Empty)" title="@(Tooltip ?? p.Tooltip)">
     @if (p.Icon is not null)
     {
         <GmsIcon Name="@p.Icon" />
     }
-    <span>@p.Label</span>
+    <span>@label</span>
 </span>
 
 @code {

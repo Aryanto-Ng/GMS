@@ -41,8 +41,8 @@ else
     <div class="gms-card" style="padding:0"><Stepper Steps="@(new[] { "Open", "Closed" })" Current="@(_period.Status == PayrollStatus.Open ? 0 : 1)" Tone="yel" Finished="@(_period.Status == PayrollStatus.Closed)" AriaLabel="Siklus status periode gaji" /></div>
 
     @if (_actionProblem is not null) { <ProblemBanner Problem="_actionProblem" /> }
-    @if (_period.IsProvisional) { <div class="gms-banner warning" role="status"><div class="gms-banner-body"><p>Angka bersifat sementara dan berubah mengikuti input produksi.</p></div></div> }
-    else { <div class="gms-banner info" role="status"><div class="gms-banner-body"><p>Periode ditutup pada @IdFormat.DateTime(_period.ClosedAt) oleh @_period.ClosedByName. Angka final.</p></div></div> }
+    @if (_period.IsProvisional) { <MessageBar Kind="warning">Angka bersifat sementara dan berubah mengikuti input produksi.</MessageBar> }
+    else { <MessageBar Kind="info">Periode ditutup pada @IdFormat.DateTime(_period.ClosedAt) oleh @_period.ClosedByName. Angka final.</MessageBar> }
 
     <div role="tablist" aria-label="Bagian periode" class="gms-tabs">
         @foreach (var (tab, label) in Tabs)

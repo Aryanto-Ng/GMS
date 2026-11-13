@@ -41,12 +41,12 @@ else
 
     @if (_po.Status == PoStatus.Completed)
     {
-        <div class="gms-banner info" role="status"><div class="gms-banner-body"><p>PO selesai. Tambahan pesanan dibuat pada PO baru.</p></div></div>
+        <MessageBar Kind="info">PO selesai. Tambahan pesanan dibuat pada PO baru.</MessageBar>
     }
 
     @if (_po.Status == PoStatus.Cancelled && !string.IsNullOrEmpty(_po.CancelReason))
     {
-        <div class="gms-banner warning" role="status"><div class="gms-banner-body"><p>Dibatalkan: @_po.CancelReason</p></div></div>
+        <MessageBar Kind="warning">Dibatalkan: @_po.CancelReason</MessageBar>
     }
 
     <div class="gms-customerpo">

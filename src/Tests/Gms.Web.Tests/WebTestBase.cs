@@ -12,8 +12,12 @@ namespace Gms.Web.Tests;
 /// <summary>Dasar tes komponen: layanan AntDesign, JS longgar (modul isolasi dipalsukan), pengguna uji, dan penanganan galat API.</summary>
 public abstract class WebTestBase : BunitContext
 {
+    private readonly System.Globalization.CultureInfo _uiBefore = System.Globalization.CultureInfo.CurrentUICulture;
+
     protected WebTestBase()
     {
+        // Bahasa UI aplikasi bawaan = Indonesia; mesin uji dapat berbahasa lain (teks tes ditulis dalam Indonesia).
+        System.Globalization.CultureInfo.CurrentUICulture = new System.Globalization.CultureInfo("id-ID");
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddLocalization();
         Services.AddOptions<Gms.Web.Infrastructure.AppIdentityOptions>();

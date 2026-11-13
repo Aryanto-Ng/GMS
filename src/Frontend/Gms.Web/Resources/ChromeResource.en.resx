@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Nav.po.list.Label" xml:space="preserve"><value>PO list</value></data>
+  <data name="Nav.po.list.Desc" xml:space="preserve"><value>Customer orders and their status</value></data>
+  <data name="Nav.po.new.Label" xml:space="preserve"><value>Create PO</value></data>
+  <data name="Nav.po.new.Desc" xml:space="preserve"><value>Record a new customer order</value></data>
+  <data name="Nav.sj.list.Label" xml:space="preserve"><value>Delivery note list</value></data>
+  <data name="Nav.sj.list.Desc" xml:space="preserve"><value>Delivery notes and their status</value></data>
+  <data name="Nav.sj.new.Label" xml:space="preserve"><value>Create delivery note</value></data>
+  <data name="Nav.sj.new.Desc" xml:space="preserve"><value>Ship finished goods to a customer</value></data>
+  <data name="Nav.wo.list.Label" xml:space="preserve"><value>WO list</value></data>
+  <data name="Nav.wo.list.Desc" xml:space="preserve"><value>Work orders and step progress</value></data>
+  <data name="Nav.wo.new.Label" xml:space="preserve"><value>Create WO</value></data>
+  <data name="Nav.wo.new.Desc" xml:space="preserve"><value>Issue a work order from a PO</value></data>
+  <data name="Nav.out.history.Label" xml:space="preserve"><value>Output history</value></data>
+  <data name="Nav.out.history.Desc" xml:space="preserve"><value>Output, adjustments, and voids</value></data>
+  <data name="Nav.out.new.Label" xml:space="preserve"><value>Enter output</value></data>
+  <data name="Nav.out.new.Desc" xml:space="preserve"><value>Record work per worker</value></data>
+  <data name="Nav.out.adjust.Label" xml:space="preserve"><value>Enter adjustment</value></data>
+  <data name="Nav.out.adjust.Desc" xml:space="preserve"><value>Correct output already recorded</value></data>
+  <data name="Nav.vendor.move.Label" xml:space="preserve"><value>Send/receive vendor</value></data>
+  <data name="Nav.vendor.move.Desc" xml:space="preserve"><value>Record goods going to and from vendors</value></data>
+  <data name="Nav.fg.handovers.Label" xml:space="preserve"><value>Handover list</value></data>
+  <data name="Nav.fg.handovers.Desc" xml:space="preserve"><value>Finished goods handed over to the warehouse</value></data>
+  <data name="Nav.fg.stock.Label" xml:space="preserve"><value>FG stock</value></data>
+  <data name="Nav.fg.stock.Desc" xml:space="preserve"><value>Current finished goods stock</value></data>
+  <data name="Nav.fg.ledger.Label" xml:space="preserve"><value>Stock card</value></data>
+  <data name="Nav.fg.ledger.Desc" xml:space="preserve"><value>Stock movements per item</value></data>
+  <data name="Nav.fg.handover.new.Label" xml:space="preserve"><value>FG handover</value></data>
+  <data name="Nav.fg.handover.new.Desc" xml:space="preserve"><value>Receive finished goods from production</value></data>
+  <data name="Nav.mat.handovers.Label" xml:space="preserve"><value>Material handover</value></data>
+  <data name="Nav.mat.handovers.Desc" xml:space="preserve"><value>Material issued to production</value></data>
+  <data name="Nav.mat.handover.new.Label" xml:space="preserve"><value>New material handover</value></data>
+  <data name="Nav.mat.handover.new.Desc" xml:space="preserve"><value>Record material issued to production</value></data>
+  <data name="Nav.stock.import.Label" xml:space="preserve"><value>Import opening balance</value></data>
+  <data name="Nav.stock.import.Desc" xml:space="preserve"><value>Load opening stock from CSV</value></data>
+  <data name="Nav.payroll.periods.Label" xml:space="preserve"><value>Payroll periods</value></data>
+  <data name="Nav.payroll.periods.Desc" xml:space="preserve"><value>Periods, details, slips, and closing</value></data>
+  <data name="Nav.fgs.Label" xml:space="preserve"><value>Finished goods</value></data>
+  <data name="Nav.fgs.Desc" xml:space="preserve"><value>Items, sizes, routing, and rates</value></data>
+  <data name="Nav.materials.Label" xml:space="preserve"><value>Material</value></data>
+  <data name="Nav.materials.Desc" xml:space="preserve"><value>Materials and their units</value></data>
+  <data name="Nav.matcats.Label" xml:space="preserve"><value>Material categories</value></data>
+  <data name="Nav.matcats.Desc" xml:space="preserve"><value>Material grouping</value></data>
+  <data name="Nav.sizes.Label" xml:space="preserve"><value>Size</value></data>
+  <data name="Nav.sizes.Desc" xml:space="preserve"><value>List of sizes</value></data>
+  <data name="Nav.colors.Label" xml:space="preserve"><value>Color</value></data>
+  <data name="Nav.colors.Desc" xml:space="preserve"><value>List of colors</value></data>
+  <data name="Nav.uoms.Label" xml:space="preserve"><value>Units (UoM)</value></data>
+  <data name="Nav.uoms.Desc" xml:space="preserve"><value>Units of measure</value></data>
+  <data name="Nav.processes.Label" xml:space="preserve"><value>Process</value></data>
+  <data name="Nav.processes.Desc" xml:space="preserve"><value>Production processes</value></data>
+  <data name="Nav.customers.Label" xml:space="preserve"><value>Customer</value></data>
+  <data name="Nav.customers.Desc" xml:space="preserve"><value>Customers</value></data>
+  <data name="Nav.vendors.Label" xml:space="preserve"><value>Vendor</value></data>
+  <data name="Nav.vendors.Desc" xml:space="preserve"><value>Outsourcing partners</value></data>
+  <data name="Nav.workers.Label" xml:space="preserve"><value>Workers</value></data>
+  <data name="Nav.workers.Desc" xml:space="preserve"><value>Piece-rate workers</value></data>
+  <data name="Nav.import.fgs.Label" xml:space="preserve"><value>Import FG</value></data>
+  <data name="Nav.import.fgs.Desc" xml:space="preserve"><value>Load finished goods from CSV</value></data>
+  <data name="Nav.import.materials.Label" xml:space="preserve"><value>Import material</value></data>
+  <data name="Nav.import.materials.Desc" xml:space="preserve"><value>Load materials from CSV</value></data>
+  <data name="Nav.import.workers.Label" xml:space="preserve"><value>Import workers</value></data>
+  <data name="Nav.import.workers.Desc" xml:space="preserve"><value>Load workers from CSV</value></data>
+  <data name="Nav.users.Label" xml:space="preserve"><value>Users</value></data>
+  <data name="Nav.users.Desc" xml:space="preserve"><value>User accounts</value></data>
+  <data name="Nav.roles.Label" xml:space="preserve"><value>Roles &amp; permissions</value></data>
+  <data name="Nav.roles.Desc" xml:space="preserve"><value>Roles and permission matrix</value></data>
+  <data name="Nav.audit.Label" xml:space="preserve"><value>Audit log</value></data>
+  <data name="Nav.audit.Desc" xml:space="preserve"><value>Trail of data changes</value></data>
+  <data name="Nav.notif.settings.Label" xml:space="preserve"><value>Notification settings</value></data>
+  <data name="Nav.notif.settings.Desc" xml:space="preserve"><value>Types, threshold, time, retention</value></data>
+  <data name="Nav.home.Label" xml:space="preserve"><value>Home</value></data>
+  <data name="Nav.home.Desc" xml:space="preserve"><value>Summary and quick actions</value></data>
+  <data name="Nav.Home" xml:space="preserve"><value>Home</value></data>
+  <data name="Nav.Cat.sales" xml:space="preserve"><value>Sales</value></data>
+  <data name="Nav.Cat.production" xml:space="preserve"><value>Production</value></data>
+  <data name="Nav.Cat.warehouse" xml:space="preserve"><value>Warehouse</value></data>
+  <data name="Nav.Cat.payroll" xml:space="preserve"><value>Payroll</value></data>
+  <data name="Nav.Cat.master" xml:space="preserve"><value>Master data</value></data>
+  <data name="Nav.Cat.admin" xml:space="preserve"><value>Administration</value></data>
+  <data name="Nav.Group.Customer PO" xml:space="preserve"><value>Customer PO</value></data>
+  <data name="Nav.Group.Pengiriman" xml:space="preserve"><value>Deliveries</value></data>
+  <data name="Nav.Group.Work Order" xml:space="preserve"><value>Work orders</value></data>
+  <data name="Nav.Group.Production Output" xml:space="preserve"><value>Production output</value></data>
+  <data name="Nav.Group.Vendor" xml:space="preserve"><value>Vendors</value></data>
+  <data name="Nav.Group.Finished Goods" xml:space="preserve"><value>Finished goods</value></data>
+  <data name="Nav.Group.Material" xml:space="preserve"><value>Material</value></data>
+  <data name="Nav.Group.Impor" xml:space="preserve"><value>Import</value></data>
+  <data name="Nav.Group.Payroll Borongan" xml:space="preserve"><value>Piece-rate payroll</value></data>
+  <data name="Nav.Group.Produk" xml:space="preserve"><value>Products</value></data>
+  <data name="Nav.Group.Atribut" xml:space="preserve"><value>Attributes</value></data>
+  <data name="Nav.Group.Mitra &amp; SDM" xml:space="preserve"><value>Partners &amp; people</value></data>
+  <data name="Nav.Group.Hak Akses" xml:space="preserve"><value>Access rights</value></data>
+  <data name="Nav.Group.Notifikasi" xml:space="preserve"><value>Notifications</value></data>
+  <data name="Header.Search.Placeholder" xml:space="preserve"><value>Search pages or actions…</value></data>
+  <data name="Header.Search.Label" xml:space="preserve"><value>Search pages or actions</value></data>
+  <data name="Header.Search.Results" xml:space="preserve"><value>Search results</value></data>
+  <data name="Header.Search.None" xml:space="preserve"><value>No results for this search.</value></data>
+  <data name="Header.Search.Action" xml:space="preserve"><value>Action</value></data>
+  <data name="Header.Lang" xml:space="preserve"><value>Language</value></data>
+  <data name="Header.LangLabel" xml:space="preserve"><value>Language: {0}</value></data>
+  <data name="Header.UserMenu" xml:space="preserve"><value>User menu {0}</value></data>
+  <data name="Header.ChangePassword" xml:space="preserve"><value>Change password</value></data>
+  <data name="Header.Logout" xml:space="preserve"><value>Sign out</value></data>
+  <data name="Header.HomeLink" xml:space="preserve"><value>{0}, go to Home</value></data>
+  <data name="Header.Menu" xml:space="preserve"><value>Menu</value></data>
+  <data name="Nav.Aria" xml:space="preserve"><value>Main navigation</value></data>
+  <data name="Tabs.Aria" xml:space="preserve"><value>Document tabs</value></data>
+  <data name="Tabs.All" xml:space="preserve"><value>All tabs</value></data>
+  <data name="Tabs.Close" xml:space="preserve"><value>Close {0}</value></data>
+  <data name="Tabs.Unsaved" xml:space="preserve"><value>unsaved</value></data>
+  <data name="Tabs.Reload" xml:space="preserve"><value>Reload</value></data>
+  <data name="Tabs.CloseThis" xml:space="preserve"><value>Close</value></data>
+  <data name="Tabs.CloseOthers" xml:space="preserve"><value>Close others</value></data>
+  <data name="Tabs.CloseAll" xml:space="preserve"><value>Close all</value></data>
+  <data name="Tabs.ConfirmTitle" xml:space="preserve"><value>Close the tab without saving?</value></data>
+  <data name="Tabs.ConfirmBody" xml:space="preserve"><value>Changes in "{0}" are not saved and will be lost.</value></data>
+  <data name="Tabs.ConfirmYes" xml:space="preserve"><value>Close without saving</value></data>
+  <data name="Tabs.ConfirmNo" xml:space="preserve"><value>Stay here</value></data>
+  <data name="Tabs.Limit" xml:space="preserve"><value>The limit of {0} tabs is reached. Close a tab to open a new document.</value></data>
+  <data name="Tabs.CloseMessage" xml:space="preserve"><value>Dismiss message</value></data>
+  <data name="Footer.Text" xml:space="preserve"><value>© {0} {1}. All rights reserved.</value></data>
+  <data name="Skip.Main" xml:space="preserve"><value>Skip to main content</value></data>
+  <data name="Login.Title" xml:space="preserve"><value>Sign in</value></data>
+  <data name="Login.User" xml:space="preserve"><value>Username</value></data>
+  <data name="Login.Pass" xml:space="preserve"><value>Password</value></data>
+  <data name="Login.Required" xml:space="preserve"><value>required</value></data>
+  <data name="Login.Show" xml:space="preserve"><value>Show</value></data>
+  <data name="Login.Hide" xml:space="preserve"><value>Hide</value></data>
+  <data name="Login.Help" xml:space="preserve"><value>Forgot your password? Contact the Administrator.</value></data>
+  <data name="Status.Aktif" xml:space="preserve"><value>Active</value></data>
+  <data name="Status.Nonaktif" xml:space="preserve"><value>Inactive</value></data>
+  <data name="Status.Terkunci" xml:space="preserve"><value>Locked</value></data>
+  <data name="Status.Terlambat" xml:space="preserve"><value>Late</value></data>
+  <data name="Status.Jatuh tempo" xml:space="preserve"><value>Due soon</value></data>
+  <data name="Status.Belum ada" xml:space="preserve"><value>Not set</value></data>
+  <data name="Status.Negatif" xml:space="preserve"><value>Negative</value></data>
+  <data name="Status.Belum Final" xml:space="preserve"><value>Not final</value></data>
+  <data name="Status.Siap Produksi" xml:space="preserve"><value>Ready for production</value></data>
+  <data name="Status.Belum Siap" xml:space="preserve"><value>Not ready</value></data>
+  <data name="Status.Belum Mulai" xml:space="preserve"><value>Not started</value></data>
+  <data name="Status.Berjalan" xml:space="preserve"><value>Running</value></data>
+  <data name="Status.Selesai" xml:space="preserve"><value>Done</value></data>
+</root>

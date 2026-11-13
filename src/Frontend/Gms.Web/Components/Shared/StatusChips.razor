@@ -1,0 +1,27 @@
+@* Filter chip berjumlah (Design.md 10, DataList): satu chip terpilih (aria-pressed), jumlah dihitung server. Dipertahankan per tab (state halaman tab tetap hidup)
+   dan tidak menandai tab belum disimpan. *@
+<div class="gms-chips" role="group" aria-label="@Label">
+    @foreach (var option in Options)
+    {
+        var on = Selected == option.Key;
+        <button type="button" class="gms-chipbtn @(on ? "on" : "")" aria-pressed="@(on ? "true" : "false")" @onclick="() => SelectedChanged.InvokeAsync(option.Key)">
+            @option.Label <span class="gms-chipcount">@(Counts.TryGetValue(option.Key ?? string.Empty, out var n) && n is not null ? IdFormat.Qty(n) : "–")</span>
+        </button>
+    }
+</div>
+
+@code {
+    /// <summary>Satu pilihan; <see cref="Key"/> null/kosong = "Semua".</summary>
+    public sealed record Option(string? Key, string Label);
+
+    [Parameter, EditorRequired] public IReadOnlyList<Option> Options { get; set; } = [];
+
+    [Parameter] public string? Selected { get; set; }
+
+    [Parameter] public EventCallback<string?> SelectedChanged { get; set; }
+
+    /// <summary>Jumlah per kunci (kunci "" untuk Semua); null = belum dimuat.</summary>
+    [Parameter] public IReadOnlyDictionary<string, int?> Counts { get; set; } = new Dictionary<string, int?>();
+
+    [Parameter] public string Label { get; set; } = "Filter status";
+}

@@ -18,7 +18,7 @@ public sealed record NavGroup(string Title, IReadOnlyList<NavEntry> Entries);
 public sealed record NavCategory(string Key, string Title, string Icon, IReadOnlyList<NavGroup> Groups);
 
 /// <summary>Baris datar untuk CommandPalette: entri beserta jalur "Kategori › Grup".</summary>
-public sealed record NavFlatEntry(string Key, string Label, string Desc, string Href, NavKind Kind, string Keywords, string Category, string Group);
+public sealed record NavFlatEntry(string Key, string Label, string Desc, string Href, NavKind Kind, string Keywords, string Category, string Group, string CategoryKey = "");
 
 /// <summary>
 /// Sumber tunggal navigasi (Design.md 7): Kategori → Grup → Halaman/Aksi. Beranda adalah tautan langsung tanpa panel.
@@ -152,7 +152,7 @@ public static class NavCatalog
     /// <summary>Daftar datar (Beranda + semua entri terlihat) untuk CommandPalette.</summary>
     public static IReadOnlyList<NavFlatEntry> Flatten(IReadOnlyList<NavCategory> visible) =>
         visible
-            .SelectMany(c => c.Groups.SelectMany(g => g.Entries.Select(e => new NavFlatEntry(e.Key, e.Label, e.Desc, e.Href, e.Kind, e.Keywords, c.Title, g.Title))))
-            .Prepend(new NavFlatEntry(Home.Key, Home.Label, Home.Desc, Home.Href, NavKind.Page, Home.Keywords, string.Empty, string.Empty))
+            .SelectMany(c => c.Groups.SelectMany(g => g.Entries.Select(e => new NavFlatEntry(e.Key, e.Label, e.Desc, e.Href, e.Kind, e.Keywords, c.Title, g.Title, c.Key))))
+            .Prepend(new NavFlatEntry(Home.Key, Home.Label, Home.Desc, Home.Href, NavKind.Page, Home.Keywords, string.Empty, string.Empty, string.Empty))
             .ToList();
 }

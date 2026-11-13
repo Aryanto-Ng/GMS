@@ -1,31 +1,32 @@
 @inject NavigationManager Nav
+@inject IStringLocalizer<ChromeResource> L
 
 @* Top Navigation (Design.md 5): satu tombol per kategori (ikon 16px + label), aktif = teks tebal + garis bawah brand 3px; panel lebar penuh berisi grup (kartu berbingkai) dan
    item (tile ikon, judul, deskripsi); item aksi bertanda "+" dengan tile tint brand. Entri tanpa izin tidak dirender (katalog sudah disaring). Beranda = tautan langsung. *@
-<nav class="gms-nav @(Open ? "open" : "")" aria-label="Navigasi utama" @onkeydown="OnKey">
-    <a href="/" class="@(IsHome ? "on" : "")" aria-current="@(IsHome ? "page" : null)"><GmsIcon Name="home" />Beranda</a>
+<nav class="gms-nav @(Open ? "open" : "")" aria-label="@L["Nav.Aria"]" @onkeydown="OnKey">
+    <a href="/" class="@(IsHome ? "on" : "")" aria-current="@(IsHome ? "page" : null)"><GmsIcon Name="home" />@L["Nav.Home"]</a>
     @foreach (var category in Catalog)
     {
         var active = IsActive(category);
         <button type="button" class="@(_open == category.Key || (_open is null && active) ? "on" : "")" aria-haspopup="true" aria-expanded="@(_open == category.Key ? "true" : "false")"
                 @onclick="() => Toggle(category.Key)">
-            <GmsIcon Name="@category.Icon" />@category.Title<GmsIcon Name="chevron-down" Class="s12" />
+            <GmsIcon Name="@category.Icon" />@CatTitle(category)<GmsIcon Name="chevron-down" Class="s12" />
         </button>
     }
 
     @if (_open is not null && Catalog.FirstOrDefault(c => c.Key == _open) is { } current)
     {
-        <div class="gms-mega" role="region" aria-label="@current.Title">
+        <div class="gms-mega" role="region" aria-label="@CatTitle(current)">
             @foreach (var group in current.Groups)
             {
                 <section class="gms-mgrp">
-                    <h3><span class="gms-tile b"><GmsIcon Name="@GroupIcon(group.Title)" /></span>@group.Title</h3>
+                    <h3><span class="gms-tile b"><GmsIcon Name="@GroupIcon(group.Title)" /></span>@L.Or($"Nav.Group.{group.Title}", group.Title)</h3>
                     @foreach (var entry in group.Entries)
                     {
                         var isAction = entry.Kind == NavKind.Action;
                         <a class="gms-mitem" href="@entry.Href" @onclick="Close" aria-current="@(IsCurrent(entry) ? "page" : null)">
                             <span class="gms-tile @(isAction ? "t" : "")"><GmsIcon Name="@(isAction ? "plus" : "list")" /></span>
-                            <span><b>@entry.Label@(isAction ? " +" : "")</b><span class="d">@entry.Desc</span></span>
+                            <span><b>@L.Or($"Nav.{entry.Key}.Label", entry.Label)@(isAction ? " +" : "")</b><span class="d">@L.Or($"Nav.{entry.Key}.Desc", entry.Desc)</span></span>
                         </a>
                     }
                 </section>
@@ -43,6 +44,8 @@
     [Parameter] public EventCallback OnNavigate { get; set; }
 
     private string? _open;
+
+    private string CatTitle(NavCategory c) => L.Or($"Nav.Cat.{c.Key}", c.Title);
 
     private string CurrentPath => "/" + Nav.ToBaseRelativePath(Nav.Uri).Split('?')[0];
 

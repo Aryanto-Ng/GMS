@@ -19,18 +19,12 @@
 <div class="gms-toolbar" role="search">
     <div class="gms-field">
         <label for="@($"{_id}-q")">Cari kode/nama</label>
-        <input id="@($"{_id}-q")" type="search" value="@_q" @onchange="e => Apply(() => _q = e.Value?.ToString())" />
-    </div>
-    <div class="gms-field">
-        <label for="@($"{_id}-status")">Status</label>
-        <select id="@($"{_id}-status")" @onchange="e => Apply(() => _status = Enum.TryParse<ActiveFilter>(e.Value?.ToString(), out var s) ? s : ActiveFilter.Active)">
-            <option value="Active" selected="@(_status == ActiveFilter.Active)">Aktif</option>
-            <option value="Inactive" selected="@(_status == ActiveFilter.Inactive)">Nonaktif</option>
-            <option value="All" selected="@(_status == ActiveFilter.All)">Semua</option>
-        </select>
+        <input id="@($"{_id}-q")" type="search" value="@_q" @onchange="async e => { Apply(() => _q = e.Value?.ToString()); await RefreshCountsAsync(); }" />
     </div>
     @ExtraFilters
 </div>
+<StatusChips Label="Filter status" Selected="@_status.ToString()" Counts="_counts" SelectedChanged="SelectStatusAsync"
+             Options="@(new StatusChips.Option[] { new("Active", "Aktif"), new("Inactive", "Nonaktif"), new("All", "Semua") })" />
 
 <AsyncContent T="PagedResult<TItem>" Key="@($"{Version}|{_refresh}|{_page}|{_q}|{_status}|{ExtraKey}")" Loader="LoadAsync" IsEmpty="r => r.TotalCount == 0">
     <EmptyContent>
@@ -161,7 +155,39 @@
 
     private bool CanDeactivate => Can(DeactivatePermission);
 
-    protected override async Task OnInitializedAsync() => _user = (await Auth.GetAuthenticationStateAsync()).User;
+    private IReadOnlyDictionary<string, int?> _counts = new Dictionary<string, int?>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _user = (await Auth.GetAuthenticationStateAsync()).User;
+        await RefreshCountsAsync();
+    }
+
+    private async Task SelectStatusAsync(string? key)
+    {
+        _status = Enum.TryParse<ActiveFilter>(key, out var s) ? s : ActiveFilter.Active;
+        _page = 1;
+        await RefreshCountsAsync();
+    }
+
+    /// <summary>Jumlah per status dari server (query 1 baris) menurut pencarian aktif; gagal = tanpa jumlah.</summary>
+    private async Task RefreshCountsAsync()
+    {
+        try
+        {
+            async Task<int?> Count(ActiveFilter filter)
+            {
+                var query = new MasterListQuery { Page = 1, PageSize = 1, Q = _q, Status = filter };
+                return (await Loader(QueryFactory?.Invoke(query) ?? query, CancellationToken.None)).TotalCount;
+            }
+
+            _counts = new Dictionary<string, int?> { ["Active"] = await Count(ActiveFilter.Active), ["Inactive"] = await Count(ActiveFilter.Inactive), ["All"] = await Count(ActiveFilter.All) };
+        }
+        catch (ApiException)
+        {
+            _counts = new Dictionary<string, int?>();
+        }
+    }
 
     private async Task<PagedResult<TItem>> LoadAsync(CancellationToken ct)
     {

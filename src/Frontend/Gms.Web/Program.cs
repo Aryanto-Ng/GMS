@@ -160,10 +160,12 @@ if (!app.Environment.IsDevelopment())
 }
 
 // Bahasa UI: Indonesia (bawaan) dan English; dipilih lewat cookie (menu bahasa di header dan form masuk). Culture ditetapkan EKSPLISIT, bukan culture server.
-app.UseRequestLocalization(new RequestLocalizationOptions()
+var localization = new RequestLocalizationOptions()
     .SetDefaultCulture(AccountEndpoints.DefaultCulture)
     .AddSupportedCultures(AccountEndpoints.SupportedCultures)
-    .AddSupportedUICultures(AccountEndpoints.SupportedCultures));
+    .AddSupportedUICultures(AccountEndpoints.SupportedCultures);
+localization.RequestCultureProviders = [new CookieRequestCultureProvider()]; // pilihan pengguna saja; header Accept-Language browser diabaikan (bawaan Indonesia)
+app.UseRequestLocalization(localization);
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 app.UseAuthentication();

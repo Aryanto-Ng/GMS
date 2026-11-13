@@ -29,7 +29,7 @@ else if (_ctx is not null)
 {
     @if (_ctx.BlockedReason is not null)
     {
-        <div class="gms-banner warning" role="alert"><div class="gms-banner-body"><p>@_ctx.BlockedReason <a href="/work-orders/@_ctx.WoId">Buka WO</a></p></div></div>
+        <MessageBar Kind="warning" Role="alert" Closable="false">@_ctx.BlockedReason <a href="/work-orders/@_ctx.WoId">Buka WO</a></MessageBar>
     }
 
     <p class="gms-note">
@@ -39,7 +39,7 @@ else if (_ctx is not null)
 
     <FormSummary Errors="_problem?.Errors" />
     @if (_problem is not null && _problem.Errors is null) { <ProblemBanner Problem="_problem" OnReload="LoadContextAsync" /> }
-    @foreach (var warning in _warnings) { <div class="gms-banner warning" role="status"><div class="gms-banner-body"><p>@warning</p></div></div> }
+    @foreach (var warning in _warnings) { <MessageBar Kind="warning">@warning</MessageBar> }
 
     <div class="gms-inline">
         <LookupSelect Label="Tambah pekerja" Items="_available" @bind-Value="_addWorker" ShowCode="true" Placeholder="Cari kode/nama…" />
@@ -52,7 +52,7 @@ else if (_ctx is not null)
     }
     else
     {
-        <QtyGrid Caption="Output per pekerja" RowHeader="Pekerja" Rows="_rows" Columns="_columns" Values="_values" CellInfo="CellInfo" ShowMax="true" Compact="true" OnChanged="() => _dirty = true" />
+        <QtyGrid Caption="Output per pekerja" RowHeader="Pekerja" Rows="_rows" Columns="_columns" Values="_values" CellInfo="CellInfo" ShowMax="true" Compact="true" OnChanged="GridChanged" @ref="_grid" />
         <ul class="gms-chips" aria-label="Pekerja pada tabel">
             @foreach (var row in _rows)
             {
@@ -82,6 +82,18 @@ else if (_ctx is not null)
     private MatrixValues _values = new();
     private List<string> _warnings = [];
     private bool _dirty, _saving, _confirmExceed;
+    private QtyGrid? _grid;
+
+    [CascadingParameter] private TabContext? TabCtx { get; set; }
+
+    /// <summary>Alert tab (Design.md 6): merah bila ada sel melebihi batas (galat), oranye bila hanya peringatan (mis. melebihi Qty WO).</summary>
+    private void GridChanged()
+    {
+        _dirty = true;
+        var issues = _grid?.Issues ?? [];
+        TabCtx?.SetAlert(issues.Any(i => i.IsError) ? TabAlertKind.Error : issues.Count > 0 ? TabAlertKind.Warning : TabAlertKind.None,
+            issues.Any(i => i.IsError) ? "Ada sel melebihi batas" : "Ada peringatan pada isian");
+    }
     private string _exceedText = string.Empty;
 
     protected override async Task OnInitializedAsync()

@@ -32,7 +32,7 @@ else
         </Actions>
     </PageHeader>
 
-    @if (_doc.Item.Status == DocStatus.Voided) { <div class="gms-banner warning" role="status"><div class="gms-banner-body"><p>Di-void: @_doc.VoidReason</p></div></div> }
+    @if (_doc.Item.Status == DocStatus.Voided) { <MessageBar Kind="warning">Di-void: @_doc.VoidReason</MessageBar> }
     @if (_printProblem is not null) { <ProblemBanner Problem="_printProblem" /> }
 
     <p class="gms-note">Penerima: @(_doc.RecipientName ?? "—") · Kendaraan: @(_doc.Vehicle ?? "—") · Sopir: @(_doc.Driver ?? "—")@(string.IsNullOrEmpty(_doc.Notes) ? string.Empty : $" · Catatan: {_doc.Notes}") · Dicetak @_doc.Item.PrintCount kali</p>
@@ -59,7 +59,7 @@ else
     </div>
 </ConfirmDialog>
 
-<ConfirmDialog Open="_correcting" OpenChanged="o => _correcting = o" Danger="false" ConfirmText="Simpan koreksi" Title="Koreksi surat jalan"
+<ConfirmDialog Wide="true" Open="_correcting" OpenChanged="o => _correcting = o" Danger="false" ConfirmText="Simpan koreksi" Title="Koreksi surat jalan"
               CanConfirm="@(_correctPreview?.CanProceed == true)" OnConfirm="CorrectAsync">
     @if (_doc is not null)
     {

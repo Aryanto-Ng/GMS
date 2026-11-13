@@ -247,12 +247,13 @@ public sealed class MasterPageTests : WebTestBase
         var cut = Render<UomsPage>();
         WaitRows(cut, 3);
 
-        cut.Find("select").Change("Inactive");
+        cut.FindAll(".gms-chipbtn").First(c => c.TextContent.StartsWith("Nonaktif")).Click();
         WaitRows(cut, 1);
         Assert.Contains("Nonaktif", cut.Find("tbody").TextContent);
         Assert.Contains("Aktifkan", cut.Find("tbody").TextContent.Replace("Nonaktif", ""));
-        cut.Find("select").Change("All");
+        cut.FindAll(".gms-chipbtn").First(c => c.TextContent.StartsWith("Semua")).Click();
         WaitRows(cut, 4);
+        Assert.Equal("true", cut.FindAll(".gms-chipbtn").First(c => c.TextContent.StartsWith("Semua")).GetAttribute("aria-pressed"));
     }
 
     [Fact]

@@ -1,0 +1,31 @@
+@* MessageBar (Design.md 7.2): info, peringatan, sukses, error. Info/peringatan/sukses dapat ditutup (x); ERROR TIDAK dapat ditutup. Error memakai role="alert", lainnya role="status". *@
+@if (!_closed)
+{
+    <div class="gms-banner @Kind" role="@(Kind == "error" ? "alert" : Role)">
+        <GmsIcon Name="@IconName" />
+        <div class="gms-banner-body">@ChildContent</div>
+        @if (CanClose)
+        {
+            <button type="button" class="gms-banner-close" aria-label="Tutup pesan" @onclick="() => _closed = true"><GmsIcon Name="dismiss" /></button>
+        }
+    </div>
+}
+
+@code {
+    private bool _closed;
+
+    /// <summary><c>info</c>, <c>warning</c>, <c>success</c>, atau <c>error</c>.</summary>
+    [Parameter] public string Kind { get; set; } = "info";
+
+    /// <summary>Null = bawaan (tidak error = dapat ditutup). Pesan penahan aksi sebaiknya <c>false</c>.</summary>
+    [Parameter] public bool? Closable { get; set; }
+
+    /// <summary>Peran ARIA untuk non-error (<c>status</c> atau <c>alert</c> untuk penahan).</summary>
+    [Parameter] public string Role { get; set; } = "status";
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private bool CanClose => Kind != "error" && (Closable ?? true);
+
+    private string IconName => Kind switch { "error" => "error", "warning" => "alert", "success" => "check-circle", _ => "info" };
+}

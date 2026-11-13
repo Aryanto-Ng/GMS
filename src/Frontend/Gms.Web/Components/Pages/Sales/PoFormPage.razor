@@ -32,7 +32,7 @@ else if (_loading)
 }
 else if (_po is { AllowedActions: var allowed } && !allowed.Contains(PoActions.Edit))
 {
-    <div class="gms-banner info" role="status"><div class="gms-banner-body"><p>PO selesai atau dibatalkan. Tambahan pesanan dibuat pada PO baru.</p></div></div>
+    <MessageBar Kind="info">PO selesai atau dibatalkan. Tambahan pesanan dibuat pada PO baru.</MessageBar>
 }
 else
 {

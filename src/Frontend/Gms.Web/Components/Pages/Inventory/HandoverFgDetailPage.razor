@@ -32,7 +32,7 @@ else
 
     @if (_doc.Item.Status == DocStatus.Voided)
     {
-        <div class="gms-banner warning" role="status"><div class="gms-banner-body"><p>Di-void: @_doc.VoidReason</p></div></div>
+        <MessageBar Kind="warning">Di-void: @_doc.VoidReason</MessageBar>
     }
 
     <table class="gms-table compact">

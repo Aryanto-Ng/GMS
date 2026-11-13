@@ -21,7 +21,7 @@
     <ChildContent Context="periods">
         @if (_defaults is { HasOpenPeriod: false, StartDate: { } next } && _user.HasPermission(Permissions.Payroll.CreatePeriod))
         {
-            <div class="gms-banner info" role="status"><div class="gms-banner-body"><p>Belum ada periode terbuka. Mulai periode berikutnya mulai @IdFormat.Date(next).</p></div></div>
+            <MessageBar Kind="info">Belum ada periode terbuka. Mulai periode berikutnya mulai @IdFormat.Date(next).</MessageBar>
         }
 
         <table class="gms-table">

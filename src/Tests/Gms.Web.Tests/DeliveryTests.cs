@@ -206,7 +206,8 @@ public sealed class DeliveryPageTests : WebTestBase
 
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll("tbody tr")));
         Assert.Contains(doc.Item.Code, cut.Find("tbody").TextContent);
-        cut.Find("#dl-status").Change("Voided");
+        Assert.Contains("1", cut.FindAll(".gms-chipbtn").First(c => c.TextContent.StartsWith("Aktif")).TextContent); // jumlah dari server
+        cut.FindAll(".gms-chipbtn").First(c => c.TextContent.StartsWith("Void")).Click();
         cut.WaitForAssertion(() => Assert.Contains("Belum ada surat jalan", cut.Markup));
     }
 
