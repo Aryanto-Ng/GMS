@@ -20,22 +20,35 @@ public sealed class DashboardLoadE2ETests(StackFixture stack)
         return stream.Length;
     }
 
-    [Fact]
-    public async Task Beranda_memuat_tiap_widget_paling_banyak_dua_kali_dan_berhenti_setelah_stabil()
-    {
-        var page = await stack.LoginAsAdminAsync();
-        await StackFixture.GotoInteractiveAsync(page, "/");
-        await Task.Delay(3000); // biarkan pemuatan awal selesai
+    private static readonly string[] ChipWidgets = ["po-late", "po-no-customer-number", "wo-late"];
 
-        var offset = Length(stack.WebLogPath);
-        await Task.Delay(10000); // sistem idle: tidak boleh ada permintaan dashboard baru
-        var idle = ReadFrom(stack.WebLogPath, offset);
-        var idleCount = Regex.Matches(idle, @"Start processing HTTP request GET \S+/api/v1/dashboard/").Count;
-
-        var all = ReadFrom(stack.WebLogPath, 0);
-        var perWidget = Regex.Matches(all, @"Start processing HTTP request GET \S+/api/v1/dashboard/(?<w>[a-z-]+)")
+    private static Dictionary<string, int> CountWidgets(string log) =>
+        Regex.Matches(log, @"Start processing HTTP request GET \S+/api/v1/dashboard/(?<w>[a-z-]+)")
             .GroupBy(m => m.Groups["w"].Value).ToDictionary(g => g.Key, g => g.Count());
 
-        Assert.True(idleCount == 0, $"Saat idle masih ada {idleCount} permintaan dashboard dalam 10 dtk. Total per widget: {string.Join(", ", perWidget.Select(kv => $"{kv.Key}={kv.Value}"))}");
+    [Fact]
+    public async Task Beranda_memuat_tiap_widget_sekali_per_kunjungan_dan_tidak_ada_permintaan_saat_idle()
+    {
+        var page = await stack.LoginAsAdminAsync();
+        await StackFixture.GotoInteractiveAsync(page, "/work-orders"); // pastikan sirkuit hidup, lalu mulai dari halaman lain
+        await Task.Delay(2000);
+
+        var visitStart = Length(stack.WebLogPath);
+        await StackFixture.GotoInteractiveAsync(page, "/");
+        await Task.Delay(4000);
+        var visit = CountWidgets(ReadFrom(stack.WebLogPath, visitStart));
+
+        // Tanpa prerender: satu muatan per widget; widget yang juga dipakai chip ringkasan boleh dua kali.
+        Assert.NotEmpty(visit);
+        foreach (var (widget, count) in visit)
+        {
+            var allowed = ChipWidgets.Contains(widget) ? 2 : 1;
+            Assert.True(count <= allowed, $"Widget {widget} dimuat {count}x (maks {allowed}). Semua: {string.Join(", ", visit.Select(kv => $"{kv.Key}={kv.Value}"))}");
+        }
+
+        var idleStart = Length(stack.WebLogPath);
+        await Task.Delay(10000); // sistem idle: tidak boleh ada permintaan dashboard baru
+        var idle = CountWidgets(ReadFrom(stack.WebLogPath, idleStart));
+        Assert.True(idle.Count == 0, $"Saat idle masih ada permintaan dashboard: {string.Join(", ", idle.Select(kv => $"{kv.Key}={kv.Value}"))}");
     }
 }

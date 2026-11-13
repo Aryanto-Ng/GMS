@@ -30,6 +30,10 @@
     private string? Nonce => HttpContext?.Items[Gms.Web.Infrastructure.SecurityHeaders.NonceItemKey] as string;
 
     // Halaman bertanda [ExcludeFromInteractiveRouting] (login, ganti password, 403) tetap Static SSR; selebihnya Interactive Server.
+    // BUG-003: tanpa prerender. Aplikasi ini di balik login (tidak butuh SEO), dan prerender membuat setiap halaman memuat data dua kali
+    // (sekali saat prerender, sekali saat sirkuit interaktif), menggandakan beban API/DB (Beranda: 12 widget x 2).
+    private static readonly InteractiveServerRenderMode NoPrerender = new(prerender: false);
+
     private IComponentRenderMode? PageRenderMode =>
-        HttpContext is not null && HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null;
+        HttpContext is not null && HttpContext.AcceptsInteractiveRouting() ? NoPrerender : null;
 }
