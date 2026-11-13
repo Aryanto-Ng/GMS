@@ -3,7 +3,7 @@
 | Atribut | Nilai |
 |---|---|
 | Modul | Notifikasi |
-| Versi | **0.9 (DRAFT — menunggu persetujuan user)** |
+| Versi | **1.0 (Disetujui user 2026-11-13)** |
 | Tipe | Modul Baru (diminta user saat tahap UI/UX; berlaku di fase 1) |
 | Penulis | System Analyst |
 | Fase | 1 |
@@ -174,11 +174,11 @@ Tidak ada halaman Static SSR baru. WebAssembly tidak dipakai.
 
 ---
 
-## 9. Hal yang Perlu Dikonfirmasi
+## 9. Keputusan Akhir (dikonfirmasi user 2026-11-13)
 
-| # | Pertanyaan | Usulan bawaan |
-|---|---|---|
-| Q1 | Penerima NE-03 (Serah Terima FG dibuat) = pemegang `StokFG.View`. Apakah cukup, atau hanya pemegang izin alokasi/`CustomerPO.Allocate`? | `StokFG.View` |
-| Q2 | NE-05/06/07 (Void/Koreksi) memberi tahu **semua** pemegang izin View modul tersebut. Apakah terlalu luas, atau cukup yang pernah terlibat (mis. pembuat entri asal)? | Semua pemegang View |
-| Q3 | Retensi 90 hari berlaku juga untuk notifikasi **belum dibaca**? | Ya |
-| Q4 | Posisi menu Pengaturan Notifikasi | Administrasi → grup **Notifikasi** (terpisah dari Hak Akses, karena izinnya bukan `AccessManagement.*`) |
+| # | Keputusan |
+|---|---|
+| Q1 | Penerima NE-03 = pemegang `StokFG.View` |
+| Q2 | NE-05/06/07 dikirim ke **semua** pemegang izin View modul terkait (kecuali pelaku) |
+| Q3 | Retensi 90 hari berlaku juga untuk notifikasi belum dibaca |
+| Q4 | Menu Pengaturan Notifikasi: Administrasi → grup **Notifikasi** (terpisah dari Hak Akses) |
